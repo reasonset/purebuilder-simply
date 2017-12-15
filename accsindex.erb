@@ -1,0 +1,35 @@
+---
+title: <%= @index["title"] %>
+date: <%= @index["date"] %>
+<% if @index["author"] %>
+author: <%= @index["author"] %>
+<% end %>
+---
+
+<%
+articles = Hash.new {|h,k| h[k] = Array.new }
+
+@indexes.each do |filename, index|
+  articles[(index["category"] || "default")].push index
+end
+
+%>
+
+% articles.each do |catname, cat|
+
+% unless articles.length == 1
+## <%= catname %>
+% end
+
+<%
+  list = if @config["accs_order"] == "desc" || @index["accs_order"] == "desc" || @index["blogmode"]
+    cat.sort_by {|i| [i["date"].to_s, i["title"].to_s, i["_last_update"].to_i] }
+  else
+    cat.sort_by {|i| [i["date"].to_s, i["title"].to_s, i["_last_update"].to_i] }.reverse
+  end
+
+  list.each do |i|
+%>* [<%= i["title"] %>](<%= @dir + "/" + File.basename(i["_filename"].to_s, ".*") + ".html" %>)
+<% end %>
+
+% end
