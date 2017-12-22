@@ -1,0 +1,11 @@
+outdir: /home/foo/public_html
+css:
+  - /tufie.css
+  - /layout.css
+toc: yes
+post_eruby: yes
+pandoc_additional_options:
+  - "-M"
+  - "lang:ja"
+  - "-M"
+  - ""

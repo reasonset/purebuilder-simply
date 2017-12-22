@@ -52,21 +52,22 @@ class << pbaccs
     # End of Ports
 
     # Get infomation
-    if File.file?([@dir, ".accs.yaml"].join("/"))
-      @index = YAML.load(File.read([dir, ".accs.yaml"].join("/")))
-    else
-      @index = {}
-    end
+    @index = {}
 
     if @config["alt_frontmatter"]
       @index.merge! @config["alt_frontmatter"]
     end
 
+    if File.file?([@dir, ".accs.yaml"].join("/"))
+      @index.merge! YAML.load(File.read([@dir, ".accs.yaml"].join("/")))
+    end
+
+
     # Pseudo instance variables
     @pandoc_options = @pandoc_default_options.clone
     @index["title"] ||= (@config["accs_index_title"] || "Index")
     @index["date"] ||= Time.now.strftime("%Y-%m-%d %H:%M:%S")
-    @index["pagetype"] = "ACCS_INDEX"
+    @index["pagetype"] = "accs_index"
 
     doc = ERB.new(erbtemplate, nil, "%<>").result(binding)
     File.open([@dir, ".index.md"].join("/"), "w") do |f|

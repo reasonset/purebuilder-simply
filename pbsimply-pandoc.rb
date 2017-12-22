@@ -183,11 +183,6 @@ class PureDoc
         # Rescue for failed to read YAML.
         begin
           frontmatter = YAML.load(lines.map {|i| i.sub(/^\s*/, "") }.join)
-
-          frontmatter.each do |k,v|
-            @pandoc_options.push("-M")
-            @pandoc_options.push("#{k}:#{v}")
-          end
         rescue
           STDERR.puts "Error in parsing ReST YAML frontmatter (#{$!})"
           next
@@ -207,26 +202,28 @@ class PureDoc
     mtime = File.mtime(path.join("/")).to_i
 
     default_infomation = {
-      "_filename" => path[1]
+      "_filename" => path[1],
+      "pagetype" => "post"
     }
 
+    now = Time.now
     current_infomation = {
       "_size" => fsize,
       "_mtime" => mtime,
-      "_last_proced" => Time.now.to_i
+      "_last_proced" => now.to_i
     }
 
     if index && index["_size"] == fsize && (current_infomation["_mtime"] < index["_last_proced"] || index["_mtime"] == current_infomation["_mtime"])
       STDERR.puts "#{path[1]} is not modified."
       modify = false
     else
-      STDERR.puts "#{path[1]} last modified at #{current_infomation["_mtime"]}, last processed at #{index["_last_proced"] || "origin"}"
-      current_infomation["_last_update"] = current_infomation["_last_proced"]
+      STDERR.puts "#{path[1]} last modified at #{current_infomation["_mtime"]}, last processed at #{index["_last_proced"] || 0}"
+      current_infomation["last_update"] = now.strftime("%Y-%m-%d %H:%M:%S")
     end
 
 
     @indexes[path[1]] = default_infomation.merge(index || {}).merge(frontmatter || {}).merge(current_infomation)
-    @indexes[path[1]]["date"] ||= Time.now.strftime("%Y-%m-%d %H:%M:%s")
+    @indexes[path[1]]["date"] ||= now.strftime("%Y-%m-%d %H:%M:%S")
     @index = @indexes[path[1]]
 
     modify
@@ -236,6 +233,12 @@ class PureDoc
   def lets_pandoc(dir, filename)
     STDERR.puts "#{filename} is going Pandoc."
     doc = nil
+
+    # Add index values to commnadline meta.
+    @index.each do |k,v|
+      @pandoc_options.push("-M")
+      @pandoc_options.push("#{k}:#{v}")
+    end
 
     # Go Pandoc
     filepath = [dir, filename].join("/")
@@ -250,6 +253,7 @@ class PureDoc
 
     ##### Post eRuby
     if @config["post_eruby"]
+      STDERR.puts "Porcessing with eRuby."
       doc = ERB.new(doc, nil, "%<>").result(binding)
     end
 
