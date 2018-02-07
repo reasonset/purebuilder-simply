@@ -1,0 +1,5 @@
+# 2018-02-07
+
+* Support docinfo in ReST
+* Skip if filename start with `draft-`
+* Delete entry in indexes if not exist.

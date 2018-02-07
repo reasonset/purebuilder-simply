@@ -3,11 +3,23 @@
 
 require 'yaml'
 require 'erb'
+require 'date'
 
-class PureDoc
+class PureBuilder
+  POST_PROCESSORS = {
+    ".rb" => "ruby",
+    ".pl" => "perl",
+    ".py" => "python",
+    ".lua" => "lua",
+    ".bash" => "bash",
+    ".zsh" => "zsh",
+    ".php" => "php",
+    ".sed" => ["sed", ->(script, target) { ["-f", script, target] } ]
+  }
   def initialize(dir=nil)
     @docobject = {}
     @pandoc_default_options = ["-t", "html5", "-s"]
+    @this_time_processed = []
 
     # Set target directory.
     @dir = ARGV.shift unless dir
@@ -82,7 +94,7 @@ class PureDoc
   def parse_frontmatter
     STDERR.puts "in #{@dir}..."
     Dir.foreach(@dir) do |filename|
-      next if filename =~ /^\./
+      next if filename =~ /^\./ || filename =~ /^draft-/
       next unless File.file?([@dir, filename].join("/"))
       next unless %w:.md .rst:.include? File.extname filename
       STDERR.puts "Checking frontmatter in #{filename}"
@@ -120,10 +132,38 @@ class PureDoc
       # Normal (directory) mode.
       parse_frontmatter
 
+      # Check existing in indexes.
+      @indexes.delete_if {|k,v| ! File.exist?([@dir, k].join("/")) }
+
       File.open([@dir, ".indexes.rbm"].join("/"), "w") do |f|
         Marshal.dump(@indexes, f)
       end
 
+      post_plugins
+
+    end
+  end
+
+  def post_plugins
+    if File.directory?(".post_generate")
+
+      ENV["pbsimply-indexes"] = [@dir, ".indexes.rbm"].join("/")
+      STDERR.puts("Processing with post plugins")
+
+      Dir.foreach(".post_generate") do |script_file|
+        next if script_file =~ /^\./
+        STDERR.puts "Running script: #{script_file}"
+        @this_time_processed.each do |v|
+          STDERR.puts "Processing #{v[:dest]} (from #{v[:source]})"
+          filename = v[:dest]
+          post_script_result = nil
+          IO.popen(["perl", [".post_generate", script_file].join("/"), filename]) do |io|
+            post_script_result = io.read
+          end
+
+          File.open(filename, "w") {|f| f.write post_script_result}
+        end
+      end
     end
   end
 
@@ -160,34 +200,86 @@ class PureDoc
       end
 
     when ".rst"
+      # ReSTRUCTURED Text
 
-      # Load ReST YAML that document begins comment and block is yaml.
       File.open([dir, filename].join("/")) do |f|
         l = f.gets
-        next unless l && l.chomp == ".."
+        if l =~ /:[A-Za-z]+: .*/ #docinfo
+          docinfo_lines = [l.chomp]
 
-        lines = []
-
-        while (l = f.gets)
-          if(l !~ /^\s*$/ .. l =~ /^\s*$/)
-            if l=~ /^\s*$/
-              break
-            else
-              lines.push l
+          # Read docinfo
+          while(l = f.gets)
+            break if l =~ /^\s*$/ # End of docinfo
+            if l =~ /^\s+- / && (docinfo_lines.last.kind_of?(Array) || docinfo_lines.last =~ /^:.*?: +-/) # List items
+              if docinfo_lines.last.kind_of?(String)
+                docinfo_lines.last =~ /^:(.*?): +- *(.*)/
+                docinfo_lines[-1] = [ [$1, $2] ]
+              end
+              docinfo_lines.last[1].push(l.sub(/^\s+- +/).chomp)
+            elsif l =~ /^\s+/ # Continuous line
+              docinfo_lines.last << " " + $'.chomp
+            elsif l =~ /^:.*?: +.*/
+              docinfo_lines.push l.chomp
             end
           end
-        end
-        next if f.eof?
+
+          # Convert Hash.
+          frontmatter = {}
+          docinfo_lines.each do |i|
+            if i.kind_of?(Array) #list
+              # Array element
+              frontmatter[i[0]] = i[1]
+            elsif i =~ /^:author: .*[,;]/ #author
+              # It work only pandoc style author (not Authors.)
+              author = i.sub(/:author: /, "")
+              if author.include?(";")
+                author = author.split(/ *; */)
+              elsif author.include?(",")
+                author = author.split(/ *, */)
+              end
+
+              frontmatter["author"] = author
+            elsif i =~ /^:(.*?): +(\d{4}-\d{2}-\d{2}[T ]\d{2}[0-9: T+-]*)$/ #datetime
+              key = $1
+              time = DateTime.parse($2)
+              frontmatter[key] = time
+            elsif i =~ /^:(.*?): +(\d{4}-\d{2}-\d{2}) *$/ #date
+              key = $1
+              time = Date.parse($2)
+              frontmatter[key] = time
+            elsif i =~ /^:(.*?): +/
+              key = $1
+              value = $'
+              frontmatter[key] = value
+            end
+          end
+
+        elsif l && l.chomp == ".." #YAML
+          # Load ReST YAML that document begins comment and block is yaml.
+          lines = []
+
+          while(l = f.gets)
+            if(l !~ /^\s*$/ .. l =~ /^\s*$/)
+              if l=~ /^\s*$/
+                break
+              else
+                lines.push l
+              end
+            end
+          end
+          next if f.eof?
 
 
-        # Rescue for failed to read YAML.
-        begin
-          frontmatter = YAML.load(lines.map {|i| i.sub(/^\s*/, "") }.join)
-        rescue
-          STDERR.puts "Error in parsing ReST YAML frontmatter (#{$!})"
+          # Rescue for failed to read YAML.
+          begin
+            frontmatter = YAML.load(lines.map {|i| i.sub(/^\s*/, "") }.join)
+          rescue
+            STDERR.puts "Error in parsing ReST YAML frontmatter (#{$!})"
+            next
+          end
+        else
           next
         end
-
       end
     end
 
@@ -263,8 +355,11 @@ class PureDoc
     File.open(outpath, "w") do |f|
       f.write(doc)
     end
+
+    # Mark processed
+    @this_time_processed.push({source: filepath, dest: outpath})
   end
 
 end
 
-PureDoc.new.main
+PureBuilder.new.main
