@@ -24,7 +24,9 @@ class << pbaccs
       abort "Failed to load config file (.pbsimple.yaml)"
     end
 
-    File.open([@dir, ".indexes.rbm"].join("/")) do |f|
+    fp = [".accs_index.rbm", ".indexes.rbm"].map {|i| File.join(@dir, i)}.select {|i| File.exist? i }.first or abort "Missing Index File."
+
+    File.open(fp) do |f|
       @indexes = Marshal.load(f)
     end
 

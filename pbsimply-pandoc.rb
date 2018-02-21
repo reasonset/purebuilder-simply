@@ -194,8 +194,9 @@ class PureBuilder
 
         begin
           frontmatter = YAML.load(lines.join)
-        rescue
-          next
+        rescue => e
+          STDERR.puts "!CRITICAL: Cannot parse frontmatter."
+          raise e
         end
       end
 
@@ -328,8 +329,15 @@ class PureBuilder
 
     # Add index values to commnadline meta.
     @index.each do |k,v|
-      @pandoc_options.push("-M")
-      @pandoc_options.push("#{k}:#{v}")
+      if v.kind_of?(Array)
+        v.each do |i|
+          @pandoc_options.push("-M")
+          @pandoc_options.push("#{k}:#{i}")
+        end
+      else
+        @pandoc_options.push("-M")
+        @pandoc_options.push("#{k}:#{v}")
+      end
     end
 
     # Go Pandoc
