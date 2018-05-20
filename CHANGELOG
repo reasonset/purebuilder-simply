@@ -8,3 +8,9 @@
 
 * .accs_index.rbm is added index file list.
 * Support Array metadata.
+
+# 2018-05-20
+
+* More suitable support for ReSTreuctured Text's docinfo.
+* Commented out adding parsed metadata to commandline function.
+  This feature is not necessary because Pandoc understand metadata right anyway.

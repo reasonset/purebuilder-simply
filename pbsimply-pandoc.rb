@@ -205,54 +205,53 @@ class PureBuilder
 
       File.open([dir, filename].join("/")) do |f|
         l = f.gets
-        if l =~ /:[A-Za-z]+: .*/ #docinfo
-          docinfo_lines = [l.chomp]
+        if l =~ /:([A-Za-z]+): (.*)/ #docinfo
+          frontmatter = { $1 => [$2.chomp] }
+          last_key = $1
 
           # Read docinfo
           while(l = f.gets)
             break if l =~ /^\s*$/ # End of docinfo
-            if l =~ /^\s+- / && (docinfo_lines.last.kind_of?(Array) || docinfo_lines.last =~ /^:.*?: +-/) # List items
-              if docinfo_lines.last.kind_of?(String)
-                docinfo_lines.last =~ /^:(.*?): +- *(.*)/
-                docinfo_lines[-1] = [ [$1, $2] ]
-              end
-              docinfo_lines.last[1].push(l.sub(/^\s+- +/).chomp)
-            elsif l =~ /^\s+/ # Continuous line
-              docinfo_lines.last << " " + $'.chomp
-            elsif l =~ /^:.*?: +.*/
-              docinfo_lines.push l.chomp
+            if l =~ /^\s+/ # Continuous line
+              docinfo_lines.last.push($'.chomp)
+            elsif l =~ /:([A-Za-z]+): (.*)/
+              frontmatter[$1] = [$2.chomp]
+              last_key = $1
             end
           end
 
-          # Convert Hash.
-          frontmatter = {}
-          docinfo_lines.each do |i|
-            if i.kind_of?(Array) #list
-              # Array element
-              frontmatter[i[0]] = i[1]
-            elsif i =~ /^:author: .*[,;]/ #author
-              # It work only pandoc style author (not Authors.)
-              author = i.sub(/:author: /, "")
-              if author.include?(";")
-                author = author.split(/ *; */)
-              elsif author.include?(",")
-                author = author.split(/ *, */)
+          # Treat docinfo lines
+          frontmatter.each do |k,v|
+            v = v.join(" ")
+            if v =~ /(?:.+;)+;$/ # Is semi-colons separated array?
+              # a;b;c;
+              v = v.chop.split(/;s*/)
+
+            elsif v =~ /(?:.+,);$/ # Or semi-colon terminated single element?
+              # a,b,c;
+              v = v.chop
+
+            elsif v.include?(";") # semi-colons separated without semi-colon terminated line?
+              # a;b;c
+              v = v.split(/;\s*/)
+
+            elsif v.include?(",") # comma separated multiple element?
+              # a, b, c
+              v = v.split(/,\s*/)
+
+            elsif k == "date" # Date?
+              # Datetime?
+              if v =~ /[0-2][0-9]:[0-6][0-9]/
+                v = DateTime.parse(v)
+              else
+                v = Date.parse(v)
               end
 
-              frontmatter["author"] = author
-            elsif i =~ /^:(.*?): +(\d{4}-\d{2}-\d{2}[T ]\d{2}[0-9: T+-]*)$/ #datetime
-              key = $1
-              time = DateTime.parse($2)
-              frontmatter[key] = time
-            elsif i =~ /^:(.*?): +(\d{4}-\d{2}-\d{2}) *$/ #date
-              key = $1
-              time = Date.parse($2)
-              frontmatter[key] = time
-            elsif i =~ /^:(.*?): +/
-              key = $1
-              value = $'
-              frontmatter[key] = value
+            else # Simple String.
+              nil # keep v
             end
+
+            frontmatter[k] = v
           end
 
         elsif l && l.chomp == ".." #YAML
@@ -328,17 +327,17 @@ class PureBuilder
     doc = nil
 
     # Add index values to commnadline meta.
-    @index.each do |k,v|
-      if v.kind_of?(Array)
-        v.each do |i|
-          @pandoc_options.push("-M")
-          @pandoc_options.push("#{k}:#{i}")
-        end
-      else
-        @pandoc_options.push("-M")
-        @pandoc_options.push("#{k}:#{v}")
-      end
-    end
+    # @index.each do |k,v|
+      # if v.kind_of?(Array)
+        # v.each do |i|
+          # @pandoc_options.push("-M")
+          # @pandoc_options.push("#{k}:#{i}")
+        # end
+      # else
+        # @pandoc_options.push("-M")
+        # @pandoc_options.push("#{k}:#{v}")
+      # end
+    # end
 
     # Go Pandoc
     filepath = [dir, filename].join("/")
