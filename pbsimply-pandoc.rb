@@ -20,6 +20,7 @@ class PureBuilder
     @docobject = {}
     @pandoc_default_options = ["-t", "html5", "-s"]
     @this_time_processed = []
+    @extra_meta_format = false # Pandoc inunderstandable metadata format is used.
 
     # Set target directory.
     @dir = ARGV.shift unless dir
@@ -223,21 +224,8 @@ class PureBuilder
           # Treat docinfo lines
           frontmatter.each do |k,v|
             v = v.join(" ")
-            if v =~ /(?:.+;)+;$/ # Is semi-colons separated array?
-              # a;b;c;
-              v = v.chop.split(/;s*/)
-
-            elsif v =~ /(?:.+,);$/ # Or semi-colon terminated single element?
-              # a,b,c;
-              v = v.chop
-
-            elsif v.include?(";") # semi-colons separated without semi-colon terminated line?
-              # a;b;c
-              v = v.split(/;\s*/)
-
-            elsif v.include?(",") # comma separated multiple element?
-              # a, b, c
-              v = v.split(/,\s*/)
+            if((k == "author" || k == "authors") && v.include?(";")) # Multiple authors.
+              v = v.split(/\s*;\s*/)
 
             elsif k == "date" # Date?
               # Datetime?
@@ -246,7 +234,6 @@ class PureBuilder
               else
                 v = Date.parse(v)
               end
-
             else # Simple String.
               nil # keep v
             end
@@ -256,6 +243,7 @@ class PureBuilder
 
         elsif l && l.chomp == ".." #YAML
           # Load ReST YAML that document begins comment and block is yaml.
+          @extra_meta_format = true # ReST + YAML is not supported by Pandoc.
           lines = []
 
           while(l = f.gets)
@@ -327,17 +315,19 @@ class PureBuilder
     doc = nil
 
     # Add index values to commnadline meta.
-    # @index.each do |k,v|
-      # if v.kind_of?(Array)
-        # v.each do |i|
-          # @pandoc_options.push("-M")
-          # @pandoc_options.push("#{k}:#{i}")
-        # end
-      # else
-        # @pandoc_options.push("-M")
-        # @pandoc_options.push("#{k}:#{v}")
-      # end
-    # end
+    if @extra_meta_format # Only Original style metadata.
+      @index.each do |k,v|
+        if v.kind_of?(Array)
+          v.each do |i|
+            @pandoc_options.push("-M")
+            @pandoc_options.push("#{k}:#{i}")
+          end
+        else
+          @pandoc_options.push("-M")
+          @pandoc_options.push("#{k}:#{v}")
+        end
+      end
+    end
 
     # Go Pandoc
     filepath = [dir, filename].join("/")
