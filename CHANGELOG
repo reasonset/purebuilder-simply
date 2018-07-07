@@ -1,16 +1,25 @@
-# 2018-02-07
+# v1.2 2018-02-07
 
 * Support docinfo in ReST
 * Skip if filename start with `draft-`
 * Delete entry in indexes if not exist.
 
-# 2018-02-21
+# v1.2.1 2018-02-21
 
 * .accs_index.rbm is added index file list.
 * Support Array metadata.
 
-# 2018-05-20
+# v1.3 2018-05-20
 
 * More suitable support for ReSTreuctured Text's docinfo.
 * Commented out adding parsed metadata to commandline function.
   This feature is not necessary because Pandoc understand metadata right anyway.
+
+# v1.4 2018-07-07
+
+* Process temporary file instead of real document file.
+* Support draft metadata. if draft is true, skip processing document.
+* Add _docformat to doc metadata.
+* Support $pbsimply_doc_frontmatter environment variable.
+* Change $pbsimply-indexes to $pbsimply_indexes
+* Add support Pre plugins.

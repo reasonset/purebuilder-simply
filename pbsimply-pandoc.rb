@@ -4,6 +4,7 @@
 require 'yaml'
 require 'erb'
 require 'date'
+require 'fileutils'
 
 class PureBuilder
   POST_PROCESSORS = {
@@ -21,6 +22,7 @@ class PureBuilder
     @pandoc_default_options = ["-t", "html5", "-s"]
     @this_time_processed = []
     @extra_meta_format = false # Pandoc inunderstandable metadata format is used.
+    @processing_document = ".#{$$}.pbsimply-processing"
 
     # Set target directory.
     @dir = ARGV.shift unless dir
@@ -100,10 +102,11 @@ class PureBuilder
       next unless %w:.md .rst:.include? File.extname filename
       STDERR.puts "Checking frontmatter in #{filename}"
       frontmatter = read_frontmatter(@dir, filename)
+      next if frontmatter["draft"]
 
       if check_modify([@dir, filename], frontmatter)
         STDERR.puts "Processing #{filename}"
-        lets_pandoc(@dir, filename)
+        lets_pandoc(@dir, filename, frontmatter)
       end
     end
   end
@@ -126,7 +129,7 @@ class PureBuilder
       @pandoc_options = @pandoc_default_options.clone
       @dir = dir
 
-      lets_pandoc(dir, filename)
+      lets_pandoc(dir, filename, read_frontmatter(dir, filename))
 
 
     else
@@ -145,11 +148,29 @@ class PureBuilder
     end
   end
 
+  def pre_plugins(procdoc, frontmatter)
+    if File.directory?(".pre_generate")
+      STDERR.puts("Processing with pre plugins")
+      Dir.foreach(".pre_generate") do |script_file|
+        next if script_file =~ /^\./
+        STDERR.puts "Running script: #{script_file}"
+        pre_script_result = nil
+        IO.popen({"pbsimply_doc_frontmatter" => YAML.dump(frontmatter)}, ["perl", [".pre_generate", script_file].join("/"), procdoc]) do |io|
+          pre_script_result = io.read
+        end
+        File.open(procdoc, "w") {|f| f.write pre_script_result}
+      end
+    end
+  end
+
   def post_plugins
     if File.directory?(".post_generate")
 
-      ENV["pbsimply-indexes"] = [@dir, ".indexes.rbm"].join("/")
+      ENV["pbsimply_indexes"] = [@dir, ".indexes.rbm"].join("/")
       STDERR.puts("Processing with post plugins")
+
+      indexes = nil
+      File.open(ENV["pbsimply_indexes"]) {|f| indexes = Marshal.load(f) }
 
       Dir.foreach(".post_generate") do |script_file|
         next if script_file =~ /^\./
@@ -158,7 +179,7 @@ class PureBuilder
           STDERR.puts "Processing #{v[:dest]} (from #{v[:source]})"
           filename = v[:dest]
           post_script_result = nil
-          IO.popen(["perl", [".post_generate", script_file].join("/"), filename]) do |io|
+          IO.popen({"pbsimply_doc_frontmatter" => YAML.dump(indexes[File.basename v[:source]])}, ["perl", [".post_generate", script_file].join("/"), filename], "r") do |io|
             post_script_result = io.read
           end
 
@@ -293,6 +314,12 @@ class PureBuilder
       "_last_proced" => now.to_i
     }
 
+    if path =~ /\.md$/
+      current_infomation["_docformat"] = "Markdown"
+    elsif path =~ /\.rst$/ || path =~ /\.rest$/
+      current_infomation["_docformat"] = "ReST"
+    end
+
     if index && index["_size"] == fsize && (current_infomation["_mtime"] < index["_last_proced"] || index["_mtime"] == current_infomation["_mtime"])
       STDERR.puts "#{path[1]} is not modified."
       modify = false
@@ -310,7 +337,7 @@ class PureBuilder
   end
 
   # Invoke pandoc, parse and format and write out.
-  def lets_pandoc(dir, filename)
+  def lets_pandoc(dir, filename, frontmatter)
     STDERR.puts "#{filename} is going Pandoc."
     doc = nil
 
@@ -329,10 +356,19 @@ class PureBuilder
       end
     end
 
+    # Preparing and pre script.
+    orig_filepath = [dir, filename].join("/")
+    procdoc = "#{@processing_document}.#{File.extname(filename)}"
+    ::FileUtils.cp orig_filepath, procdoc
+    pre_plugins(procdoc, frontmatter)
+
     # Go Pandoc
-    filepath = [dir, filename].join("/")
-    IO.popen((["pandoc"] + @pandoc_options + [ filepath ] )) do |io|
+    IO.popen((["pandoc"] + @pandoc_options + [ procdoc ] )) do |io|
       doc = io.read
+    end
+
+    if File.exist?(procdoc)
+      File.delete procdoc
     end
 
     # Abort if pandoc returns non-zero status
@@ -354,7 +390,7 @@ class PureBuilder
     end
 
     # Mark processed
-    @this_time_processed.push({source: filepath, dest: outpath})
+    @this_time_processed.push({source: orig_filepath, dest: outpath})
   end
 
 end

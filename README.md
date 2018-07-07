@@ -35,7 +35,7 @@ Move your document root before running.
 
 PureBuilder builds documents in the directory.
 
-PureBuilder skip if filename start with `draft-`.
+PureBuilder skip if filename start with `draft-` or `.`, or `draft` value in frontmatter is true.
 
 ### Make ACCS index
 
@@ -79,17 +79,19 @@ Document meta data that "default | indexed | frontmatter | current".
 
 |Key|Set/Used by|Description|
 |-------|------------|-----------------------------------|
-|title|frontmatter|Document title. required.
+|title|frontmatter|Document title. required.|
 |author|frontmatter|Author.|
 |date|frontmatter or system.|Date of written|
 |lang|additional option / Pandoc template|`lang`/`xml:lang`|
 |keywords|additional option / Pandoc template|An array, used as keywords in meta tag.|
 |description|additional option / Sample template|Used as description in meta tag.|
+|draft|additional option / system|Draft status. Skip process document if true.|
 |_last_proced|system|*Integer*. DateTime of last processed by PureBuilder. `0` if this document is processed first.|
 |last_updated|system|*String*. DateTime of last processed by PanDoc.|
 |_size|system|File size (byte)|
 |_mtime|system|*Integer*. mtime of this file.|
 |_filename|system|File name|
+|_docformat|system|Document Format. `Markdown` or `ReST`.|
 |categories|ACCS|Document category. Sort documents by this value.
 |pagetype|ACCS|Document type of this page. `accs_index` is set if processed by ACCS, set `post` by default.|
 |accs_order|ACCS|Document order. If `desc` is set, document sort by descending order.|
@@ -110,11 +112,47 @@ How to use is very simple.
 If you think to put subdirectory like `http://example.com/site/index.html`,
 I recommend that you put document in `site` subdirectory, and sync under there.
 
+## Pre processing
+
+if you put scripts in `.pre_generate`, PureBuilder Simply Pandoc executes these files each of before generating.
+
+Scripts are invoked by `perl` for udnerstanding shebang line.
+
+Each scriped is called with
+
+```
+perl <script> <temporary_source_file>
+```
+
+PureBuilder Simply replaces temporary source file with script output.
+
+Script **cannot** use `indexes.rbm` because this script is called each generating.
+
+Processing document's meta infomation is in `$pbsimply_doc_frontmatter` environment variable.
+
+Pre script called just before generating. Not called with skipped document.
+
 ## Post processing
 
 if you put scripts in `.post_generate`, PureBuilder Simply Pandoc executes these files after generating.
 
 Scripts are invoked by `perl` for udnerstanding shebang line.
+
+Each scriped is called with
+
+```
+perl <script> <generated_file>
+```
+
+PureBuilder Simply replaces generated file with script output.
+
+Scripts can use `indexes.rbm`.
+You can get database path from `$pbsimply_indexes` environment variable.
+
+Processing document's meta infomation is in `$pbsimply_doc_frontmatter` environment variable.
+
+Post script called from generated file list.
+They aren't called by already generated files without generating this time.
 
 ## Files
 
