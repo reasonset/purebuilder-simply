@@ -23,3 +23,8 @@
 * Support $pbsimply_doc_frontmatter environment variable.
 * Change $pbsimply-indexes to $pbsimply_indexes
 * Add support Pre plugins.
+
+# v1.4.1 2018-07-09
+
+* Meta data give to pandoc with argument when ReST + docinfo for multiple element
+* Add support docinfo term characters - and _.

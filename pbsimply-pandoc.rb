@@ -227,7 +227,8 @@ class PureBuilder
 
       File.open([dir, filename].join("/")) do |f|
         l = f.gets
-        if l =~ /:([A-Za-z]+): (.*)/ #docinfo
+        if l =~ /:([A-Za-z_-]+): (.*)/ #docinfo
+          @extra_meta_format = true # ReST docinfo is supported but there is some gritch.
           frontmatter = { $1 => [$2.chomp] }
           last_key = $1
 
@@ -236,7 +237,7 @@ class PureBuilder
             break if l =~ /^\s*$/ # End of docinfo
             if l =~ /^\s+/ # Continuous line
               docinfo_lines.last.push($'.chomp)
-            elsif l =~ /:([A-Za-z]+): (.*)/
+            elsif l =~ /:([A-Za-z_-]+): (.*)/
               frontmatter[$1] = [$2.chomp]
               last_key = $1
             end
@@ -245,7 +246,9 @@ class PureBuilder
           # Treat docinfo lines
           frontmatter.each do |k,v|
             v = v.join(" ")
-            if((k == "author" || k == "authors") && v.include?(";")) # Multiple authors.
+            #if((k == "author" || k == "authors") && v.include?(";")) # Multiple authors.
+            if(v.include?(";")) # Multiple element.
+              STDERR.puts v.inspect
               v = v.split(/\s*;\s*/)
 
             elsif k == "date" # Date?
