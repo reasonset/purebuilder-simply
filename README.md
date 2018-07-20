@@ -74,6 +74,7 @@ Document meta data that "default | indexed | frontmatter | current".
 |pandoc_additional_options|Array|Extra pandoc options|
 |post_eruby|Boolian|Process Pandoc output with eRuby if true|
 |alt_frontmatter|Hash|Default frontmatter in ACCS index|
+|testserver_port|Fixnum|Port number of pbsimply-testserver (default 80)|
 
 ## Special values in @index
 
@@ -107,7 +108,9 @@ How to use is very simple.
 
 1. Move your document root
 2. run it.
-3. access `http://localhost:20080`
+3. access `http://localhost:port`
+
+You can config port with `testserver_port` in config file. default is 80.
 
 If you think to put subdirectory like `http://example.com/site/index.html`,
 I recommend that you put document in `site` subdirectory, and sync under there.
