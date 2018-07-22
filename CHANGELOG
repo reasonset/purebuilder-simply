@@ -28,3 +28,7 @@
 
 * Meta data give to pandoc with argument when ReST + docinfo for multiple element
 * Add support docinfo term characters - and _.
+
+# v1.4.2 2018-07-22
+
+* Read .accsindex.erb on ACCS directory instead of the file on document root.

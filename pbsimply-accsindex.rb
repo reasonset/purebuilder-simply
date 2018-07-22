@@ -13,8 +13,14 @@ class << pbaccs
 
     @dir = ARGV.shift
     @dir ||= "."
-
-    erbtemplate = File.read(".accsindex.erb")
+    
+    if File.exist?(File.join(@dir, ".accsindex.erb"))
+      erbtemplate = File.read(File.join(@dir, ".accsindex.erb"))
+    elsif File.exist?(".accsindex.erb")
+      erbtemplate = File.read(".accsindex.erb")
+    else
+      abort "No .accesindex.erb"
+    end
 
     begin
       File.open(".pbsimply.yaml") do |f|
