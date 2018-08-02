@@ -151,7 +151,7 @@ class PureBuilder
   def pre_plugins(procdoc, frontmatter)
     if File.directory?(".pre_generate")
       STDERR.puts("Processing with pre plugins")
-      Dir.foreach(".pre_generate") do |script_file|
+      Dir.entries(".pre_generate").sort.each do |script_file|
         next if script_file =~ /^\./
         STDERR.puts "Running script: #{script_file}"
         pre_script_result = nil
@@ -172,7 +172,7 @@ class PureBuilder
       indexes = nil
       File.open(ENV["pbsimply_indexes"]) {|f| indexes = Marshal.load(f) }
 
-      Dir.foreach(".post_generate") do |script_file|
+      Dir.entries(".post_generate").sort.each do |script_file|
         next if script_file =~ /^\./
         STDERR.puts "Running script: #{script_file}"
         @this_time_processed.each do |v|

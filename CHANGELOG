@@ -32,3 +32,7 @@
 # v1.4.2 2018-07-22
 
 * Read .accsindex.erb on ACCS directory instead of the file on document root.
+
+# v1.4.3 2018-08-02
+
+* Keep plugin order.
