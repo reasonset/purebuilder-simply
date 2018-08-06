@@ -36,3 +36,7 @@
 # v1.4.3 2018-08-02
 
 * Keep plugin order.
+
+# v1.4.4 2018-08-06
+
+* Plugins can access subdirectory path with pbsimply_subdir environment variable.

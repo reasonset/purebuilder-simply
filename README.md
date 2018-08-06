@@ -133,6 +133,8 @@ Script **cannot** use `indexes.rbm` because this script is called each generatin
 
 Processing document's meta infomation is in `$pbsimply_doc_frontmatter` environment variable.
 
+You can access the document's sub-directory part with `$pbsimply_subdir` environment variable.
+
 Pre script called just before generating. Not called with skipped document.
 
 ## Post processing
@@ -153,6 +155,8 @@ Scripts can use `indexes.rbm`.
 You can get database path from `$pbsimply_indexes` environment variable.
 
 Processing document's meta infomation is in `$pbsimply_doc_frontmatter` environment variable.
+
+You can access the document's sub-directory part with `$pbsimply_subdir` environment variable.
 
 Post script called from generated file list.
 They aren't called by already generated files without generating this time.

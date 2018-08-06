@@ -27,6 +27,7 @@ class PureBuilder
     # Set target directory.
     @dir = ARGV.shift unless dir
     @dir ||= "."
+    ENV["pbsimply_subdir"] = @dir
   end
 
   def doc
