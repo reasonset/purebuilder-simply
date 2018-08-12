@@ -9,7 +9,7 @@ PureBuilder is website building script.
 
 ACCS is site building script for serialized articles.
 
-PB Simply ACCS make `index.html` with indexes build by PureBuilder.
+PB Simply ACCS make `index.md` with indexes build by PureBuilder.
 
 ## Install
 
@@ -94,7 +94,7 @@ Document meta data that "default | indexed | frontmatter | current".
 |_filename|system|File name|
 |_docformat|system|Document Format. `Markdown` or `ReST`.|
 |categories|ACCS|Document category. Sort documents by this value.
-|pagetype|ACCS|Document type of this page. `accs_index` is set if processed by ACCS, set `post` by default.|
+|pagetype|ACCS|Document type of this page. `accsindex` is set if processed by ACCS, set `post` by default.|
 |accs_order|ACCS|Document order. If `desc` is set, document sort by descending order.|
 |blogmode|ACCS|Document sort by descending order if this value is true.|
 
@@ -131,7 +131,7 @@ PureBuilder Simply replaces temporary source file with script output.
 
 Script **cannot** use `indexes.rbm` because this script is called each generating.
 
-Processing document's meta infomation is in `$pbsimply_doc_frontmatter` environment variable.
+Processing document's meta infomation is in `$pbsimply_doc_frontmatter` environment variable with YAML.
 
 You can access the document's sub-directory part with `$pbsimply_subdir` environment variable.
 
@@ -154,7 +154,7 @@ PureBuilder Simply replaces generated file with script output.
 Scripts can use `indexes.rbm`.
 You can get database path from `$pbsimply_indexes` environment variable.
 
-Processing document's meta infomation is in `$pbsimply_doc_frontmatter` environment variable.
+Processing document's meta infomation is in `$pbsimply_doc_frontmatter` environment variable with YAML.
 
 You can access the document's sub-directory part with `$pbsimply_subdir` environment variable.
 
@@ -170,7 +170,7 @@ They aren't called by already generated files without generating this time.
 |pbsimply-testserver.rb|Satrt web server for testing.|
 |accsindex.erb|Sample for `.accsindex.erb`. Normaly you don't need to edit template.|
 |template.html|Sample for PureBuilder template.|
-|tufie.css|Sample CSS file. This file forked from [otsaloma/markdown-css/tufie.css](https://github.com/otsaloma/markdown-css/blob/master/tufte.css). Thank you.|
+|tufie.css|Sample CSS file. This file forked from [otsaloma/markdown-css/tufie.css]|(https://github.com/otsaloma/markdown-css/blob/master/tufte.css). Thank you.|
 |postgenerate|Sample files for post generate script.|
 
 ### You put or generated
