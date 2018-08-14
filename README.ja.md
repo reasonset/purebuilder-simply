@@ -173,8 +173,7 @@ post-scriptは生成されたファイルのリストとともに呼ばれる。
 |--------|-------------|
 |pbsimply-testserver.rb|テスト用ウェブサーバー起動スクリプト|
 |accsindex.erb|`.accsindex.erb`のサンプル。通常編集せずそのまま利用できる|
-|template.html|PureBuilder用Pandocテンプレートのサンプル|
-|tufie.css|サンプルCSS file. This file forked from [otsaloma/markdown-css/tufie.css](https://github.com/otsaloma/markdown-css/blob/master/tufte.css). Thank you.|
+|docroot-sample|(部分的に)コピーしてドキュメントルートとして使用するためのサンプル|
 |postgenerate|post pluginsのサンプルファイル|
 
 ### あなたが置くか、生成されるもの
@@ -188,3 +187,46 @@ post-scriptは生成されたファイルのリストとともに呼ばれる。
 |.accs.yaml|each|ACCSインデックスページ用の`@index`|
 |.post_generate|root|post pluginsを配置するディレクトリ|
 |.pre_generate|root|pre pluginsを配置するディレクトリ|
+
+# ドキュメントサンプル
+
+## テンプレート
+
+このテンプレートは標準的なブログをイメージしたテーマとなっている。
+
+* ふたつのヘッダーを持つ。通常は`display: none`になっているバナーのための`#TopHeader`と、タイトルのための`#TitleHeader`
+* メインセクションは`#MainContainer` sectionで囲まれる
+* 記事は`#MainArticle` articleに囲まれる
+* サイドバーは`#SideBar` sectionとして容易されている。include beforeを使ってサイドバーの中身を書くことができる
+* 著者部分は削除された
+* 埋め込みCSSは削除された
+* シンタックスハイライトのテーマも削除された。必要なら[pandoc-goodies](https://github.com/tajmone/pandoc-goodies)などで入手できる。
+
+## CSS
+
+基本的でシンプルなCSSが用意されている。
+
+|ファイル|内容|
+|---------|----------------|
+|layout.css|レイアウト|
+|base.css|最小限のデザイン|
+|skylightning.css|PandocデフォルトのソースコードCSS|
+|lightbox.css|Lightboxプラグインのテーマ|
+
+## Post
+
+ACCSのベースになるディレクトリ。
+
+## Post Generate
+
+post-pluginsのサンプルスクリプト
+
+## 設定ファイル
+
+`.accsindex.rb` と `.pbsimply.yaml` のサンプルファイルが用意されている。
+
+## JavaScript
+
+JavaScriptプラグインファイル。
+
+それぞれのファイルにあるREADMEを読むこと。

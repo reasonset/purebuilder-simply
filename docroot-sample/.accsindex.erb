@@ -29,7 +29,7 @@ end
   end
 
   list.each do |i|
-%>* [<%= i["title"] %>](<%= @dir + "/" + File.basename(i["_filename"].to_s, ".*") + ".html" %>)
+%>* [<%= i["title"] %>](<%= "/" + (@dir ? @dir + "/" : "") + File.basename(i["_filename"].to_s, ".*") + ".html" %>)
 <% end %>
 
 % end

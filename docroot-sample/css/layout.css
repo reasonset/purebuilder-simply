@@ -1,0 +1,55 @@
+body {
+	margin: 0px;
+	padding: 0px;
+}
+
+header#TopHeader {
+	display: none;
+	height: 180px;
+	width: 100vw;
+	margin: 0px;
+}
+
+header#TitleHeader {
+	width: 100vw;
+	margin: 0px;
+}
+
+@media screen and (min-width: 900px){
+	#MainContainer {
+		display: table;
+		width: 900px;
+		margin: auto;
+	}
+
+	article#MainArticle {
+		display: table-cell;
+		width: 600px;
+		max-width: 600px;
+	}
+
+	#SideBar {
+		display: table-cell;
+		width: 300px;
+		max-width: 300px;
+		overflow: hidden;
+	}
+}
+
+@media screen and (max-width: 899px){
+	#MainContainer {
+		display: block;
+		width: 100vw;
+	}
+
+	article#MainArticle {
+		display: block;
+		width: 100%
+	}
+
+	#SideBar {
+		display: block;
+		width: 100%
+	}
+
+}

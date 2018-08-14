@@ -41,7 +41,7 @@ class PureBuilder
         @config = YAML.load(f)
       end
     rescue
-      abort "Failed to load config file (.pbsimple.yaml)"
+      abort "Failed to load config file (.pbsimply.yaml)"
     end
 
     # Required values

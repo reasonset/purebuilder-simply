@@ -40,3 +40,14 @@
 # v1.4.4 2018-08-06
 
 * Plugins can access subdirectory path with pbsimply_subdir environment variable.
+
+# v1.4.5 2018-08-12
+
+* Add Japanese README.
+
+# v1.5 2018-08-14
+
+* CHANGE LICENSE BSD 3-clause TO APACHE LICENSE 2.0
+* Move document sample files to docroot-sample directory.
+* New template and CSS files.
+* Add JavaScript plugins.

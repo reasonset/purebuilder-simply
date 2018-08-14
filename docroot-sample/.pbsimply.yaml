@@ -1,0 +1,15 @@
+outdir: /home/foo/public_html
+css:
+  - /css/layout.css
+  - /css/base.css
+toc: yes
+post_eruby: no
+pandoc_additional_options:
+  - "-M"
+  - "lang:ja"
+  - "-M"
+  - "title-prefix:Powered by PureBuilder Simply"
+#  - "-B"
+#  - before.html
+#  - "-A"
+#  - after.html

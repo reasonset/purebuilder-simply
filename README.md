@@ -169,8 +169,8 @@ They aren't called by already generated files without generating this time.
 |--------|-------------|
 |pbsimply-testserver.rb|Satrt web server for testing.|
 |accsindex.erb|Sample for `.accsindex.erb`. Normaly you don't need to edit template.|
+|docroot-sample|For (part) copy to your document root.|
 |template.html|Sample for PureBuilder template.|
-|tufie.css|Sample CSS file. This file forked from [otsaloma/markdown-css/tufie.css]|(https://github.com/otsaloma/markdown-css/blob/master/tufte.css). Thank you.|
 |postgenerate|Sample files for post generate script.|
 
 ### You put or generated
@@ -183,3 +183,48 @@ They aren't called by already generated files without generating this time.
 |.accsindex.erb|root or each ACCS|Markdown eRuby template for ACCS index.|
 |.accs.yaml|each|`@index` for the ACCS index.|
 |.post_generate|root|Script files for process each documents after generating.|
+
+# Document Sample
+
+## Template
+
+This template is associeted to basic blog theme.
+
+I customized:
+
+* Two Headers. `#TopHeader` for banner (default `display: none`), `#TitleHeader` for title.
+* Main section is wrapped by `#MainContainer` section.
+* Article body is wrapped by `#MainArticle` article.
+* Side bar is available as `#SideBar` section. You can write content with include before function.
+* Author section is deleted.
+* Embedded CSS is deleted.
+* Syntax highlightning theme is deleted. If you need it, get themes from [pandoc-goodies](https://github.com/tajmone/pandoc-goodies) or other.
+
+## CSS
+
+Basic sample CSS.
+
+|file|description|
+|---------|----------------------|
+|layout.css|Layouting.|
+|base.css|Basic design.|
+|skylightning.css|Pandoc default Source code CSS|
+|lightbox.css|Lightbox theme for lightbox plugin.|
+
+## Post
+
+ACCS template directory.
+
+## Post Generate
+
+Sample Post Plugins.
+
+## Configuration file
+
+`.accsindex.rb` and `.pbsimply.yaml` are avialable.
+
+## JavaScript
+
+JavaScript Plugins.
+
+See README on each file.
