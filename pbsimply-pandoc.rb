@@ -86,7 +86,7 @@ class PureBuilder
 
     unless File.exist? outdir
       STDERR.puts "destination directory is not exist. creating (only one step.)"
-      Dir.mkdir outdir
+      FileUtils.mkdir_p outdir
     end
   end
 
@@ -422,9 +422,6 @@ class PureBuilder
 
     # Write out
     outpath = [@config["outdir"], @dir, File.basename(filename, ".*")].join("/") + ".html"
-    unless File.exist?(File.dirname(outpath))
-      FileUtils.mkdir_p(File.dirname(outpath))
-    end
 
     File.open(outpath, "w") do |f|
       f.write(doc)
