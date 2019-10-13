@@ -37,6 +37,12 @@ PureBuilder builds documents in the directory.
 
 PureBuilder skip if filename start with `draft-` or `.`, or `draft` value in frontmatter is true.
 
+### Options
+
+|Option|Description|
+|------|------------------------------|
+|`-f`|Refresh all documents (force update mode.) This options useful when update template.|
+
 ### Make ACCS index
 
 Before running, build your documents in the directory, and move your document root.
@@ -75,6 +81,8 @@ Document meta data that "default | indexed | frontmatter | current".
 |post_eruby|Boolian|Process Pandoc output with eRuby if true|
 |alt_frontmatter|Hash|Default frontmatter in ACCS index|
 |testserver_port|Fixnum|Port number of pbsimply-testserver (default 80)|
+|self_url_prefix|String|Absolute path prefix for URL of generated document itself instead of `/`.|
+|self_url_external_prefix|String|Like `self_url_prefix`, but it only works on `page_url_encoded_external`.|
 
 ## Special values in @index
 
@@ -88,7 +96,7 @@ Document meta data that "default | indexed | frontmatter | current".
 |description|additional option / Sample template|Used as description in meta tag.|
 |draft|additional option / system|Draft status. Skip process document if true.|
 |_last_proced|system|*Integer*. DateTime of last processed by PureBuilder. `0` if this document is processed first.|
-|last_updated|system|*String*. DateTime of last processed by PanDoc.|
+|last_updated|system|*String*. DateTime of last processed by Pandoc.|
 |_size|system|File size (byte)|
 |_mtime|system|*Integer*. mtime of this file.|
 |_filename|system|File name|
@@ -97,6 +105,13 @@ Document meta data that "default | indexed | frontmatter | current".
 |pagetype|ACCS|Document type of this page. `accsindex` is set if processed by ACCS, set `post` by default.|
 |accs_order|ACCS|Document order. If `desc` is set, document sort by descending order.|
 |blogmode|ACCS|Document sort by descending order if this value is true.|
+|source_directory|system|Source directory string. Set by PureBuilder.|
+|source_file|system|Source Filename. Set by PureBuilder.|
+|source_path|system|Source path string. Set by PureBuilder.|
+|page_url|system|This (generated) page's URL. Set by PureBuilder.|
+|page_url_encoded|system|This (generated) page's URI encoded URL. Set by PureBuilder.|
+|page_url_encoded_external|system|This (generated) page's URI encoded URL with `self_url_external_prefix`. Set by PureBuilder.|
+|title_encoded|system|URI encoded document title. Set by PureBuilder.|
 
 ## Testing
 

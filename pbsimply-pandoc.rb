@@ -5,6 +5,7 @@ require 'yaml'
 require 'erb'
 require 'date'
 require 'fileutils'
+require 'optparse'
 
 class PureBuilder
   POST_PROCESSORS = {
@@ -23,6 +24,12 @@ class PureBuilder
     @this_time_processed = []
     @extra_meta_format = false # Pandoc inunderstandable metadata format is used.
     @processing_document = ".#{$$}.pbsimply-processing"
+
+
+    # Options definition.
+    opts = OptionParser.new
+    opts.on("-f") { @refresh = true }
+    opts.parse!(ARGV)
 
     # Set target directory.
     @dir = ARGV.shift unless dir
@@ -127,11 +134,11 @@ class PureBuilder
         dir = "."
         filename = $2
       end
-      @pandoc_options = @pandoc_default_options.clone
       @dir = dir
 
       lets_pandoc(dir, filename, read_frontmatter(dir, filename))
 
+      post_plugins
 
     else
       # Normal (directory) mode.
@@ -193,14 +200,13 @@ class PureBuilder
   private
 
   def read_frontmatter(dir, filename)
-    @pandoc_options = @pandoc_default_options.clone
     frontmatter = nil
 
     case File.extname filename
     when ".md"
 
       # Load Markdown's YAML frontmatter.
-      File.open([dir, filename].join("/")) do |f|
+      File.open(File.join(dir, filename)) do |f|
         l = f.gets
         next unless l && l.chomp == "---"
 
@@ -226,7 +232,7 @@ class PureBuilder
     when ".rst"
       # ReSTRUCTURED Text
 
-      File.open([dir, filename].join("/")) do |f|
+      File.open(File.join(dir, filename)) do |f|
         l = f.gets
         if l =~ /:([A-Za-z_-]+): (.*)/ #docinfo
           @extra_meta_format = true # ReST docinfo is supported but there is some gritch.
@@ -300,6 +306,7 @@ class PureBuilder
   end
 
   def check_modify(path, frontmatter)
+    return true if @refresh # Refresh (force update) mode.
     modify = true
 
     index = @indexes[path[1]] || {}
@@ -345,19 +352,46 @@ class PureBuilder
     STDERR.puts "#{filename} is going Pandoc."
     doc = nil
 
+    pandoc_options = @pandoc_default_options.clone
+
     # Add index values to commnadline meta.
     if @extra_meta_format # Only Original style metadata.
       @index.each do |k,v|
         if v.kind_of?(Array)
           v.each do |i|
-            @pandoc_options.push("-M")
-            @pandoc_options.push("#{k}:#{i}")
+            pandoc_options.push("-M")
+            pandoc_options.push("#{k}:#{i}")
           end
         else
-          @pandoc_options.push("-M")
-          @pandoc_options.push("#{k}:#{v}")
+          pandoc_options.push("-M")
+          pandoc_options.push("#{k}:#{v}")
         end
       end
+    end
+
+    ### Additional meta values. ###
+    # Source Directory
+    pandoc_options.push("-M")
+    pandoc_options.push(sprintf('%s:%s', "source_directory", dir))
+    # Source Filename
+    pandoc_options.push("-M")
+    pandoc_options.push(sprintf('%s:%s', "source_filename", filename))
+    # Source Path
+    pandoc_options.push("-M")
+    pandoc_options.push(sprintf('%s:%s', "source_path", File.join(dir, filename)))
+    # URL in site.
+    this_url = (File.join(dir, filename)).sub(/^[\.\/]*/) { @config["self_url_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html")
+    pandoc_options.push("-M")
+    pandoc_options.push(sprintf('%s:%s', "page_url", this_url))
+    # URL in site with URI encode.
+    pandoc_options.push("-M")
+    pandoc_options.push(sprintf('%s:%s', "page_url_encoded", ERB::Util.url_encode(this_url)))
+    pandoc_options.push("-M")
+    pandoc_options.push(sprintf('%s:%s', "page_url_encoded_external", ERB::Util.url_encode((File.join(dir, filename)).sub(/^[\.\/]*/) { @config["self_url_external_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html"))))
+    # Title with URL Encoded.
+    if frontmatter["title"]
+      pandoc_options.push("-M")
+      pandoc_options.push(sprintf('%s:%s', "title_encoded", ERB::Util.url_encode(frontmatter["title"])))  
     end
 
     # Preparing and pre script.
@@ -367,7 +401,7 @@ class PureBuilder
     pre_plugins(procdoc, frontmatter)
 
     # Go Pandoc
-    IO.popen((["pandoc"] + @pandoc_options + [ procdoc ] )) do |io|
+    IO.popen((["pandoc"] + pandoc_options + [ procdoc ] )) do |io|
       doc = io.read
     end
 
@@ -388,6 +422,9 @@ class PureBuilder
 
     # Write out
     outpath = [@config["outdir"], @dir, File.basename(filename, ".*")].join("/") + ".html"
+    unless File.exist?(File.dirname(outpath))
+      FileUtils.mkdir_p(File.dirname(outpath))
+    end
 
     File.open(outpath, "w") do |f|
       f.write(doc)

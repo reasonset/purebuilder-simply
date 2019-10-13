@@ -51,3 +51,11 @@
 * Move document sample files to docroot-sample directory.
 * New template and CSS files.
 * Add JavaScript plugins.
+
+# v1.6 2019-10-13
+
+* Additional meta data support.
+* Auto creating target directory.
+* Force update mode.
+* Support command line options.
+* Bug fix: Post plugins didn't work in single mode.

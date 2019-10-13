@@ -39,6 +39,12 @@ PureBuilder Simplyはdirectoryにあるドキュメントを構築する。
 構築されるドキュメントから除外したい場合、ファイル名を`draft-`または`.`ではじまるものにするか、
 frontmatterの`draft`の値を真にする。
 
+### Options
+
+|オプション|内容|
+|------|------------------------------|
+|`-f`|すべてのドキュメントを強制的に更新する。テンプレートを更新した場合に便利|
+
 ### Make ACCS index
 
 ドキュメントルートに移動し、directory上のドキュメントを生成してから次のように実行する。
@@ -79,6 +85,8 @@ Loaded config YAML file (`.pbsimply.yaml`).
 |post_eruby|Boolian|真にするとPandocの出力をerbによってプロセッシングする|
 |alt_frontmatter|Hash|ACCSインデックスファイルのデフォルトのfrontmatter|
 |testserver_port|Fixnum|`pbsimply-testserver.rb`が使用するポート(default 80)|
+|self_url_prefix|String|生成されたドキュメントのURLの絶対パスのプレフィックス部。デフォルトは`/`|
+|self_url_external_prefix|String|`self_url_prefix`の`page_url_encoded_external`用|
 
 ## Special values in @index
 
@@ -101,6 +109,13 @@ Loaded config YAML file (`.pbsimply.yaml`).
 |pagetype|ACCS|ページタイプ。デフォルトは`post`。ACCSによって生成されるインデックスページは`accsindex`|
 |accs_order|ACCS|ACCSのドキュメントの並び。もし`desc`である場合、逆順に並べられる|
 |blogmode|ACCS|ACCSのドキュメントの並び。真の時、降順に並べる|
+|source_directory|system|ソースディレクトリ|
+|source_file|system|ソースファイル名|
+|source_path|system|ソースファイルパス|
+|page_url|system|当該ドキュメントの生成後のURL|
+|page_url_encoded|system|当該ドキュメントの生成後のURLのURIエンコードされたもの|
+|page_url_encoded_external|system|`page_url_encoded`で`self_url_external_prefix`を使うもの|
+|title_encoded|system|タイトルをURIエンコードしたもの|
 
 ## Testing
 
@@ -154,9 +169,6 @@ perl <script> <temporary_source_file>
 PureBuilder Simply Pandocはtemporary_source_fileをこのスクリプトの出力で置き換える。
 
 スクリプトは`indexes.rbm`を利用することができ、該当するデータベースへのファイルパスは環境変数`$pbsimply_indexes`に格納される。
-
-データベース構築より前に実行されるため、
-スクリプトは`indexes.rbm`を利用することはできない。
 
 ドキュメントメタデータは環境変数`$pbsimply_doc_frontmatter`で、YAML形式でアクセスできる。
 
