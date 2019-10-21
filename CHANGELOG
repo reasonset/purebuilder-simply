@@ -59,3 +59,8 @@
 * Force update mode.
 * Support command line options.
 * Bug fix: Post plugins didn't work in single mode.
+
+# v1.6.1 2019-10-21
+
+* More additional meta data support. (timestamp)
+* Bug fix: wrong behavior on `-f` option.

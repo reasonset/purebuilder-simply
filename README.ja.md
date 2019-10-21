@@ -81,12 +81,12 @@ Loaded config YAML file (`.pbsimply.yaml`).
 |template|String|Pandoc HTMLテンプレートファイル。 `temaplte.html`がデフォルト|
 |css|String / Array|CSSファイル|
 |toc|Boolian|真ならばTOCを生成する|
-|pandoc_additional_options|Array|追加で渡されるPandocのコマンドラインオプション|
-|post_eruby|Boolian|真にするとPandocの出力をerbによってプロセッシングする|
-|alt_frontmatter|Hash|ACCSインデックスファイルのデフォルトのfrontmatter|
-|testserver_port|Fixnum|`pbsimply-testserver.rb`が使用するポート(default 80)|
-|self_url_prefix|String|生成されたドキュメントのURLの絶対パスのプレフィックス部。デフォルトは`/`|
-|self_url_external_prefix|String|`self_url_prefix`の`page_url_encoded_external`用|
+|pandoc\_additional\_options|Array|追加で渡されるPandocのコマンドラインオプション|
+|post\_eruby|Boolian|真にするとPandocの出力をerbによってプロセッシングする|
+|alt\_frontmatter|Hash|ACCSインデックスファイルのデフォルトのfrontmatter|
+|testserver\_port|Fixnum|`pbsimply-testserver.rb`が使用するポート(default 80)|
+|self\_url\_prefix|String|生成されたドキュメントのURLの絶対パスのプレフィックス部。デフォルトは`/`|
+|self\_url\_external\_prefix|String|`self_url_prefix`の`page_url_encoded_external`用|
 
 ## Special values in @index
 
@@ -100,22 +100,26 @@ Loaded config YAML file (`.pbsimply.yaml`).
 |description|additional option / Sample template|HTML metaタグのdescriptionとして使うもの|
 |draft|additional option / system|草稿。真である場合プロセッシングから除外される|
 |_last_proced|system|*Integer*. 最後にPureBuilderで処理された時刻。. はじめてのプロセッシングの場合(あるいはデータベースを削除した場合)`0`になる|
-|last_updated|system|*String*. 最後にPandocで生成した時刻|
+|last\_updated|system|*String*. 最後にPandocで生成した時刻|
 |_size|system|ファイルサイズ (byte)|
 |_mtime|system|*Integer*. mtime of this file.|
 |_filename|system|ファイル名|
 |_docformat|system|Document Format. `Markdown` or `ReST`.|
 |categories|ACCS|ドキュメントのカテゴリ。ACCSによって使われる|
 |pagetype|ACCS|ページタイプ。デフォルトは`post`。ACCSによって生成されるインデックスページは`accsindex`|
-|accs_order|ACCS|ACCSのドキュメントの並び。もし`desc`である場合、逆順に並べられる|
+|accs\_order|ACCS|ACCSのドキュメントの並び。もし`desc`である場合、逆順に並べられる|
 |blogmode|ACCS|ACCSのドキュメントの並び。真の時、降順に並べる|
-|source_directory|system|ソースディレクトリ|
-|source_file|system|ソースファイル名|
-|source_path|system|ソースファイルパス|
-|page_url|system|当該ドキュメントの生成後のURL|
-|page_url_encoded|system|当該ドキュメントの生成後のURLのURIエンコードされたもの|
-|page_url_encoded_external|system|`page_url_encoded`で`self_url_external_prefix`を使うもの|
-|title_encoded|system|タイトルをURIエンコードしたもの|
+|source\_directory|system|ソースディレクトリ|
+|source\_file|system|ソースファイル名|
+|source\_path|system|ソースファイルパス|
+|page\_url|system|当該ドキュメントの生成後のURL|
+|page\_url\_encoded|system|当該ドキュメントの生成後のURLのURIエンコードされたもの|
+|page\_url\_encoded\_external|system|`page_url_encoded`で`self_url_external_prefix`を使うもの|
+|title\_encoded|system|タイトルをURIエンコードしたもの|
+|timestamp|frontmatter / system|`Date`よりも詳細なドキュメントの日時を記載する項目|
+|timestamp\_xmlschema|system|XMLスキーマでフォーマットされたドキュメント日時。`timestamp`が定義されている場合のみ|
+|timestamp\_jplocal|system|日本のローカル形式でフォーマットされたドキュメント日時。`timestamp`が定義されている場合のみ|
+|timestamp\_rubytimestr|system|Rubyの`Time#to_s`のようなフォーマットされたドキュメント日時。`timestamp`が定義されている場合のみ|
 
 ## Testing
 
@@ -166,7 +170,7 @@ pre-scriptはドキュメントを生成する前に呼ばれ、スキップさ�
 perl <script> <temporary_source_file>
 ```
 
-PureBuilder Simply Pandocはtemporary_source_fileをこのスクリプトの出力で置き換える。
+PureBuilder Simply Pandocは`temporary_source_file`をこのスクリプトの出力で置き換える。
 
 スクリプトは`indexes.rbm`を利用することができ、該当するデータベースへのファイルパスは環境変数`$pbsimply_indexes`に格納される。
 
@@ -197,8 +201,8 @@ post-scriptは生成されたファイルのリストとともに呼ばれる。
 |.index.md|each|ACCSが生成するインデックスページ|
 |.accsindex.erb|root or each ACCS|ACCSインデックスページ用Markdown eRubyテンプレート|
 |.accs.yaml|each|ACCSインデックスページ用の`@index`|
-|.post_generate|root|post pluginsを配置するディレクトリ|
-|.pre_generate|root|pre pluginsを配置するディレクトリ|
+|.post\_generate|root|post pluginsを配置するディレクトリ|
+|.pre\_generate|root|pre pluginsを配置するディレクトリ|
 
 # ドキュメントサンプル
 

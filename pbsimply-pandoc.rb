@@ -306,7 +306,6 @@ class PureBuilder
   end
 
   def check_modify(path, frontmatter)
-    return true if @refresh # Refresh (force update) mode.
     modify = true
 
     index = @indexes[path[1]] || {}
@@ -344,7 +343,12 @@ class PureBuilder
     @indexes[path[1]]["date"] ||= now.strftime("%Y-%m-%d %H:%M:%S")
     @index = @indexes[path[1]]
 
-    modify
+    if @refresh
+      # Refresh (force update) mode.
+      true
+    else
+      modify
+    end
   end
 
   # Invoke pandoc, parse and format and write out.
@@ -392,6 +396,23 @@ class PureBuilder
     if frontmatter["title"]
       pandoc_options.push("-M")
       pandoc_options.push(sprintf('%s:%s', "title_encoded", ERB::Util.url_encode(frontmatter["title"])))  
+    end
+    fts = frontmatter["timestamp"] 
+    fts = fts.to_datetime if Time === fts
+    if DateTime === fts
+      pandoc_options.push("-M")
+      pandoc_options.push(sprintf('%s:%s', "timestamp_xmlschema", fts.xmlschema))
+      pandoc_options.push("-M")
+      pandoc_options.push(sprintf('%s:%s', "timestamp_jplocal", fts.strftime('%Y年%m月%d日 %H時%M分%S秒')))
+      pandoc_options.push("-M")
+      pandoc_options.push(sprintf('%s:%s', "timestamp_rubytimestr", fts.strftime('%a %b %d %H:%M:%S %Z %Y')))
+    elsif Date === fts
+      pandoc_options.push("-M")
+      pandoc_options.push(sprintf('%s:%s', "timestamp_xmlschema", fts.xmlschema))
+      pandoc_options.push("-M")
+      pandoc_options.push(sprintf('%s:%s', "timestamp_jplocal", fts.strftime('%Y年%m月%d日')))
+      pandoc_options.push("-M")
+      pandoc_options.push(sprintf('%s:%s', "timestamp_rubytimestr", fts.strftime('%a %b %d')))
     end
 
     # Preparing and pre script.
