@@ -84,42 +84,43 @@ Loaded config YAML file (`.pbsimply.yaml`).
 |pandoc\_additional\_options|Array|追加で渡されるPandocのコマンドラインオプション|
 |post\_eruby|Boolian|真にするとPandocの出力をerbによってプロセッシングする|
 |alt\_frontmatter|Hash|ACCSインデックスファイルのデフォルトのfrontmatter|
-|testserver\_port|Fixnum|`pbsimply-testserver.rb`が使用するポート(default 80)|
+|testserver\_port|Fixnum|`pbsimply-testserver.rb`が使用するポート(default 8000)|
 |self\_url\_prefix|String|生成されたドキュメントのURLの絶対パスのプレフィックス部。デフォルトは`/`|
 |self\_url\_external\_prefix|String|`self_url_prefix`の`page_url_encoded_external`用|
 
 ## Special values in @index
 
-|Key|Set/Used by|Description|
-|-------|------------|-----------------------------------|
-|title|frontmatter|文書タイトル。必須|
-|author|frontmatter|著者|
-|date|frontmatter or system.|執筆日|
-|lang|additional option / Pandoc template|`lang`/`xml:lang`|
-|keywords|additional option / Pandoc template|An array, HTML metaタグのキーワードとして使うもの|
-|description|additional option / Sample template|HTML metaタグのdescriptionとして使うもの|
-|draft|additional option / system|草稿。真である場合プロセッシングから除外される|
-|_last_proced|system|*Integer*. 最後にPureBuilderで処理された時刻。. はじめてのプロセッシングの場合(あるいはデータベースを削除した場合)`0`になる|
-|last\_updated|system|*String*. 最後にPandocで生成した時刻|
-|_size|system|ファイルサイズ (byte)|
-|_mtime|system|*Integer*. mtime of this file.|
-|_filename|system|ファイル名|
-|_docformat|system|Document Format. `Markdown` or `ReST`.|
-|categories|ACCS|ドキュメントのカテゴリ。ACCSによって使われる|
-|pagetype|ACCS|ページタイプ。デフォルトは`post`。ACCSによって生成されるインデックスページは`accsindex`|
-|accs\_order|ACCS|ACCSのドキュメントの並び。もし`desc`である場合、逆順に並べられる|
-|blogmode|ACCS|ACCSのドキュメントの並び。真の時、降順に並べる|
-|source\_directory|system|ソースディレクトリ|
-|source\_file|system|ソースファイル名|
-|source\_path|system|ソースファイルパス|
-|page\_url|system|当該ドキュメントの生成後のURL|
-|page\_url\_encoded|system|当該ドキュメントの生成後のURLのURIエンコードされたもの|
-|page\_url\_encoded\_external|system|`page_url_encoded`で`self_url_external_prefix`を使うもの|
-|title\_encoded|system|タイトルをURIエンコードしたもの|
-|timestamp|frontmatter / system|`Date`よりも詳細なドキュメントの日時を記載する項目|
-|timestamp\_xmlschema|system|XMLスキーマでフォーマットされたドキュメント日時。`timestamp`が定義されている場合のみ|
-|timestamp\_jplocal|system|日本のローカル形式でフォーマットされたドキュメント日時。`timestamp`が定義されている場合のみ|
-|timestamp\_rubytimestr|system|Rubyの`Time#to_s`のようなフォーマットされたドキュメント日時。`timestamp`が定義されている場合のみ|
+|Key|Set by|Used by|Description|
+|-------|------------|------------|-----------------------------------|
+|title|frontmatter|frontmatter|文書タイトル。必須|
+|author|frontmatter|frontmatter|著者|
+|date|frontmatter/system|frontmatter or system.|執筆日|
+|lang|frontmatter|additional option / Pandoc template|`lang`/`xml:lang`|
+|keywords|frontmatter|additional option / Pandoc template|An array, HTML metaタグのキーワードとして使うもの|
+|description|frontmatter|additional option / Sample template|HTML metaタグのdescriptionとして使うもの|
+|draft|frontmatter|additional option / system|草稿。真である場合プロセッシングから除外される|
+|\_last\_proced|system|system|*Integer*. 最後にPureBuilderで処理された時刻。. はじめてのプロセッシングの場合(あるいはデータベースを削除した場合)`0`になる|
+|last\_updated|system|system|*String*. 最後にPandocで生成した時刻|
+|\_size|system|system|ファイルサイズ (byte)|
+|\_mtime|system|system|*Integer*. mtime of this file.|
+|\_filename|system|system|ファイル名|
+|\_docformat|system|system|Document Format. `Markdown` or `ReST`.|
+|categories|frontmatter|ACCS|ドキュメントのカテゴリ。ACCSによって使われる|
+|pagetype|frontmatter/config|ACCS|ページタイプ。デフォルトは`post`。ACCSによって生成されるインデックスページは`accsindex`|
+|accs\_order|config|ACCS|ACCSのドキュメントの並び。もし`desc`である場合、逆順に並べられる|
+|blogmode|config|ACCS|ACCSのドキュメントの並び。真の時、降順に並べる|
+|source\_directory|system|system|ソースディレクトリ|
+|source\_file|system|system|ソースファイル名|
+|source\_path|system|system|ソースファイルパス|
+|page\_url|system|system|当該ドキュメントの生成後のURL|
+|page\_url\_encoded|system|system|当該ドキュメントの生成後のURLのURIエンコードされたもの|
+|page\_url\_encoded\_external|system|system|`page_url_encoded`で`self_url_external_prefix`を使うもの|
+|title\_encoded|system|system|タイトルをURIエンコードしたもの|
+|timestamp|frontmatter|frontmatter / system|`date`よりも詳細なドキュメントの日時を記載する項目|
+|timestamp\_xmlschema|system|system|XMLスキーマでフォーマットされたドキュメント日時。`timestamp`が定義されていない場合、`date`を使う|
+|timestamp\_jplocal|system|system|日本のローカル形式でフォーマットされたドキュメント日時。`timestamp`が定義されていない場合、`date`を使う|
+|timestamp\_rubytimestr|system|system|Rubyの`Time#to_s`のようなフォーマットされたドキュメント日時。`timestamp`が定義されていない場合、`date`を使う|
+
 
 ## Testing
 
@@ -134,7 +135,7 @@ Loaded config YAML file (`.pbsimply.yaml`).
 2. 起動する
 3. `http://localhost:port` にアクセスする
 
-ポートは設定ファイルの`testserver_port`で設定でき、デフォルトは80。
+ポートは設定ファイルの`testserver_port`で設定でき、デフォルトは8000。
 
 もし`http://example.com/site/index.html`のように本番環境がサブディレクトリにある場合、
 ドキュメントをサブディレクトリ化に配置することを推奨する。

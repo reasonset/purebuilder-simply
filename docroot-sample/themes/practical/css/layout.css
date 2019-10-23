@@ -1,0 +1,16 @@
+body {
+	margin: 0px;
+	padding: 0px;
+}
+
+header#TopHeader {
+	display: none;
+	height: 180px;
+	width: 100vw;
+	margin: 0px;
+}
+
+header#TitleHeader {
+	width: 100vw;
+	margin: 0px;
+}

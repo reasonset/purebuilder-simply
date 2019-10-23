@@ -64,3 +64,9 @@
 
 * More additional meta data support. (timestamp)
 * Bug fix: wrong behavior on `-f` option.
+
+# v1.7 2019-10-23
+
+* Change test server's default port 80 to 8000.
+* Converted timestamp uses dete if timestamp isn't defined.
+* Add and rearrange sample docs.

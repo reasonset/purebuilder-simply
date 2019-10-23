@@ -1,0 +1,35 @@
+---
+# Built documents output path.
+# ../Build means Build directory on Source document root's parent directory.
+outdir: ../Build
+#outdir: /home/foo/public_html/
+# Loading CSS files (userd by Pandoc's default template.)
+# This values must be *server's URL*.
+css:
+  - /css/layout.css
+  - /css/base.css
+# Enable TOC. yes or no. no by default.
+toc: yes
+# Enable eRuby template expansion. yes or no. no by default.
+post_eruby: no
+# Additional options for Pandoc on every generation.
+pandoc_additional_options:
+  - "-M"
+  - "lang:ja"
+  - "-M"
+  - "title-prefix:Powered by PureBuilder Simply"
+# Pandoc "-B" options means include document as "before".
+# Sample template use "before" document as sidebar's content.
+#  - "-B"
+#  - before.html
+#  - "-A"
+#  - after.html
+# Override every ACCS index page's frontmatter.
+#alt_frontmatter:
+#  title: Serial documents by ACCS
+# Testserver (pbsimply-testserver.rb)'s port. 8000 by default.
+#testserver_port: 8080
+# Generated document's URL absolute prefix. This value replaces reading /.
+#self_url_prefix: /foowebsite/
+# Generated document's URL absolute prefix. This value replaces reading /. Used by page_url_encoded_external.
+self_url_external_prefix: https://example.com/

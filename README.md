@@ -1,4 +1,5 @@
 # Purebuilder Simply
+
 Simplified website building system with Pandoc.
 
 ## What is PureBuilder
@@ -80,42 +81,42 @@ Document meta data that "default | indexed | frontmatter | current".
 |pandoc\_additional\_options|Array|Extra pandoc options|
 |post\_eruby|Boolian|Process Pandoc output with eRuby if true|
 |alt\_frontmatter|Hash|Default frontmatter in ACCS index|
-|testserver\_port|Fixnum|Port number of pbsimply-testserver (default 80)|
+|testserver\_port|Fixnum|Port number of pbsimply-testserver (default 8000)|
 |self\_url\_prefix|String|Absolute path prefix for URL of generated document itself instead of `/`.|
 |self\_url\_external\_prefix|String|Like `self_url_prefix`, but it only works on `page_url_encoded_external`.|
 
 ## Special values in @index
 
-|Key|Set/Used by|Description|
-|-------|------------|-----------------------------------|
-|title|frontmatter|Document title. required.|
-|author|frontmatter|Author.|
-|date|frontmatter or system.|Date of written|
-|lang|additional option / Pandoc template|`lang`/`xml:lang`|
-|keywords|additional option / Pandoc template|An array, used as keywords in meta tag.|
-|description|additional option / Sample template|Used as description in meta tag.|
-|draft|additional option / system|Draft status. Skip process document if true.|
-|_last_proced|system|*Integer*. DateTime of last processed by PureBuilder. `0` if this document is processed first.|
-|last\_updated|system|*String*. DateTime of last processed by Pandoc.|
-|_size|system|File size (byte)|
-|_mtime|system|*Integer*. mtime of this file.|
-|_filename|system|File name|
-|_docformat|system|Document Format. `Markdown` or `ReST`.|
-|categories|ACCS|Document category. Sort documents by this value.
-|pagetype|ACCS|Document type of this page. `accsindex` is set if processed by ACCS, set `post` by default.|
-|accs\_order|ACCS|Document order. If `desc` is set, document sort by descending order.|
-|blogmode|ACCS|Document sort by descending order if this value is true.|
-|source\_directory|system|Source directory string. Set by PureBuilder.|
-|source\_file|system|Source Filename. Set by PureBuilder.|
-|source\_path|system|Source path string. Set by PureBuilder.|
-|page\_url|system|This (generated) page's URL. Set by PureBuilder.|
-|page\_url\_encoded|system|This (generated) page's URI encoded URL. Set by PureBuilder.|
-|page\_url\_encoded\_external|system|This (generated) page's URI encoded URL with `self_url_external_prefix`. Set by PureBuilder.|
-|title\_encoded|system|URI encoded document title. Set by PureBuilder.|
-|timestamp|frontmatter / system|The date and time of the document which is more detailed than `Date`.|
-|timestamp\_xmlschema|system|XML Schema formatted Timestamp if `timestamp` if defined.|
-|timestamp\_jplocal|system|Japanese local formatted Timestamp if `timestamp` if defined.|
-|timestamp\_rubytimestr|system|Ruby's `Time#to_s` like formatted Timestamp if `timestamp` if defined.|
+|Key|Set by|Used by|Description|
+|-------|------------|------------|-----------------------------------|
+|title|frontmatter|Pandoc/System|Document title. required.|
+|author|frontmatter|Default template|Author.|
+|date|frontmatter/system|System|Date of written|
+|lang|frontmatter|Pandoc template|`lang`/`xml:lang`|
+|keywords|frontmatter|Pandoc template|An array, used as keywords in meta tag.|
+|description|frontmatter|Sample template|Used as description in meta tag.|
+|draft|frontmatter|System|Draft status. Skip process document if true.|
+|\_last\_proced|system||*Integer*. DateTime of last processed by PureBuilder. `0` if this document is processed first.|
+|last\_updated|system||*String*. DateTime of last processed by Pandoc.|
+|\_size|system||File size (byte)|
+|\_mtime|system||*Integer*. mtime of this file.|
+|\_filename|system||File name|
+|\_docformat|system||Document Format. `Markdown` or `ReST`.|
+|categories|frontmatter|ACCS|Document category. Sort documents by this value.
+|pagetype|frontmatter/config|ACCS|Document type of this page. `accsindex` is set if processed by ACCS, set `post` by default.|
+|accs\_order|config|ACCS|Document order. If `desc` is set, document sort by descending order.|
+|blogmode|config|ACCS|Document sort by descending order if this value is true.|
+|source\_directory|system||Source directory string. Set by PureBuilder.|
+|source\_file|system||Source Filename. Set by PureBuilder.|
+|source\_path|system||Source path string. Set by PureBuilder.|
+|page\_url|system||This (generated) page's URL. Set by PureBuilder.|
+|page\_url\_encoded|system||This (generated) page's URI encoded URL. Set by PureBuilder.|
+|page\_url\_encoded\_external|system||This (generated) page's URI encoded URL with `self_url_external_prefix`. Set by PureBuilder.|
+|title\_encoded|system||URI encoded document title. Set by PureBuilder.|
+|timestamp|frontmatter|system|The date and time of the document which is more detailed than `date`.|
+|timestamp\_xmlschema|system||XML Schema formatted Timestamp. Use `date` instead of `timestamp` if `timestamp` isn't defined.|
+|timestamp\_jplocal|system||Japanese local formatted Timestamp. Use `date` instead of `timestamp` if `timestamp` isn't defined.|
+|timestamp\_rubytimestr|system||Ruby's `Time#to_s` like formatted Timestamp. Use `date` instead of `timestamp` if `timestamp` isn't defined.|
 
 ## Testing
 
@@ -129,7 +130,7 @@ How to use is very simple.
 2. run it.
 3. access `http://localhost:port`
 
-You can config port with `testserver_port` in config file. default is 80.
+You can config port with `testserver_port` in config file. default is 8000.
 
 If you think to put subdirectory like `http://example.com/site/index.html`,
 I recommend that you put document in `site` subdirectory, and sync under there.

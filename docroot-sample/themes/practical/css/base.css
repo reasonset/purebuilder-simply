@@ -1,0 +1,115 @@
+code {
+  word-break: break-all;
+  overflow-wrap: break-word;
+  hyphens: none;
+}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+q { quotes: "“" "”" "‘" "’"; }
+
+#TitleHeader {
+  text-align: center;
+}
+
+body {
+  font-family: serif;
+}
+
+h1, h2, h3, h4, h5, h6, strong {
+  font-family: sans-serif;
+}
+
+footer {
+  text-align: right;
+}
+
+a {
+  color: #23669c;
+}
+
+.toc {
+  margin: auto 45px;
+  padding: 0.5em;
+  font-size: 90%;
+  border: #666 solid 1px;
+}
+
+@media screen {
+  body {
+    color: #484848;
+    background-color: #fff;
+    padding: 0;
+    margin: 0;
+  }
+
+  article, #SideBar {
+    max-width: 1080px;
+    margin: auto;
+  }
+
+  blockquote {
+    border-left-color: #7496cc;
+    border-left-style: solid;
+    border-left-width: 0.5em;
+    padding-left: 0.5em;
+  }
+
+  /* Source Code */
+  pre code.sourceCode {
+    color: #eff0f6;
+    line-height: 1.3;
+    white-space: pre-wrap;
+  }
+
+  div.sourceCode {
+    overflow: auto;
+    background-color: #191B2A;
+    padding: 0.75rem;
+    border-radius: 5px;
+  }
+
+  article img {
+    max-width: 100%;
+    max-height: 500px;
+    width: auto;
+    height: auto;
+  }
+  
+  /* This color theme inspired by Dank Neon. */
+  pre code.sourceCode .al {color: #F8F8F8; background-color: #800F00; font-weight: bold;} /*Alert*/
+  pre code.sourceCode .an {color: #7496cc;} /*Annotation*/
+  pre code.sourceCode .at {color: #39FFBA;} /*Attribute*/
+  pre code.sourceCode .dt {color: #ffca7a;} /*BaseN*/
+  pre code.sourceCode .du {color: #F1B3F1;} /*Builtin*/
+  pre code.sourceCode .cf {color: #39FFBA;} /*ControlFlow*/
+  pre code.sourceCode .ch {color: #ac3756;} /*Char*/
+  pre code.sourceCode .cn {color: #F1B3F1;} /*Constant*/
+  pre code.sourceCode .co {color: #858DB7;} /*Comment*/
+  pre code.sourceCode .cv {color: #ffca7a;} /*CommentVar*/
+  pre code.sourceCode .do {color: #218B97;} /*Documentation*/
+  pre code.sourceCode .dt {color: #2dad86;} /*DataType*/
+  pre code.sourceCode .dv {color: #F1B3F1;} /*DecVal*/
+  pre code.sourceCode .er {color: #F8F8F8; text-decoration: underline;} /*Error*/
+  pre code.sourceCode .ex {color: #2dad86;} /*Extension*/
+  pre code.sourceCode .fl {color: #F1B3F1;} /*Float*/
+  pre code.sourceCode .fu {color: #FF476E;} /*Function*/
+  pre code.sourceCode .im {color: #2dad86;} /*Import*/
+  pre code.sourceCode .in {color: #01a8ad;} /*Infomation*/
+  pre code.sourceCode .kw {color: #ac3756;} /*Keyword*/
+  pre code.sourceCode .op {color: #7496cc;} /*Operator*/
+  pre code.sourceCode .ot {color: #eff0f6;} /*Other*/
+  pre code.sourceCode .pp {color: #A85E3D;} /*PreProcessor*/
+  pre code.sourceCode .sc {color: #3daee9; background-color: #4E163E} /*SpecialChar*/
+  pre code.sourceCode .ss {color: #ac3756;} /*SpecialString*/
+  pre code.sourceCode .st {color: #94BFFF;} /*String*/
+  pre code.sourceCode .va {color: #39ffba;} /*Variable*/
+  pre code.sourceCode .vs {color: #218B97; font-style: italic;} /*VerbatimString*/
+  pre code.sourceCode .wa {color: #eff0f6;} /*Warning*/
+
+  a.sourceLine { display: inline-block; line-height: 1.25; }
+  a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+  a.sourceLine:empty { height: 1.2em; position: absolute; }
+  div.sourceCode { margin: 1em 0; }
+  a.sourceLine::before { text-decoration: underline; }
+}

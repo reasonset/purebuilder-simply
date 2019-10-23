@@ -7,6 +7,9 @@
 $for(author-meta)$
   <meta name="author" content="$author-meta$" />
 $endfor$
+$if(timetsmap_xmlscheme)$
+  <meta name="date" content="$timetsmap_xmlscheme$" />
+$endif$
 $if(date-meta)$
   <meta name="dcterms.date" content="$date-meta$" />
 $endif$
@@ -32,14 +35,20 @@ $endfor$
 </head>
   <body>
     <header id="TopHeader">
+      <h1>$title-prefix$</h1>
     </header>
-    <header id="TitleHeader">
+    <section id="TitleHeader">
       <h1 class="title">$title$</h1>
 $if(subtitle)$
       <p class="subtitle">$subtitle$</p>
 $endif$
-    </header>
+    </section>
     <section id="MainContainer">
+      <section id="SideBar">
+        $for(include-before)$
+        $include-before$
+        $endfor$
+      </section>
       <article id="MainArticle">
 $if(toc)$
         <nav id="$idprefix$TOC" class="toc">
@@ -48,11 +57,6 @@ $table-of-contents$
 $endif$
 $body$
       </article>
-      <section id="SideBar">
-        $for(include-before)$
-        $include-before$
-        $endfor$
-      </section>
     </section>
     <footer>
 $if(date)$

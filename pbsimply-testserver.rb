@@ -10,6 +10,6 @@ end
 
 srv = WEBrick::HTTPServer.new({ :DocumentRoot => @config["outdir"],
                                 :BindAddress => '127.0.0.1',
-                                :Port => (@config["testserver_port"] || 80 )})
+                                :Port => (@config["testserver_port"] || 8000 )})
 trap("INT"){ srv.shutdown }
 srv.start

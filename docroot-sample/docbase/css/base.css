@@ -1,0 +1,84 @@
+body {
+    color: #666;
+    background-color: #fff;
+    font-family: serif;
+}
+
+#MainArticle {
+    padding: 1em;
+}
+
+#TitleHeader {
+    text-align: center;
+    border-bottom: 1px solid #333;
+}
+
+h1, h2, h3, h4, h5, h6, figure, figcaption, caption, dt {
+    font-family: sans-serif;
+}
+
+a:visited {
+    color: #c16ab8;
+}
+
+a:hover {
+    color: #c28850;
+}
+
+a {
+    color: #4a69ff;
+}
+
+.toc {
+    border: #999 solid 1px;
+    background-color: #fcfcff;
+    margin: 0.5em;
+}
+
+#SideBar {
+    padding-top: 15px;
+}
+
+.menu {
+    border: #41484c solid 1px;
+    background-color: #fff;
+    margin: auto;
+    padding: 1em;
+    max-width: 100%;
+}
+
+/****** SOUECE CODE ******/
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; left: -4em; }
+pre.numberSource a.sourceLine::before
+  { content: attr(data-line-number);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #c8a280;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+/*************************/
+
