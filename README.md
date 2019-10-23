@@ -248,3 +248,23 @@ Sample Post Plugins.
 JavaScript Plugins.
 
 See README on each file.
+
+## Themes
+
+You can use sample Themes with merge content to copied sample document directory.
+
+### Base
+
+![Default theme](img/theme-base.png)
+
+### Warm
+
+![Warm colored theme](img/theme-warm.png)
+
+### Practical
+
+![Basic theme like reports](img/theme-practical.png)
+
+### Bloggy
+
+![Typical blog theme](img/theme-bloggy.png)]

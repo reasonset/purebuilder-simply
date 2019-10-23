@@ -247,3 +247,23 @@ post-pluginsのサンプルスクリプト
 JavaScriptプラグインファイル。
 
 それぞれのファイルにあるREADMEを読むこと。
+
+## テーマ
+
+コピーしたサンプルドキュメントディレクトリにテーマディレクトリをマージすることでテーマを利用することができる。
+
+### Base
+
+![Default theme](img/theme-base.png)
+
+### Warm
+
+![ウォームカラーのテーマ](img/theme-warm.png)
+
+### Practical
+
+![論文などに適するテーマ](img/theme-practical.png)
+
+### Bloggy
+
+![よくあるブログっぽいテーマ](img/theme-bloggy.png)]
