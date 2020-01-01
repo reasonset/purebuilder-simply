@@ -267,4 +267,4 @@ You can use sample Themes with merge content to copied sample document directory
 
 ### Bloggy
 
-![Typical blog theme](img/theme-bloggy.png)]
+![Typical blog theme](img/theme-bloggy.png)

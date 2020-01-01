@@ -132,7 +132,7 @@ class PureBuilder
         filename = $2
       else
         dir = "."
-        filename = $2
+        filename = @dir
       end
       @dir = dir
 
@@ -443,7 +443,7 @@ class PureBuilder
 
     # Preparing and pre script.
     orig_filepath = [dir, filename].join("/")
-    procdoc = "#{@processing_document}.#{File.extname(filename)}"
+    procdoc = "#{@processing_document}#{File.extname(filename)}"
     ::FileUtils.cp orig_filepath, procdoc
     pre_plugins(procdoc, frontmatter)
 
