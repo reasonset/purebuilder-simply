@@ -381,8 +381,6 @@ class PureBuilder
     @indexes[path[1]] = frontmatter
     @index = @indexes[path[1]]
 
-    pp @indexes[path[1]]
-
     if @refresh
       # Refresh (force update) mode.
       true
@@ -446,8 +444,8 @@ class PureBuilder
 
     
     File.delete procdoc if File.exist?(procdoc)
-#    File.delete ".pbsimply-defaultfiles.yaml"
-#    File.delete ".pbsimply-frontmatter.yaml"
+    File.delete ".pbsimply-defaultfiles.yaml"
+    File.delete ".pbsimply-frontmatter.yaml"
 
     # Abort if pandoc returns non-zero status
     if $?.exitstatus != 0
