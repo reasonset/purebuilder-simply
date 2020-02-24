@@ -121,8 +121,6 @@ class PureBuilder
 
   def main
     @singlemode = true if File.file?(@dir)
-    load_config
-    load_index
 
     # Check single file mode.
     if @singlemode
@@ -136,12 +134,17 @@ class PureBuilder
       end
       @dir = dir
 
+      load_config
+      load_index
+
       lets_pandoc(dir, filename, read_frontmatter(dir, filename))
 
       post_plugins
 
     else
       # Normal (directory) mode.
+      load_config
+      load_index
       parse_frontmatter
 
       # Check existing in indexes.
@@ -342,9 +345,9 @@ class PureBuilder
       "_last_proced" => now.to_i
     }
 
-    if path =~ /\.md$/
+    if path[1] =~ /\.md$/
       current_infomation["_docformat"] = "Markdown"
-    elsif path =~ /\.rst$/ || path =~ /\.rest$/
+    elsif path[1] =~ /\.rst$/ || path[1] =~ /\.rest$/
       current_infomation["_docformat"] = "ReST"
     end
 
@@ -410,10 +413,16 @@ class PureBuilder
     pandoc_options.push(sprintf('%s:%s', "page_url_encoded", ERB::Util.url_encode(this_url)))
     pandoc_options.push("-M")
     pandoc_options.push(sprintf('%s:%s', "page_url_encoded_external", ERB::Util.url_encode((File.join(dir, filename)).sub(/^[\.\/]*/) { @config["self_url_external_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html"))))
+    pandoc_options.push("-M")
+    pandoc_options.push(sprintf('%s:%s', "page_html_escaped", ERB::Util.html_escape(this_url)))
+    pandoc_options.push("-M")
+    pandoc_options.push(sprintf('%s:%s', "page_html_escaped_external", ERB::Util.html_escape((File.join(dir, filename)).sub(/^[\.\/]*/) { @config["self_url_external_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html"))))
     # Title with URL Encoded.
     if frontmatter["title"]
       pandoc_options.push("-M")
       pandoc_options.push(sprintf('%s:%s', "title_encoded", ERB::Util.url_encode(frontmatter["title"])))  
+      pandoc_options.push("-M")
+      pandoc_options.push(sprintf('%s:%s', "title_html_escaped", ERB::Util.html_escape(frontmatter["title"])))  
     end
     fts = frontmatter["timestamp"] 
     fts = fts.to_datetime if Time === fts
