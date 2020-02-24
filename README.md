@@ -23,8 +23,8 @@ PB Simply ACCS make `index.md` with indexes build by PureBuilder.
 
 ## Dependency
 
-* Ruby >2.3
-* Pandoc
+* Ruby >= 2.3
+* Pandoc >= 2.8
 
 ## Usage
 
@@ -117,6 +117,7 @@ Document meta data that "default | indexed | frontmatter | current".
 |timestamp\_xmlschema|system||XML Schema formatted Timestamp. Use `date` instead of `timestamp` if `timestamp` isn't defined.|
 |timestamp\_jplocal|system||Japanese local formatted Timestamp. Use `date` instead of `timestamp` if `timestamp` isn't defined.|
 |timestamp\_rubytimestr|system||Ruby's `Time#to_s` like formatted Timestamp. Use `date` instead of `timestamp` if `timestamp` isn't defined.|
+|timestamp\_str|system||`%Y-%m-%d[ %H:%M:%S %Z]`. Use `date` instead of `timestamp` if `timestamp` isn't defined.|
 
 ## Testing
 

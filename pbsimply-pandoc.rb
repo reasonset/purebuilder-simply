@@ -20,12 +20,17 @@ class PureBuilder
   }
   def initialize(dir=nil)
     @docobject = {}
-    @pandoc_default_options = ["-t", "html5", "-s"]
     @this_time_processed = []
-    @extra_meta_format = false # Pandoc inunderstandable metadata format is used.
     @processing_document = ".#{$$}.pbsimply-processing"
 
-
+    # -d
+    @pandoc_default_file = {
+      "to" => "html5",
+      "standalone" => true
+    }
+    # --metadata-file
+    @frontmatter = {}
+    
     # Options definition.
     opts = OptionParser.new
     opts.on("-f") { @refresh = true }
@@ -59,23 +64,22 @@ class PureBuilder
 
     if @config["css"]
       if @config["css"].kind_of?(String)
-        @pandoc_default_options.concat ["-c", @config["css"]]
+        @pandoc_default_file["css"] = [@config["css"]]
       elsif @config["css"].kind_of?(Array)
-        @config["css"].each do |i|
-          @pandoc_default_options.concat ["-c", i]
-        end
+        @pandoc_default_file["css"] = @config["css"]
+      else
+        abort "css in Config should be a String or an Array."
       end
     end
 
     if @config["toc"]
-      @pandoc_default_options.push "--toc"
+      @pandoc_default_file["toc"] = true
     end
 
-    @pandoc_default_options.push "--template"
-    @pandoc_default_options.push @config["template"]
+    @pandoc_default_file["template"] = @config["template"]
 
-    if @config["pandoc_additional_options"]
-      @pandoc_default_options.concat @config["pandoc_additional_options"]
+    if Hash === @config["pandoc_additional_options"]
+      @pandoc_default_file.merge! @config["pandoc_additional_options"]
     end
 
     if @singlemode
@@ -109,7 +113,7 @@ class PureBuilder
       next unless File.file?([@dir, filename].join("/"))
       next unless %w:.md .rst:.include? File.extname filename
       STDERR.puts "Checking frontmatter in #{filename}"
-      frontmatter = read_frontmatter(@dir, filename)
+      frontmatter = @frontmatter.merge read_frontmatter(@dir, filename)
       next if frontmatter["draft"]
 
       if check_modify([@dir, filename], frontmatter)
@@ -159,7 +163,7 @@ class PureBuilder
     end
   end
 
-  def pre_plugins(procdoc, frontmatter)
+  def pre_plugins(procdoc)
     if File.directory?(".pre_generate")
       STDERR.puts("Processing with pre plugins")
       script_file = File.join(".pre_generate", script_file)
@@ -175,7 +179,7 @@ class PureBuilder
         else
           ["perl", script_file, procdoc]
         end
-        IO.popen({"pbsimply_doc_frontmatter" => YAML.dump(frontmatter)}, script_cmdline) do |io|
+        IO.popen({"pbsimply_doc_frontmatter" => YAML.dump(@frontmatter)}, script_cmdline) do |io|
           pre_script_result = io.read
         end
         File.open(procdoc, "w") {|f| f.write pre_script_result}
@@ -248,6 +252,9 @@ class PureBuilder
           STDERR.puts "!CRITICAL: Cannot parse frontmatter."
           raise e
         end
+
+        # Output document
+        File.open(".current_document.md", "w") {|fo| fo.write f.read}
       end
 
     when ".rst"
@@ -256,7 +263,6 @@ class PureBuilder
       File.open(File.join(dir, filename)) do |f|
         l = f.gets
         if l =~ /:([A-Za-z_-]+): (.*)/ #docinfo
-          @extra_meta_format = true # ReST docinfo is supported but there is some gritch.
           frontmatter = { $1 => [$2.chomp] }
           last_key = $1
 
@@ -286,16 +292,18 @@ class PureBuilder
               else
                 v = Date.parse(v)
               end
+            elsif v == "yes" || v == "true"
+              v = true
             else # Simple String.
               nil # keep v
             end
 
             frontmatter[k] = v
+            STDERR.puts("FRONTMATTER: #{k} => #{v}")
           end
 
         elsif l && l.chomp == ".." #YAML
           # Load ReST YAML that document begins comment and block is yaml.
-          @extra_meta_format = true # ReST + YAML is not supported by Pandoc.
           lines = []
 
           while(l = f.gets)
@@ -320,8 +328,18 @@ class PureBuilder
         else
           next
         end
+
+        # Output document
+        File.open(".current_document.rst", "w") do |fo|
+          fo.puts ":title: #{frontmatter["title"]}"
+          fo.puts
+          fo.write f.read
+        end
       end
     end
+
+    abort "This document has no frontmatter" unless frontmatter
+    abort "This document has no title." unless frontmatter["title"]
 
     return frontmatter
   end
@@ -333,10 +351,8 @@ class PureBuilder
     fsize = FileTest.size(path.join("/"))
     mtime = File.mtime(path.join("/")).to_i
 
-    default_infomation = {
-      "_filename" => path[1],
-      "pagetype" => "post"
-    }
+    frontmatter["_filename"] ||= path[1]
+    frontmatter["pagetype"] ||= "post"
 
     now = Time.now
     current_infomation = {
@@ -359,10 +375,13 @@ class PureBuilder
       current_infomation["last_update"] = now.strftime("%Y-%m-%d %H:%M:%S")
     end
 
+    frontmatter.merge!(current_infomation)
+    frontmatter["date"] ||= now.strftime("%Y-%m-%d %H:%M:%S")
 
-    @indexes[path[1]] = default_infomation.merge(index || {}).merge(frontmatter || {}).merge(current_infomation)
-    @indexes[path[1]]["date"] ||= now.strftime("%Y-%m-%d %H:%M:%S")
+    @indexes[path[1]] = frontmatter
     @index = @indexes[path[1]]
+
+    pp @indexes[path[1]]
 
     if @refresh
       # Refresh (force update) mode.
@@ -377,93 +396,58 @@ class PureBuilder
     STDERR.puts "#{filename} is going Pandoc."
     doc = nil
 
-    pandoc_options = @pandoc_default_options.clone
-
-    # Add index values to commnadline meta.
-    if @extra_meta_format # Only Original style metadata.
-      @index.each do |k,v|
-        if v.kind_of?(Array)
-          v.each do |i|
-            pandoc_options.push("-M")
-            pandoc_options.push("#{k}:#{i}")
-          end
-        else
-          pandoc_options.push("-M")
-          pandoc_options.push("#{k}:#{v}")
-        end
-      end
-    end
-
     ### Additional meta values. ###
-    # Source Directory
-    pandoc_options.push("-M")
-    pandoc_options.push(sprintf('%s:%s', "source_directory", dir))
-    # Source Filename
-    pandoc_options.push("-M")
-    pandoc_options.push(sprintf('%s:%s', "source_filename", filename))
-    # Source Path
-    pandoc_options.push("-M")
-    pandoc_options.push(sprintf('%s:%s', "source_path", File.join(dir, filename)))
+    frontmatter["source_directory"] = dir # Source Directory
+    frontmatter["source_filename"] = filename # Source Filename
+    frontmatter["source_path"] = File.join(dir, filename) # Source Path
     # URL in site.
     this_url = (File.join(dir, filename)).sub(/^[\.\/]*/) { @config["self_url_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html")
-    pandoc_options.push("-M")
-    pandoc_options.push(sprintf('%s:%s', "page_url", this_url))
+    frontmatter["page_url"] = this_url
     # URL in site with URI encode.
-    pandoc_options.push("-M")
-    pandoc_options.push(sprintf('%s:%s', "page_url_encoded", ERB::Util.url_encode(this_url)))
-    pandoc_options.push("-M")
-    pandoc_options.push(sprintf('%s:%s', "page_url_encoded_external", ERB::Util.url_encode((File.join(dir, filename)).sub(/^[\.\/]*/) { @config["self_url_external_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html"))))
-    pandoc_options.push("-M")
-    pandoc_options.push(sprintf('%s:%s', "page_html_escaped", ERB::Util.html_escape(this_url)))
-    pandoc_options.push("-M")
-    pandoc_options.push(sprintf('%s:%s', "page_html_escaped_external", ERB::Util.html_escape((File.join(dir, filename)).sub(/^[\.\/]*/) { @config["self_url_external_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html"))))
+    frontmatter["page_url_encoded"] = ERB::Util.url_encode(this_url)
+    frontmatter["page_url_encoded_external"] = ERB::Util.url_encode((File.join(dir, filename)).sub(/^[\.\/]*/) { @config["self_url_external_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html"))
+    frontmatter["page_html_escaped"] = ERB::Util.html_escape(this_url)
+    frontmatter["page_html_escaped_external"] = ERB::Util.html_escape((File.join(dir, filename)).sub(/^[\.\/]*/) { @config["self_url_external_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html"))
     # Title with URL Encoded.
-    if frontmatter["title"]
-      pandoc_options.push("-M")
-      pandoc_options.push(sprintf('%s:%s', "title_encoded", ERB::Util.url_encode(frontmatter["title"])))  
-      pandoc_options.push("-M")
-      pandoc_options.push(sprintf('%s:%s', "title_html_escaped", ERB::Util.html_escape(frontmatter["title"])))  
-    end
+    frontmatter["title_encoded"] = ERB::Util.url_encode(frontmatter["title"])
+    frontmatter["title_html_escaped"] = ERB::Util.html_escape(frontmatter["title"])
     fts = frontmatter["timestamp"] 
     fts = fts.to_datetime if Time === fts
     if DateTime === fts
-      pandoc_options.push("-M")
-      pandoc_options.push(sprintf('%s:%s', "timestamp_xmlschema", fts.xmlschema))
-      pandoc_options.push("-M")
-      pandoc_options.push(sprintf('%s:%s', "timestamp_jplocal", fts.strftime('%Y年%m月%d日 %H時%M分%S秒')))
-      pandoc_options.push("-M")
-      pandoc_options.push(sprintf('%s:%s', "timestamp_rubytimestr", fts.strftime('%a %b %d %H:%M:%S %Z %Y')))
+      frontmatter["timestamp_xmlschema"] = fts.xmlschema
+      frontmatter["timestamp_jplocal"] = fts.strftime('%Y年%m月%d日 %H時%M分%S秒')
+      frontmatter["timestamp_rubytimestr"] = fts.strftime('%a %b %d %H:%M:%S %Z %Y')
+      frontmatter["timestamp_str"] = fts.strftime("%Y-%m-%d %H:%M:%S %Z")
     elsif Date === fts
-      pandoc_options.push("-M")
-      pandoc_options.push(sprintf('%s:%s', "timestamp_xmlschema", fts.xmlschema))
-      pandoc_options.push("-M")
-      pandoc_options.push(sprintf('%s:%s', "timestamp_jplocal", fts.strftime('%Y年%m月%d日')))
-      pandoc_options.push("-M")
-      pandoc_options.push(sprintf('%s:%s', "timestamp_rubytimestr", fts.strftime('%a %b %d')))
+      frontmatter["timestamp_xmlschema"] = fts.xmlschema
+      frontmatter["timestamp_jplocal"] = fts.strftime('%Y年%m月%d日')
+      frontmatter["timestamp_rubytimestr"] = fts.strftime('%a %b %d')
+      frontmatter["timestamp_str"] = fts.strftime("%Y-%m-%d")
     elsif Date === frontmatter["Date"]
       fts = frontmatter["Date"]
-      pandoc_options.push("-M")
-      pandoc_options.push(sprintf('%s:%s', "timestamp_xmlschema", fts.xmlschema))
-      pandoc_options.push("-M")
-      pandoc_options.push(sprintf('%s:%s', "timestamp_jplocal", fts.strftime('%Y年%m月%d日')))
-      pandoc_options.push("-M")
-      pandoc_options.push(sprintf('%s:%s', "timestamp_rubytimestr", fts.strftime('%a %b %d')))
+      frontmatter["timestamp_xmlschema"] = fts.xmlschema
+      frontmatter["timestamp_jplocal"] = fts.strftime('%Y年%m月%d日')
+      frontmatter["timestamp_rubytimestr"] = fts.strftime('%a %b %d')
+      frontmatter["timestamp_str"] = fts.strftime("%Y-%m-%d")
     end
 
     # Preparing and pre script.
     orig_filepath = [dir, filename].join("/")
-    procdoc = "#{@processing_document}#{File.extname(filename)}"
-    ::FileUtils.cp orig_filepath, procdoc
-    pre_plugins(procdoc, frontmatter)
+    ext = File.extname(filename)
+    procdoc = sprintf(".current_document%s", ext)
+    pre_plugins(procdoc)
 
+    File.open(".pbsimply-defaultfiles.yaml", "w") {|f| YAML.dump(@pandoc_default_file, f)}
+    File.open(".pbsimply-frontmatter.yaml", "w") {|f| YAML.dump(frontmatter, f)}
     # Go Pandoc
-    IO.popen((["pandoc"] + pandoc_options + [ procdoc ] )) do |io|
+    IO.popen((["pandoc"] + ["-d", ".pbsimply-defaultfiles.yaml", "--metadata-file", ".pbsimply-frontmatter.yaml"] + [ procdoc ] )) do |io|
       doc = io.read
     end
 
-    if File.exist?(procdoc)
-      File.delete procdoc
-    end
+    
+    File.delete procdoc if File.exist?(procdoc)
+#    File.delete ".pbsimply-defaultfiles.yaml"
+#    File.delete ".pbsimply-frontmatter.yaml"
 
     # Abort if pandoc returns non-zero status
     if $?.exitstatus != 0

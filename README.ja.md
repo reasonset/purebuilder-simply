@@ -23,8 +23,8 @@ PureBuilder Simply ACCS はPureBuilder Simplyによって `index.html` ファイ
 
 ## Dependency
 
-* Ruby >2.3
-* Pandoc
+* Ruby >= 2.3
+* Pandoc >= 2.8
 
 ## Usage
 
@@ -88,7 +88,7 @@ Loaded config YAML file (`.pbsimply.yaml`).
 |self\_url\_prefix|String|生成されたドキュメントのURLの絶対パスのプレフィックス部。デフォルトは`/`|
 |self\_url\_external\_prefix|String|`self_url_prefix`の`page_url_encoded_external`用|
 
-## Special values in @index
+## 特別な値
 
 |Key|Set by|Used by|Description|
 |-------|------------|------------|-----------------------------------|
@@ -120,7 +120,7 @@ Loaded config YAML file (`.pbsimply.yaml`).
 |timestamp\_xmlschema|system|system|XMLスキーマでフォーマットされたドキュメント日時。`timestamp`が定義されていない場合、`date`を使う|
 |timestamp\_jplocal|system|system|日本のローカル形式でフォーマットされたドキュメント日時。`timestamp`が定義されていない場合、`date`を使う|
 |timestamp\_rubytimestr|system|system|Rubyの`Time#to_s`のようなフォーマットされたドキュメント日時。`timestamp`が定義されていない場合、`date`を使う|
-
+|timestamp\_str|system||`%Y-%m-%d[ %H:%M:%S %Z]`形式の日時。 `timestamp`が定義されていない場合、`date`を使う|
 
 ## Testing
 

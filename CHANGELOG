@@ -71,3 +71,11 @@
 * Converted timestamp uses dete if timestamp isn't defined.
 * Add and rearrange sample docs.
 * Directly execute plugins if it is executable, or call with script engine if known extension.
+
+# v1.8 2020-02-25
+
+* Change to use `defaults` and `metadata-file`. Now PureBuilder Simply requires Pandoc >= 2.8.
+* Add metadata `timestamp_str`.
+* Add some metadata about timestamp and encoded value.
+
+NOW `pandoc_additional_options` IS MERGED INTO `defaults`. IT IS NOT COMMANDLINE OPTION.
