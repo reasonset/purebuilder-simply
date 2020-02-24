@@ -282,7 +282,6 @@ class PureBuilder
             v = v.join(" ")
             #if((k == "author" || k == "authors") && v.include?(";")) # Multiple authors.
             if(v.include?(";")) # Multiple element.
-              STDERR.puts v.inspect
               v = v.split(/\s*;\s*/)
 
             elsif k == "date" # Date?
@@ -299,7 +298,6 @@ class PureBuilder
             end
 
             frontmatter[k] = v
-            STDERR.puts("FRONTMATTER: #{k} => #{v}")
           end
 
         elsif l && l.chomp == ".." #YAML
@@ -331,8 +329,6 @@ class PureBuilder
 
         # Output document
         File.open(".current_document.rst", "w") do |fo|
-          fo.puts ":title: #{frontmatter["title"]}"
-          fo.puts
           fo.write f.read
         end
       end
@@ -438,7 +434,7 @@ class PureBuilder
     File.open(".pbsimply-defaultfiles.yaml", "w") {|f| YAML.dump(@pandoc_default_file, f)}
     File.open(".pbsimply-frontmatter.yaml", "w") {|f| YAML.dump(frontmatter, f)}
     # Go Pandoc
-    IO.popen((["pandoc"] + ["-d", ".pbsimply-defaultfiles.yaml", "--metadata-file", ".pbsimply-frontmatter.yaml"] + [ procdoc ] )) do |io|
+    IO.popen((["pandoc"] + ["-d", ".pbsimply-defaultfiles.yaml", "--metadata-file", ".pbsimply-frontmatter.yaml", "-M", "title:#{frontmatter["title"]}"] + [ procdoc ] )) do |io|
       doc = io.read
     end
 
