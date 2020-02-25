@@ -43,6 +43,10 @@ PureBuilder skip if filename start with `draft-` or `.`, or `draft` value in fro
 |Option|Description|
 |------|------------------------------|
 |`-f`|Refresh all documents (force update mode.) This options useful when update template.|
+|`-I`|Don't register to `.indexes.rbm`.|
+|`-o FILE`|Output to FILE.|
+|`-m FILE`|Additional meta (YAML) File.|
+|`-A`|ACCS Mode (NOT FOR USER).|
 
 ### Make ACCS index
 
@@ -81,6 +85,7 @@ Document meta data that "default | indexed | frontmatter | current".
 |pandoc\_additional\_options|Array|Extra pandoc options|
 |post\_eruby|Boolian|Process Pandoc output with eRuby if true|
 |alt\_frontmatter|Hash|Default frontmatter in ACCS index|
+|default\_meta|Hash|Default frontmatter|
 |testserver\_port|Fixnum|Port number of pbsimply-testserver (default 8000)|
 |self\_url\_prefix|String|Absolute path prefix for URL of generated document itself instead of `/`.|
 |self\_url\_external\_prefix|String|Like `self_url_prefix`, but it only works on `page_url_encoded_external`.|

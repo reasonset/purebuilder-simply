@@ -79,3 +79,8 @@
 * Add some metadata about timestamp and encoded value.
 
 NOW `pandoc_additional_options` IS MERGED INTO `defaults`. IT IS NOT COMMANDLINE OPTION.
+
+# v1.8.1 2020-02-26
+
+* Add commandline options (`-o`, `-m`, `-I`, `-A`)
+* Fix ACCS system (to use `pbsimply-pandoc.rb` command).

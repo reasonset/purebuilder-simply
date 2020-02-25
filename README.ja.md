@@ -44,6 +44,10 @@ frontmatterの`draft`の値を真にする。
 |オプション|内容|
 |------|------------------------------|
 |`-f`|すべてのドキュメントを強制的に更新する。テンプレートを更新した場合に便利|
+|`-I`|`.indexes.rbm`に登録しない|
+|`-o FILE`|出力ファイルをFILEに指定する|
+|`-m FILE`|さらに追加のメタデータYAMLファイル|
+|`-A`|ACCSモード (通常は使用しない)|
 
 ### Make ACCS index
 
@@ -84,6 +88,7 @@ Loaded config YAML file (`.pbsimply.yaml`).
 |pandoc\_additional\_options|Array|追加で渡されるPandocのコマンドラインオプション|
 |post\_eruby|Boolian|真にするとPandocの出力をerbによってプロセッシングする|
 |alt\_frontmatter|Hash|ACCSインデックスファイルのデフォルトのfrontmatter|
+|default\_meta|Hash|デフォルトのfrontmatter|
 |testserver\_port|Fixnum|`pbsimply-testserver.rb`が使用するポート(default 8000)|
 |self\_url\_prefix|String|生成されたドキュメントのURLの絶対パスのプレフィックス部。デフォルトは`/`|
 |self\_url\_external\_prefix|String|`self_url_prefix`の`page_url_encoded_external`用|

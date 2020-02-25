@@ -27,7 +27,7 @@ class << pbaccs
         @config = YAML.load(f)
       end
     rescue
-      abort "Failed to load config file (.pbsimple.yaml)"
+      abort "Failed to load config file (.pbsimply.yaml)"
     end
 
     fp = [".accs_index.rbm", ".indexes.rbm"].map {|i| File.join(@dir, i)}.select {|i| File.exist? i }.first or abort "Missing Index File."
@@ -36,46 +36,15 @@ class << pbaccs
       @indexes = Marshal.load(f)
     end
 
-    # Port from pbsimply-pandoc
-    @pandoc_default_options = ["-t", "html5", "-s"]
-    if @config["css"]
-      if @config["css"].kind_of?(String)
-        @pandoc_default_options.concat ["-c", @config["css"]]
-      elsif @config["css"].kind_of?(Array)
-        @config["css"].each do |i|
-          @pandoc_default_options.concat ["-c", i]
-        end
-      end
-    end
-
-    if @config["toc"]
-      @pandoc_default_options.push "--toc"
-    end
-
-    @pandoc_default_options.push "--template"
-    @pandoc_default_options.push (@config["template"] || "./template.html")
-
-    if @config["pandoc_additional_options"]
-      @pandoc_default_options.concat @config["pandoc_additional_options"]
-    end
-    # End of Ports
-
     # Get infomation
     @index = {}
-
-    if @config["alt_frontmatter"]
-      @index.merge! @config["alt_frontmatter"]
-    end
 
     if File.file?([@dir, ".accs.yaml"].join("/"))
       @index.merge! YAML.load(File.read([@dir, ".accs.yaml"].join("/")))
     end
 
-
-    # Pseudo instance variables
-    @pandoc_options = @pandoc_default_options.clone
     @index["title"] ||= (@config["accs_index_title"] || "Index")
-    @index["date"] ||= Time.now.strftime("%Y-%m-%d %H:%M:%S")
+    @index["date"] ||= Time.now.strftime("%Y-%m-%d")
     @index["pagetype"] = "accs_index"
 
     doc = ERB.new(erbtemplate, nil, "%<>").result(binding)
@@ -83,20 +52,8 @@ class << pbaccs
       f.write doc
     end
 
-    IO.popen((["pandoc"] + @pandoc_options + [ [@dir, ".index.md"].join("/") ] )) do |io|
-      doc = io.read
-    end
-
-    if @config["post_eruby"]
-      doc = ERB.new(doc, nil, "%<>").result(binding)
-    end
-
-    File.open(([@config["outdir"], @dir, "index.html"].join("/")), "w") do |f|
-      f.write(doc)
-    end
+    IO.popen(["pbsimply-pandoc.rb", "-A", File.join(@dir, ".index.md")])
   end
 end
 
 pbaccs.letsaccs
-
-#pbaccs.methods

@@ -30,10 +30,24 @@ class PureBuilder
     }
     # --metadata-file
     @frontmatter = {}
+
+    @refresh = false # Force generate all documents.
+    @skip_index = false # Don't register to index.
+    @outfile = nil # Fixed output filename
+    @add_meta = nil
+    @accs = nil
     
     # Options definition.
     opts = OptionParser.new
-    opts.on("-f") { @refresh = true }
+    opts.on("-f", "--force-refresh") { @refresh = true }
+    opts.on("-I", "--skip-index") { @skip_index = true }
+    opts.on("-o FILE", "--output") {|v| @outfile = v }
+    opts.on("-m FILE", "--additional-metafile") {|v| @add_meta = YAML.load(File.read(v))}
+    opts.on("-A", "--accs") { 
+      @accs = true
+      @singlemode = true
+      @skip_index = true
+    }
     opts.parse!(ARGV)
 
     # Set target directory.
@@ -88,6 +102,13 @@ class PureBuilder
       outdir = [@config["outdir"], @dir].join("/")
     end
 
+    @frontmatter.merge!(@config["default_meta"]) if @config["default_meta"]
+
+    # Merge ACCS Frontmatter
+    if @accs && @config["alt_frontmatter"]
+      @frontmatter.merge!(@config["alt_frontmatter"])
+    end
+
     unless File.exist? outdir
       STDERR.puts "destination directory is not exist. creating (only one step.)"
       FileUtils.mkdir_p outdir
@@ -114,6 +135,7 @@ class PureBuilder
       next unless %w:.md .rst:.include? File.extname filename
       STDERR.puts "Checking frontmatter in #{filename}"
       frontmatter = @frontmatter.merge read_frontmatter(@dir, filename)
+      frontmatter.merge!(@add_meta) if @add_meta
       next if frontmatter["draft"]
 
       if check_modify([@dir, filename], frontmatter)
@@ -141,9 +163,11 @@ class PureBuilder
       load_config
       load_index
 
-      lets_pandoc(dir, filename, read_frontmatter(dir, filename))
+      frontmatter = read_frontmatter(dir, filename)
 
-      post_plugins
+      lets_pandoc(dir, filename, frontmatter)
+
+      post_plugins(frontmatter)
 
     else
       # Normal (directory) mode.
@@ -154,8 +178,10 @@ class PureBuilder
       # Check existing in indexes.
       @indexes.delete_if {|k,v| ! File.exist?([@dir, k].join("/")) }
 
-      File.open([@dir, ".indexes.rbm"].join("/"), "w") do |f|
-        Marshal.dump(@indexes, f)
+      unless @skip_index
+        File.open([@dir, ".indexes.rbm"].join("/"), "w") do |f|
+          Marshal.dump(@indexes, f)
+        end
       end
 
       post_plugins
@@ -163,7 +189,7 @@ class PureBuilder
     end
   end
 
-  def pre_plugins(procdoc)
+  def pre_plugins(procdoc, frontmatter)
     if File.directory?(".pre_generate")
       STDERR.puts("Processing with pre plugins")
       script_file = File.join(".pre_generate", script_file)
@@ -179,7 +205,7 @@ class PureBuilder
         else
           ["perl", script_file, procdoc]
         end
-        IO.popen({"pbsimply_doc_frontmatter" => YAML.dump(@frontmatter)}, script_cmdline) do |io|
+        IO.popen({"pbsimply_doc_frontmatter" => YAML.dump(frontmatter)}, script_cmdline) do |io|
           pre_script_result = io.read
         end
         File.open(procdoc, "w") {|f| f.write pre_script_result}
@@ -187,7 +213,7 @@ class PureBuilder
     end
   end
 
-  def post_plugins
+  def post_plugins(frontmatter=nil)
     if File.directory?(".post_generate")
 
       ENV["pbsimply_indexes"] = [@dir, ".indexes.rbm"].join("/")
@@ -212,7 +238,7 @@ class PureBuilder
           else
             ["perl", script_file, procdoc]
           end
-          IO.popen({"pbsimply_doc_frontmatter" => YAML.dump(indexes[File.basename v[:source]])}, script_cmdline) do |io|  
+          IO.popen({"pbsimply_doc_frontmatter" => YAML.dump(frontmatter || indexes[File.basename v[:source]])}, script_cmdline) do |io|  
             post_script_result = io.read
           end
 
@@ -429,7 +455,7 @@ class PureBuilder
     orig_filepath = [dir, filename].join("/")
     ext = File.extname(filename)
     procdoc = sprintf(".current_document%s", ext)
-    pre_plugins(procdoc)
+    pre_plugins(procdoc, frontmatter)
 
     File.open(".pbsimply-defaultfiles.yaml", "w") {|f| YAML.dump(@pandoc_default_file, f)}
     File.open(".pbsimply-frontmatter.yaml", "w") {|f| YAML.dump(frontmatter, f)}
@@ -437,7 +463,6 @@ class PureBuilder
     IO.popen((["pandoc"] + ["-d", ".pbsimply-defaultfiles.yaml", "--metadata-file", ".pbsimply-frontmatter.yaml", "-M", "title:#{frontmatter["title"]}"] + [ procdoc ] )) do |io|
       doc = io.read
     end
-
     
     File.delete procdoc if File.exist?(procdoc)
     File.delete ".pbsimply-defaultfiles.yaml"
@@ -455,7 +480,14 @@ class PureBuilder
     end
 
     # Write out
-    outpath = [@config["outdir"], @dir, File.basename(filename, ".*")].join("/") + ".html"
+    outpath = case
+    when @outfile
+      @outfile
+    when @accs
+      File.join(@config["outdir"], @dir, "index") + ".html"
+    else
+      File.join(@config["outdir"], @dir, File.basename(filename, ".*")) + ".html"
+    end
 
     File.open(outpath, "w") do |f|
       f.write(doc)
