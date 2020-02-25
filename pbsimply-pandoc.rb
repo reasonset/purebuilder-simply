@@ -21,7 +21,6 @@ class PureBuilder
   def initialize(dir=nil)
     @docobject = {}
     @this_time_processed = []
-    @processing_document = ".#{$$}.pbsimply-processing"
 
     # -d
     @pandoc_default_file = {
@@ -187,6 +186,8 @@ class PureBuilder
       post_plugins
 
     end
+  ensure
+    File.delete ".pbsimply-defaultfiles.yaml" if File.exist?(".pbsimply-defaultfiles.yaml")
   end
 
   def pre_plugins(procdoc, frontmatter)
@@ -459,14 +460,14 @@ class PureBuilder
 
     File.open(".pbsimply-defaultfiles.yaml", "w") {|f| YAML.dump(@pandoc_default_file, f)}
     File.open(".pbsimply-frontmatter.yaml", "w") {|f| YAML.dump(frontmatter, f)}
+
     # Go Pandoc
     IO.popen((["pandoc"] + ["-d", ".pbsimply-defaultfiles.yaml", "--metadata-file", ".pbsimply-frontmatter.yaml", "-M", "title:#{frontmatter["title"]}"] + [ procdoc ] )) do |io|
       doc = io.read
     end
     
     File.delete procdoc if File.exist?(procdoc)
-    File.delete ".pbsimply-defaultfiles.yaml"
-    File.delete ".pbsimply-frontmatter.yaml"
+    File.delete ".pbsimply-frontmatter.yaml" if File.exist?(".pbsimply-frontmatter.yaml")
 
     # Abort if pandoc returns non-zero status
     if $?.exitstatus != 0

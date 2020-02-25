@@ -52,7 +52,7 @@ class << pbaccs
       f.write doc
     end
 
-    IO.popen(["pbsimply-pandoc.rb", "-A", File.join(@dir, ".index.md")])
+    system("pbsimply-pandoc.rb", "-A", File.join(@dir, ".index.md"))
   end
 end
 
