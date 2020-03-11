@@ -84,3 +84,7 @@ NOW `pandoc_additional_options` IS MERGED INTO `defaults`. IT IS NOT COMMANDLINE
 
 * Add commandline options (`-o`, `-m`, `-I`, `-A`)
 * Fix ACCS system (to use `pbsimply-pandoc.rb` command).
+
+# v1.9 2020-03-11
+
+* Add "Blessing" function.
