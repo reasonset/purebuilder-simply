@@ -18,6 +18,7 @@ class PureBuilder
     ".php" => "php",
     ".sed" => ["sed", ->(script, target) { ["-f", script, target] } ]
   }
+
   def initialize(dir=nil)
     @docobject = {}
     @this_time_processed = []
@@ -48,6 +49,11 @@ class PureBuilder
       @skip_index = true
     }
     opts.parse!(ARGV)
+
+    if File.exist?(".pbsimply-bless.rb")
+      require "./.pbsimply-bless.rb"
+      abort "Blessing file is exist but PureBuilder::BLESS Proc is not defined." unless (Proc === PureBuilder::BLESS rescue nil)
+    end
 
     # Set target directory.
     @dir = ARGV.shift unless dir
@@ -457,6 +463,13 @@ class PureBuilder
     ext = File.extname(filename)
     procdoc = sprintf(".current_document%s", ext)
     pre_plugins(procdoc, frontmatter)
+
+    begin
+      PureBuilder::BLESS.(frontmatter)
+    rescue
+      STDERR.puts "*** BLESSING PROC ERROR ***"
+      raise
+    end
 
     File.open(".pbsimply-defaultfiles.yaml", "w") {|f| YAML.dump(@pandoc_default_file, f)}
     File.open(".pbsimply-frontmatter.yaml", "w") {|f| YAML.dump(frontmatter, f)}

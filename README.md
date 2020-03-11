@@ -187,6 +187,19 @@ You can access the document's sub-directory part with `$pbsimply_subdir` environ
 Post script called from generated file list.
 They aren't called by already generated files without generating this time.
 
+## Blessing
+
+You can modify Frontmatter with Ruby script with `.pbsimply-bless.rb` file.
+
+If you want to use it, you should `PureBuilder::BLESS` Proc object in the file.
+It will be called with `PureBuilder::BLESS.call(frontmatter)`.
+
+This proc will be called with just before generating.
+All system setting values are already set.
+
+It don't need to return something.
+You can modify frontmatter Hash object directly.
+
 ## Files
 
 ### In this repository
@@ -209,6 +222,8 @@ They aren't called by already generated files without generating this time.
 |.accsindex.erb|root or each ACCS|Markdown eRuby template for ACCS index.|
 |.accs.yaml|each|`@index` for the ACCS index.|
 |.post_generate|root|Script files for process each documents after generating.|
+|.pre\_generate|root|Script files for process each documents before generating.|
+|.pbsimply-bless.rb|root|Ruby script for blessing.|
 
 # Document Sample
 

@@ -187,6 +187,17 @@ PureBuilder Simply Pandocは`temporary_source_file`をこのスクリプトの�
 post-scriptは生成されたファイルのリストとともに呼ばれる。
 今回生成しなかった(既に生成されていた)ファイルはリストに含まれない。
 
+## 祝福
+
+`.pbsimply-bless.rb`というRubyスクリプトファイルを使うことでFrontmatterに手を加えることができる。
+
+これを使用したい場合、同ファイルで`PureBuilder::BLESS` Procオブジェクトを定義する。
+このオブジェクトは`PureBuilder::BLESS.call(frontmatter)`のように呼び出される。
+
+呼び出されるタイミングは生成の直前であり、システムによってセットされる値も全てセットされた状態になる。
+
+この関数は値を返す必要はなく、引数として渡されたFrontmatter Hashオブジェクトを直接変更できる。
+
 ## ファイル
 
 ### リポジトリに含まれるもの
@@ -209,6 +220,7 @@ post-scriptは生成されたファイルのリストとともに呼ばれる。
 |.accs.yaml|each|ACCSインデックスページ用の`@index`|
 |.post\_generate|root|post pluginsを配置するディレクトリ|
 |.pre\_generate|root|pre pluginsを配置するディレクトリ|
+|.pbsimply-bless.rb|root|Bless用のRubyスクリプト|
 
 # ドキュメントサンプル
 
