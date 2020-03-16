@@ -543,7 +543,7 @@ class PureBuilder
     if @config["bless_style"] == "cmd"
       bless_cmd(frontmatter)
     else
-      bless(frontmatter)
+      bless_ruby(frontmatter)
     end
 
     return frontmatter, pos
