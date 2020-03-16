@@ -101,3 +101,10 @@ NOW `pandoc_additional_options` IS MERGED INTO `defaults`. IT IS NOT COMMANDLINE
 * Delete `pbsimply-accsindex.rb`
 * Call blessing procs with `frontmatter, self`.
 * Change timing to bless.
+
+# v1.11 2020-03-17
+
+Add JSON support.
+
+* Add `dbstyle` in configuration.
+* Blessing with external command.
