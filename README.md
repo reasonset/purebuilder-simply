@@ -46,15 +46,13 @@ PureBuilder skip if filename start with `draft-` or `.`, or `draft` value in fro
 |`-I`|Don't register to `.indexes.rbm`.|
 |`-o FILE`|Output to FILE.|
 |`-m FILE`|Additional meta (YAML) File.|
-|`-A`|ACCS Mode (NOT FOR USER).|
 
 ### Make ACCS index
 
-Before running, build your documents in the directory, and move your document root.
+`pbsimply-pandoc.rb` find ACCS documents directory automatically.
+You mark as "ACCS documents directory" with putting `.accs.yaml` file to the directory.
 
-	pbsimply-accsindex.rb directory
-
-PB Simply ACCS make `index.html`.
+ACCS processor makes and puts `index.html` file.
 
 ## Objects for eRuby in document
 
@@ -192,13 +190,24 @@ They aren't called by already generated files without generating this time.
 You can modify Frontmatter with Ruby script with `.pbsimply-bless.rb` file.
 
 If you want to use it, you should `PureBuilder::BLESS` Proc object in the file.
-It will be called with `PureBuilder::BLESS.call(frontmatter)`.
+It will be called with `PureBuilder::BLESS.call(frontmatter, self)`.
 
 This proc will be called with just before generating.
 All system setting values are already set.
 
 It don't need to return something.
 You can modify frontmatter Hash object directly.
+
+When processing directory is an ACCS document directory,
+`PureBuilder::ACCS::BLESS` is also called after `PureBuilder::BLESS` if defined.
+
+You can add keys and `Proc` values to `PureBuilder::ACCS::DEFINTIONS` Hash.
+They are used for setting special value.
+
+|Key|Function|
+|-----|-------------------------|
+|`:next`|Set returned value to `frontmatter["next_article"]`|
+|`:prev`|Set returned value to `frontmatter["prev_article"]`|
 
 ## Files
 

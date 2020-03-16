@@ -47,15 +47,13 @@ frontmatterの`draft`の値を真にする。
 |`-I`|`.indexes.rbm`に登録しない|
 |`-o FILE`|出力ファイルをFILEに指定する|
 |`-m FILE`|さらに追加のメタデータYAMLファイル|
-|`-A`|ACCSモード (通常は使用しない)|
 
 ### Make ACCS index
 
-ドキュメントルートに移動し、directory上のドキュメントを生成してから次のように実行する。
+`pbsimply-pandoc.rb`は自動的にACCSドキュメントディレクトリを発見し、処理する。
+あなたは`.accs.yaml`ファイルをディレクトリに配置することで、そのディレクトリがACCSドキュメントディレクトリであることを示すことができる。
 
-	pbsimply-accsindex.rb directory
-
-PB Simply ACCS は `index.html`を生成する。
+ACCSプロセッサは`index.html`を生成し、配置する。
 
 ## eRubyで利用できるオブジェクト
 
@@ -192,11 +190,21 @@ post-scriptは生成されたファイルのリストとともに呼ばれる。
 `.pbsimply-bless.rb`というRubyスクリプトファイルを使うことでFrontmatterに手を加えることができる。
 
 これを使用したい場合、同ファイルで`PureBuilder::BLESS` Procオブジェクトを定義する。
-このオブジェクトは`PureBuilder::BLESS.call(frontmatter)`のように呼び出される。
+このオブジェクトは`PureBuilder::BLESS.call(frontmatter, self)`のように呼び出される。
 
 呼び出されるタイミングは生成の直前であり、システムによってセットされる値も全てセットされた状態になる。
 
 この関数は値を返す必要はなく、引数として渡されたFrontmatter Hashオブジェクトを直接変更できる。
+
+もしも処理中のディレクトリがACCSドキュメントディレクトリである場合、`PureBuilder::BLESS`のあとでさらに`PureBuilder::ACCS::BLESS`も(定義されていれば)呼び出される。
+
+さらにあなたは`PureBuilder::ACCS::DEFINTIONS` Hashに対して`Proc`値を追加することができる。
+これらは特別な値のために使用される。
+
+|Key|動作|
+|-----|-------------------------|
+|`:next`|戻り値を`frontmatter["next_article"]`にセットする|
+|`:prev`|戻り値を`frontmatter["prev_article"]`にセットする|
 
 ## ファイル
 

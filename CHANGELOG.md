@@ -88,3 +88,15 @@ NOW `pandoc_additional_options` IS MERGED INTO `defaults`. IT IS NOT COMMANDLINE
 # v1.9 2020-03-11
 
 * Add "Blessing" function.
+
+# v1.10 2020-03-17
+
+**INCONPARTIBLE CHANGES!!!**
+
+* Delete `-A` (ACCS Processing) option.
+* Processing ACCS automatically.
+* ACCS Documents directory must have `.accs.yaml` file.
+* Support `PureBuilder::ACCS::BLESS` Blessing proc in blessing script.
+* Support `PureBuilder::ACCS::DEFINITIONS[:next]` and `PureBuilder::ACCS::DEFINITIONS[:prev]` procs in blessing script.
+* Delete `pbsimply-accsindex.rb`
+* Call blessing procs with `frontmatter, self`.

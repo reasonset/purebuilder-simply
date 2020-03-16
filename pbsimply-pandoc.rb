@@ -8,6 +8,10 @@ require 'fileutils'
 require 'optparse'
 
 class PureBuilder
+  module ACCS
+    DEFINITIONS = {}
+  end
+
   POST_PROCESSORS = {
     ".rb" => "ruby",
     ".pl" => "perl",
@@ -36,23 +40,18 @@ class PureBuilder
     @outfile = nil # Fixed output filename
     @add_meta = nil
     @accs = nil
-    
+    @accs_index = {}
+
     # Options definition.
     opts = OptionParser.new
     opts.on("-f", "--force-refresh") { @refresh = true }
     opts.on("-I", "--skip-index") { @skip_index = true }
     opts.on("-o FILE", "--output") {|v| @outfile = v }
     opts.on("-m FILE", "--additional-metafile") {|v| @add_meta = YAML.load(File.read(v))}
-    opts.on("-A", "--accs") { 
-      @accs = true
-      @singlemode = true
-      @skip_index = true
-    }
     opts.parse!(ARGV)
 
     if File.exist?(".pbsimply-bless.rb")
       require "./.pbsimply-bless.rb"
-      abort "Blessing file is exist but PureBuilder::BLESS Proc is not defined." unless (Proc === PureBuilder::BLESS rescue nil)
     end
 
     # Set target directory.
@@ -65,8 +64,10 @@ class PureBuilder
     @docobject
   end
 
+  attr :indexes
+
+  # Load config file.
   def load_config
-    # Load config file.
     begin
       File.open(".pbsimply.yaml") do |f|
         @config = YAML.load(f)
@@ -110,7 +111,7 @@ class PureBuilder
     @frontmatter.merge!(@config["default_meta"]) if @config["default_meta"]
 
     # Merge ACCS Frontmatter
-    if @accs && @config["alt_frontmatter"]
+    if @accs_processing && @config["alt_frontmatter"]
       @frontmatter.merge!(@config["alt_frontmatter"])
     end
 
@@ -120,8 +121,8 @@ class PureBuilder
     end
   end
 
+  # Load document index database (.indexes.rbm).
   def load_index
-    # Load document index.
     if File.exist?([@dir, ".indexes.rbm"].join("/"))
       File.open([@dir, ".indexes.rbm"].join("/")) do |f|
         @indexes = Marshal.load(f)
@@ -132,21 +133,43 @@ class PureBuilder
     @docobject[:indexes] = @indexes
   end
 
+  # Directory mode's main function.
+  # Read Frontmatters from all documents and proc each documents.
   def parse_frontmatter
+    target_docs = []
     STDERR.puts "in #{@dir}..."
+
     Dir.foreach(@dir) do |filename|
       next if filename =~ /^\./ || filename =~ /^draft-/
       next unless File.file?([@dir, filename].join("/"))
       next unless %w:.md .rst:.include? File.extname filename
       STDERR.puts "Checking frontmatter in #{filename}"
-      frontmatter = @frontmatter.merge read_frontmatter(@dir, filename)
+      frontmatter, pos = read_frontmatter(@dir, filename)
+      frontmatter = @frontmatter.merge frontmatter
       frontmatter.merge!(@add_meta) if @add_meta
-      next if frontmatter["draft"]
+      
+      if frontmatter["draft"]
+        @indexes.delete(filename) if @indexes[filename]
+        next
+      end
+
+      @indexes[filename] = frontmatter
 
       if check_modify([@dir, filename], frontmatter)
-        STDERR.puts "Processing #{filename}"
-        lets_pandoc(@dir, filename, frontmatter)
+        target_docs.push([filename, frontmatter, pos])
       end
+    end
+
+    target_docs.each do |filename, frontmatter, pos|
+      ext = File.extname filename
+      @index = frontmatter
+      File.open(File.join(@dir, filename)) do |f|
+        f.seek(pos)
+        File.open(".current_document#{ext}", "w") {|fo| fo.write f.read}
+      end
+
+      STDERR.puts "Processing #{filename}"
+      lets_pandoc(@dir, filename, frontmatter)
     end
   end
 
@@ -168,7 +191,16 @@ class PureBuilder
       load_config
       load_index
 
-      frontmatter = read_frontmatter(dir, filename)
+      frontmatter, pos = read_frontmatter(dir, filename)
+      frontmatter = @frontmatter.merge frontmatter
+      check_modify([dir, filename], frontmatter)
+      @index = frontmatter
+
+      ext = File.extname filename
+      File.open(File.join(dir, filename)) do |f|
+        f.seek(pos)
+        File.open(".current_document#{ext}", "w") {|fo| fo.write f.read}
+      end      
 
       lets_pandoc(dir, filename, frontmatter)
 
@@ -178,10 +210,13 @@ class PureBuilder
       # Normal (directory) mode.
       load_config
       load_index
-      parse_frontmatter
 
+      @accs = true if File.exist?(File.join(@dir, ".accs.yaml"))
+      
       # Check existing in indexes.
       @indexes.delete_if {|k,v| ! File.exist?([@dir, k].join("/")) }
+
+      parse_frontmatter
 
       unless @skip_index
         File.open([@dir, ".indexes.rbm"].join("/"), "w") do |f|
@@ -191,6 +226,9 @@ class PureBuilder
 
       post_plugins
 
+      if @accs
+        process_accs
+      end
     end
   ensure
     File.delete ".pbsimply-defaultfiles.yaml" if File.exist?(".pbsimply-defaultfiles.yaml")
@@ -257,8 +295,19 @@ class PureBuilder
 
   private
 
+  # Turn on ACCS processing mode.
+  def accsmode
+    @accs_processing = true
+    @singlemode = true
+    @skip_index = true
+  end
+
+  # Read Frontmatter from the document.
+  # This method returns frontmatter, pos.
+  # pos means position at end of Frontmatter on the file.
   def read_frontmatter(dir, filename)
     frontmatter = nil
+    pos = nil
 
     case File.extname filename
     when ".md"
@@ -286,8 +335,7 @@ class PureBuilder
           raise e
         end
 
-        # Output document
-        File.open(".current_document.md", "w") {|fo| fo.write f.read}
+        pos = f.pos
       end
 
     when ".rst"
@@ -360,68 +408,14 @@ class PureBuilder
           next
         end
 
-        # Output document
-        File.open(".current_document.rst", "w") do |fo|
-          fo.write f.read
-        end
+        pos = f.pos
+
       end
     end
 
     abort "This document has no frontmatter" unless frontmatter
     abort "This document has no title." unless frontmatter["title"]
 
-    return frontmatter
-  end
-
-  def check_modify(path, frontmatter)
-    modify = true
-
-    index = @indexes[path[1]] || {}
-    fsize = FileTest.size(path.join("/"))
-    mtime = File.mtime(path.join("/")).to_i
-
-    frontmatter["_filename"] ||= path[1]
-    frontmatter["pagetype"] ||= "post"
-
-    now = Time.now
-    current_infomation = {
-      "_size" => fsize,
-      "_mtime" => mtime,
-      "_last_proced" => now.to_i
-    }
-
-    if path[1] =~ /\.md$/
-      current_infomation["_docformat"] = "Markdown"
-    elsif path[1] =~ /\.rst$/ || path[1] =~ /\.rest$/
-      current_infomation["_docformat"] = "ReST"
-    end
-
-    if index && index["_size"] == fsize && (current_infomation["_mtime"] < index["_last_proced"] || index["_mtime"] == current_infomation["_mtime"])
-      STDERR.puts "#{path[1]} is not modified."
-      modify = false
-    else
-      STDERR.puts "#{path[1]} last modified at #{current_infomation["_mtime"]}, last processed at #{index["_last_proced"] || 0}"
-      current_infomation["last_update"] = now.strftime("%Y-%m-%d %H:%M:%S")
-    end
-
-    frontmatter.merge!(current_infomation)
-    frontmatter["date"] ||= now.strftime("%Y-%m-%d %H:%M:%S")
-
-    @indexes[path[1]] = frontmatter
-    @index = @indexes[path[1]]
-
-    if @refresh
-      # Refresh (force update) mode.
-      true
-    else
-      modify
-    end
-  end
-
-  # Invoke pandoc, parse and format and write out.
-  def lets_pandoc(dir, filename, frontmatter)
-    STDERR.puts "#{filename} is going Pandoc."
-    doc = nil
 
     ### Additional meta values. ###
     frontmatter["source_directory"] = dir # Source Directory
@@ -458,17 +452,95 @@ class PureBuilder
       frontmatter["timestamp_str"] = fts.strftime("%Y-%m-%d")
     end
 
+    return frontmatter, pos
+  end
+
+  # Check is the article modified? (or force update?)
+  def check_modify(path, frontmatter)
+    modify = true
+
+    index = @indexes[path[1]] || {}
+    fsize = FileTest.size(path.join("/"))
+    mtime = File.mtime(path.join("/")).to_i
+
+    frontmatter["_filename"] ||= path[1]
+    frontmatter["pagetype"] ||= "post"
+
+    now = Time.now
+    current_infomation = {
+      "_size" => fsize,
+      "_mtime" => mtime,
+      "_last_proced" => now.to_i
+    }
+
+    if path[1] =~ /\.md$/
+      current_infomation["_docformat"] = "Markdown"
+    elsif path[1] =~ /\.rst$/ || path[1] =~ /\.rest$/
+      current_infomation["_docformat"] = "ReST"
+    end
+
+    if index && index["_size"] == fsize && (current_infomation["_mtime"] < index["_last_proced"] || index["_mtime"] == current_infomation["_mtime"])
+      STDERR.puts "#{path[1]} is not modified."
+      modify = false
+    else
+      STDERR.puts "#{path[1]} last modified at #{current_infomation["_mtime"]}, last processed at #{index["_last_proced"] || 0}"
+      current_infomation["last_update"] = now.strftime("%Y-%m-%d %H:%M:%S")
+    end
+
+    frontmatter.merge!(current_infomation)
+    frontmatter["date"] ||= now.strftime("%Y-%m-%d %H:%M:%S")
+
+    @indexes[path[1]] = frontmatter
+
+    if @refresh
+      # Refresh (force update) mode.
+      true
+    else
+      modify
+    end
+  end
+
+  # Invoke pandoc, parse and format and write out.
+  def lets_pandoc(dir, filename, frontmatter)
+    STDERR.puts "#{filename} is going Pandoc."
+    doc = nil
+
     # Preparing and pre script.
     orig_filepath = [dir, filename].join("/")
     ext = File.extname(filename)
     procdoc = sprintf(".current_document%s", ext)
     pre_plugins(procdoc, frontmatter)
 
-    begin
-      PureBuilder::BLESS.(frontmatter)
-    rescue
-      STDERR.puts "*** BLESSING PROC ERROR ***"
-      raise
+    # BLESSING (Always)
+    if PureBuilder.const_defined?(:BLESS) && Proc === PureBuilder::BLESS
+      begin
+        PureBuilder::BLESS.(frontmatter, self)
+      rescue
+        STDERR.puts "*** BLESSING PROC ERROR ***"
+        raise
+      end
+    end
+
+    # BLESSING (ACCS)
+    if @accs && PureBuilder::ACCS.const_defined?(:BLESS) && Proc === PureBuilder::ACCS::BLESS
+      begin
+        PureBuilder::ACCS::BLESS.(frontmatter, self)
+      rescue
+        STDERR.puts "*** ACCS BLESSING PROC ERROR ***"
+        raise
+      end
+    end
+
+    # ACCS DEFINITIONS
+    if @accs
+      if Proc === PureBuilder::ACCS::DEFINITIONS[:next]
+        i = PureBuilder::ACCS::DEFINITIONS[:next].call(frontmatter, self)
+        frontmatter["next_article"] = i if i
+      end
+      if Proc === PureBuilder::ACCS::DEFINITIONS[:prev]
+        i = PureBuilder::ACCS::DEFINITIONS[:prev].call(frontmatter, self)
+        frontmatter["prev_article"] = i if i
+      end
     end
 
     File.open(".pbsimply-defaultfiles.yaml", "w") {|f| YAML.dump(@pandoc_default_file, f)}
@@ -497,7 +569,7 @@ class PureBuilder
     outpath = case
     when @outfile
       @outfile
-    when @accs
+    when @accs_processing
       File.join(@config["outdir"], @dir, "index") + ".html"
     else
       File.join(@config["outdir"], @dir, File.basename(filename, ".*")) + ".html"
@@ -509,6 +581,38 @@ class PureBuilder
 
     # Mark processed
     @this_time_processed.push({source: orig_filepath, dest: outpath})
+  end
+
+  # letsaccs
+  #
+  # This method called on the assumption that processed all documents and run as directory mode.
+  def process_accs
+    STDERR.puts "Processing ACCS index..."
+    if File.exist?(File.join(@dir, ".accsindex.erb"))
+      erbtemplate = File.read(File.join(@dir, ".accsindex.erb"))
+    elsif File.exist?(".accsindex.erb")
+      erbtemplate = File.read(".accsindex.erb")
+    else
+      abort "No .accesindex.erb"
+    end
+
+    # Get infomation
+    @accs_index = YAML.load(File.read([@dir, ".accs.yaml"].join("/")))
+
+    @accs_index["title"] ||= (@config["accs_index_title"] || "Index")
+    @accs_index["date"] ||= Time.now.strftime("%Y-%m-%d")
+    @accs_index["pagetype"] = "accs_index"
+
+    @index = @frontmatter.merge @accs_index
+
+    doc = ERB.new(erbtemplate, nil, "%<>").result(binding)
+    File.open(File.join(@dir, ".index.md"), "w") do |f|
+      f.write doc
+    end
+
+    accsmode
+    @dir = File.join(@dir, ".index.md")
+    main
   end
 
 end
