@@ -12,6 +12,67 @@ class PureBuilder
     DEFINITIONS = {}
   end
 
+  # Abstruct super class.
+  class DocDB
+    def dump(object)
+      File.open(File.join(@dir, ".indexes.#{@ext}"), "w") do |f|
+        @store_class.dump(object, f)
+      end
+    end
+
+    def load
+      File.open(File.join(@dir, ".indexes.#{@ext}"), "r") do |f|
+        next @store_class.load(f)
+      end
+    end
+
+    def exist?
+      File.exist?(File.join(@dir, ".indexes.#{@ext}"))
+    end
+
+    def path
+      File.join(@dir, ".indexes.#{@ext}")
+    end
+
+    class Marshal < DocDB
+      def initialize(dir)
+        @dir = dir
+        @store_class = ::Marshal
+        @ext = "rbm"
+      end
+    end
+
+    class JSON < DocDB
+      def initialize(dir)
+        require 'json'
+        @dir = dir
+        @store_class = ::JSON
+        @ext = "json"
+      end
+    end
+
+    class Oj < DocDB
+      def initialize(dir)
+        require 'oj'
+        @dir = dir
+        @ext = "json"
+      end
+
+      def dump(object)
+        File.open(File.join(@dir, ".indexes.json"), "w") do |f|
+          f.write ::Oj.dump(object)
+        end
+      end
+  
+      def load
+        File.open(File.join(@dir, ".indexes.json"), "r") do |f|
+          next ::Oj.load(f)
+        end
+      end
+    end
+  end
+  
+
   POST_PROCESSORS = {
     ".rb" => "ruby",
     ".pl" => "perl",
@@ -68,7 +129,7 @@ class PureBuilder
   attr :indexes
 
   # Load config file.
-  def load_config
+  def load_config(dir)
     begin
       File.open(".pbsimply.yaml") do |f|
         @config = YAML.load(f)
@@ -96,17 +157,27 @@ class PureBuilder
     if @config["toc"]
       @pandoc_default_file["toc"] = true
     end
-
+    
     @pandoc_default_file["template"] = @config["template"]
-
+    
     if Hash === @config["pandoc_additional_options"]
       @pandoc_default_file.merge! @config["pandoc_additional_options"]
     end
-
+    
     if @singlemode
       outdir = [@config["outdir"], @dir.sub(%r:/[^/]*$:, "")].join("/")
     else
       outdir = [@config["outdir"], @dir].join("/")
+    end
+    
+    # Format for Indexes database
+    @db = case @config["dbstyle"]
+    when "json"
+      DocDB::JSON.new(dir)
+    when "oj"
+      DocDB::Oj.new(dir)
+    else
+      DocDB::Marshal.new(dir)
     end
 
     @frontmatter.merge!(@config["default_meta"]) if @config["default_meta"]
@@ -122,12 +193,10 @@ class PureBuilder
     end
   end
 
-  # Load document index database (.indexes.rbm).
+  # Load document index database (.indexes.${ext}).
   def load_index
-    if File.exist?([@dir, ".indexes.rbm"].join("/"))
-      File.open([@dir, ".indexes.rbm"].join("/")) do |f|
-        @indexes = Marshal.load(f)
-      end
+    if @db.exist?
+      @indexes = @db.load
     else
       @indexes = Hash.new
     end
@@ -191,7 +260,7 @@ class PureBuilder
       end
       @dir = dir
 
-      load_config
+      load_config(dir)
       load_index
 
       frontmatter, pos = read_frontmatter(dir, filename)
@@ -211,7 +280,7 @@ class PureBuilder
 
     else
       # Normal (directory) mode.
-      load_config
+      load_config(@dir)
       load_index
 
       @accs = true if File.exist?(File.join(@dir, ".accs.yaml"))
@@ -222,9 +291,7 @@ class PureBuilder
       parse_frontmatter
 
       unless @skip_index
-        File.open([@dir, ".indexes.rbm"].join("/"), "w") do |f|
-          Marshal.dump(@indexes, f)
-        end
+        @db.dump(@indexes)
       end
 
       post_plugins
@@ -264,7 +331,7 @@ class PureBuilder
   def post_plugins(frontmatter=nil)
     if File.directory?(".post_generate")
 
-      ENV["pbsimply_indexes"] = [@dir, ".indexes.rbm"].join("/")
+      ENV["pbsimply_indexes"] = @db.path
       STDERR.puts("Processing with post plugins")
 
       indexes = nil
@@ -473,7 +540,11 @@ class PureBuilder
 
     frontmatter["date"] ||= now.strftime("%Y-%m-%d %H:%M:%S")
 
-    bless(frontmatter)
+    if @config["bless_style"] == "cmd"
+      bless_cmd(frontmatter)
+    else
+      bless(frontmatter)
+    end
 
     return frontmatter, pos
   end
@@ -499,7 +570,7 @@ class PureBuilder
     end
   end
 
-  def bless(frontmatter)
+  def bless_ruby(frontmatter)
     # BLESSING (Always)
     if PureBuilder.const_defined?(:BLESS) && Proc === PureBuilder::BLESS
       begin
@@ -531,6 +602,23 @@ class PureBuilder
         frontmatter["prev_article"] = i if i
       end
     end
+  end
+
+  def bless_cmd(frontmatter)
+    require 'json'
+    File.open(".pbsimply-frontmatter.json", "w") {|f| JSON.dump(frontmatter, f) }
+    # BLESSING (Always)
+    if @config["bless_cmd"]
+      (Array === @config["bless_cmd"] ? system(*@config["bless_cmd"]) : system(@config["bless_cmd"]) ) or abort "*** BLESS COMMAND RETURNS NON-ZERO STATUS"
+    end
+    # BLESSING (ACCS)
+    if @config["bless_accscmd"]
+      (Array === @config["bless_accscmd"] ? system(*@config["bless_accscmd"]) : system(@config["bless_accscmd"]) ) or abort "*** BLESS COMMAND RETURNS NON-ZERO STATUS"
+    end
+    mod_frontmatter = JSON.load(File.read(".pbsimply-frontmatter.json"))
+    frontmatter.replace(mod_frontmatter)
+  ensure
+    File.delete(".pbsimply-frontmatter.json") if File.exist?(".pbsimply-frontmatter.json")
   end
 
   # Invoke pandoc, parse and format and write out.

@@ -75,6 +75,15 @@ Loaded config YAML file (`.pbsimply.yaml`).
 
 "default | indexed | frontmatter | current"にあるドキュメントメタデータ。
 
+### インデックスデータベース
+
+ドキュメントメタデータは各ドキュメントディレクトリ上のデータベースに保存される。
+
+デフォルトでは`.indexes.rbm`という名前のRuby Marshalファイルとして保存される。
+
+設定ファイルの`dbstyle`の値として`json`あるいは`oj`を設定すると、
+Ruby Marshalの代わりにJSONが使用され、ファイル名も`.indexes.json`になる。
+
 ## 設定ファイルの値
 
 |Key|Type|Description|
@@ -90,6 +99,10 @@ Loaded config YAML file (`.pbsimply.yaml`).
 |testserver\_port|Fixnum|`pbsimply-testserver.rb`が使用するポート(default 8000)|
 |self\_url\_prefix|String|生成されたドキュメントのURLの絶対パスのプレフィックス部。デフォルトは`/`|
 |self\_url\_external\_prefix|String|`self_url_prefix`の`page_url_encoded_external`用|
+|dbstyle|String|`json`に設定すると`.indexes.rbm`に代えて`.indexes.json`が使用される。さらに`oj`に設定した場合、`JSON`ライブラリではなく`Oj`ライブラリを使用する|
+|bless\_style|String|`cmd`の場合、Ruby Procを使用する通常のblessではなくコマンドを使用する|
+|bless\_cmd|String / Array|blessに使用するコマンド|
+|bless\_accscmd|String / Array|ACCSのblessに使用するコマンド|
 
 ## 特別な値
 
@@ -187,6 +200,8 @@ post-scriptは生成されたファイルのリストとともに呼ばれる。
 
 ## 祝福
 
+### Rubyで祝福する
+
 `.pbsimply-bless.rb`というRubyスクリプトファイルを使うことでFrontmatterに手を加えることができる。
 
 これを使用したい場合、同ファイルで`PureBuilder::BLESS` Procオブジェクトを定義する。
@@ -282,6 +297,16 @@ PureBuilder::ACCS::DEFINITIONS[:prev] = ->(frontmatter, pb) {
 }
 ```
 
+### 他の言語、あるいはコマンドで祝福する
+
+設定ファイルの`bless_style`の値として`cmd`をセットすると、Ruby Procの代わりに外部コマンドによって祝福を行う。
+
+`bless_cmd`は通常の祝福用、
+`bless_accscmd`はACCSの祝福用である。
+
+いずれの場合も`.pbsimply-frontmatter.json`ファイルからドキュメントメタデータを読み取ることができ、
+同ファイルを書き換えることで変更を反映することができる。
+
 ## ファイル
 
 ### リポジトリに含まれるもの
@@ -298,7 +323,8 @@ PureBuilder::ACCS::DEFINITIONS[:prev] = ->(frontmatter, pb) {
 |ファイル名|場所|Description|
 |--------|-----------|-------------|
 |.pbsimply.yaml|root|設定ファイル。ドキュメントルートに置く|
-|.indexes.rbm|each|PureBuilder Simplyが生成するRuby marshalファイル|
+|.indexes.rbm|each|PureBuilder Simplyが生成するRuby marshalファイルのインデックスデータベース|
+|.indexes.json|each|PureBuilder Simplyが生成するJSONファイルのインデックスデータベース|
 |.index.md|each|ACCSが生成するインデックスページ|
 |.accsindex.erb|root or each ACCS|ACCSインデックスページ用Markdown eRubyテンプレート|
 |.accs.yaml|each|ACCSインデックスページ用の`@index`|
