@@ -100,3 +100,4 @@ NOW `pandoc_additional_options` IS MERGED INTO `defaults`. IT IS NOT COMMANDLINE
 * Support `PureBuilder::ACCS::DEFINITIONS[:next]` and `PureBuilder::ACCS::DEFINITIONS[:prev]` procs in blessing script.
 * Delete `pbsimply-accsindex.rb`
 * Call blessing procs with `frontmatter, self`.
+* Change timing to bless.

@@ -192,8 +192,7 @@ You can modify Frontmatter with Ruby script with `.pbsimply-bless.rb` file.
 If you want to use it, you should `PureBuilder::BLESS` Proc object in the file.
 It will be called with `PureBuilder::BLESS.call(frontmatter, self)`.
 
-This proc will be called with just before generating.
-All system setting values are already set.
+This proc will be called after system paramaters were set.
 
 It don't need to return something.
 You can modify frontmatter Hash object directly.
@@ -208,6 +207,82 @@ They are used for setting special value.
 |-----|-------------------------|
 |`:next`|Set returned value to `frontmatter["next_article"]`|
 |`:prev`|Set returned value to `frontmatter["prev_article"]`|
+
+For example, this is [Chienomi](https://chienomi.org/)'s blessing script.
+
+```ruby
+#!/usr/bin/ruby
+
+load "./.lib/categories.rb"
+
+TOPICPATH = {
+  "" => ["TOP", "/"],
+  "/articles" => ["Articles", "/#Category"],
+  "/override" => ["Override", "/"],
+  "/archives" => ["Old Archives", "/articlelist-wp.html"]
+}
+
+ARTICLE_CATS.each do |k,v|
+  TOPICPATH[["/articles", k].join("/")] = [v, ["", "articles", k, ""].join("/")]
+end
+
+PureBuilder::BLESS = ->(frontmatter, pb) {
+  content = nil
+  filetype = nil
+  content = File.read(frontmatter["source_path"])
+  filetype = File.extname(frontmatter["_filename"])
+
+  url = frontmatter["page_url"].sub(/^\.?\/?/, "/")
+  frontmatter["topicpath"] = []
+  url = url.split("/")
+  (1 .. url.length).each do |i|
+    path = url[0, i].join("/")
+    if v = TOPICPATH[path]
+      frontmatter["topicpath"].push({"title" => v[0], "url" => v[1]})
+    else
+      frontmatter["topicpath"].push({"title" => frontmatter["title"]})
+      break
+    end
+  end
+
+  if frontmatter["category"] && url.include?("articles")
+    frontmatter["category_spec"] = [ARTICLE_CATS[url[-2]], frontmatter["category"]].join("::")
+  end
+
+  if content
+    if((filetype == ".md" && content =~ %r:\!\[.*\]\(/img/thumb/:) || (filetype == ".rst" || filetype == ".rest") && content =~ %r!\.\. image:: .*?/img/thumb!)
+      frontmatter["lightbox"] = true
+    end
+  end
+}
+
+article_order = nil
+rev_article_order_index = {}
+
+PureBuilder::ACCS::BLESS = -> (frontmatter, pb) {
+  frontmatter["ACCS"] = true
+  unless article_order
+    article_order = pb.indexes.to_a.sort_by {|i| i[1]["date"]}
+    article_order.each_with_index {|x,i| rev_article_order_index[x[0]] = i }
+  end
+}
+
+PureBuilder::ACCS::DEFINITIONS[:next] = ->(frontmatter, pb) {
+  index = rev_article_order_index[frontmatter["_filename"]] or next nil
+  if article_order[index + 1]
+    {"url" => article_order[index + 1][1]["page_url"],
+     "title" => article_order[index + 1][1]["title"]}
+  end
+}
+
+PureBuilder::ACCS::DEFINITIONS[:prev] = ->(frontmatter, pb) {
+  index = rev_article_order_index[frontmatter["_filename"]] or next nil
+  if index > 0
+    {"url" => article_order[index - 1][1]["page_url"],
+     "title" => article_order[index - 1][1]["title"]}
+  end
+}
+```
 
 ## Files
 

@@ -41,6 +41,7 @@ class PureBuilder
     @add_meta = nil
     @accs = nil
     @accs_index = {}
+    @now = Time.now
 
     # Options definition.
     opts = OptionParser.new
@@ -137,6 +138,7 @@ class PureBuilder
   # Read Frontmatters from all documents and proc each documents.
   def parse_frontmatter
     target_docs = []
+    @indexes_orig = {}
     STDERR.puts "in #{@dir}..."
 
     Dir.foreach(@dir) do |filename|
@@ -153,6 +155,7 @@ class PureBuilder
         next
       end
 
+      @indexes_orig[filename] = @indexes[filename]
       @indexes[filename] = frontmatter
 
       if check_modify([@dir, filename], frontmatter)
@@ -452,45 +455,41 @@ class PureBuilder
       frontmatter["timestamp_str"] = fts.strftime("%Y-%m-%d")
     end
 
+    fsize = FileTest.size(File.join(dir, filename))
+    mtime = File.mtime(File.join(dir, filename)).to_i
+
+    frontmatter["_filename"] ||= filename
+    frontmatter["pagetype"] ||= "post"
+
+    frontmatter["_size"] = fsize
+    frontmatter["_mtime"] = mtime
+    frontmatter["_last_proced"] = @now.to_i
+    
+    if File.extname(filename) == ".md"
+      frontmatter["_docformat"] = "Markdown"
+    elsif File.extname(filename) == ".rst" || File.extname(filename) == ".rest"
+      frontmatter["_docformat"] = "ReST"
+    end
+
+    frontmatter["date"] ||= now.strftime("%Y-%m-%d %H:%M:%S")
+
+    bless(frontmatter)
+
     return frontmatter, pos
   end
 
   # Check is the article modified? (or force update?)
   def check_modify(path, frontmatter)
     modify = true
+    index = @indexes_orig[path[1]] || {}
 
-    index = @indexes[path[1]] || {}
-    fsize = FileTest.size(path.join("/"))
-    mtime = File.mtime(path.join("/")).to_i
-
-    frontmatter["_filename"] ||= path[1]
-    frontmatter["pagetype"] ||= "post"
-
-    now = Time.now
-    current_infomation = {
-      "_size" => fsize,
-      "_mtime" => mtime,
-      "_last_proced" => now.to_i
-    }
-
-    if path[1] =~ /\.md$/
-      current_infomation["_docformat"] = "Markdown"
-    elsif path[1] =~ /\.rst$/ || path[1] =~ /\.rest$/
-      current_infomation["_docformat"] = "ReST"
-    end
-
-    if index && index["_size"] == fsize && (current_infomation["_mtime"] < index["_last_proced"] || index["_mtime"] == current_infomation["_mtime"])
+    if index && index["_size"] == frontmatter["_size"] && (frontmatter["_mtime"] < index["_last_proced"] || index["_mtime"] == frontmatter["_mtime"])
       STDERR.puts "#{path[1]} is not modified."
       modify = false
     else
-      STDERR.puts "#{path[1]} last modified at #{current_infomation["_mtime"]}, last processed at #{index["_last_proced"] || 0}"
-      current_infomation["last_update"] = now.strftime("%Y-%m-%d %H:%M:%S")
+      STDERR.puts "#{path[1]} last modified at #{frontmatter["_mtime"]}, last processed at #{index["_last_proced"] || 0}"
+      frontmatter["last_update"] = @now.strftime("%Y-%m-%d %H:%M:%S")
     end
-
-    frontmatter.merge!(current_infomation)
-    frontmatter["date"] ||= now.strftime("%Y-%m-%d %H:%M:%S")
-
-    @indexes[path[1]] = frontmatter
 
     if @refresh
       # Refresh (force update) mode.
@@ -500,17 +499,7 @@ class PureBuilder
     end
   end
 
-  # Invoke pandoc, parse and format and write out.
-  def lets_pandoc(dir, filename, frontmatter)
-    STDERR.puts "#{filename} is going Pandoc."
-    doc = nil
-
-    # Preparing and pre script.
-    orig_filepath = [dir, filename].join("/")
-    ext = File.extname(filename)
-    procdoc = sprintf(".current_document%s", ext)
-    pre_plugins(procdoc, frontmatter)
-
+  def bless(frontmatter)
     # BLESSING (Always)
     if PureBuilder.const_defined?(:BLESS) && Proc === PureBuilder::BLESS
       begin
@@ -542,6 +531,18 @@ class PureBuilder
         frontmatter["prev_article"] = i if i
       end
     end
+  end
+
+  # Invoke pandoc, parse and format and write out.
+  def lets_pandoc(dir, filename, frontmatter)
+    STDERR.puts "#{filename} is going Pandoc."
+    doc = nil
+
+    # Preparing and pre script.
+    orig_filepath = [dir, filename].join("/")
+    ext = File.extname(filename)
+    procdoc = sprintf(".current_document%s", ext)
+    pre_plugins(procdoc, frontmatter)
 
     File.open(".pbsimply-defaultfiles.yaml", "w") {|f| YAML.dump(@pandoc_default_file, f)}
     File.open(".pbsimply-frontmatter.yaml", "w") {|f| YAML.dump(frontmatter, f)}

@@ -192,7 +192,7 @@ post-scriptは生成されたファイルのリストとともに呼ばれる。
 これを使用したい場合、同ファイルで`PureBuilder::BLESS` Procオブジェクトを定義する。
 このオブジェクトは`PureBuilder::BLESS.call(frontmatter, self)`のように呼び出される。
 
-呼び出されるタイミングは生成の直前であり、システムによってセットされる値も全てセットされた状態になる。
+呼び出されるタイミングはシステムによってセットされる値が全てセットされた後である。
 
 この関数は値を返す必要はなく、引数として渡されたFrontmatter Hashオブジェクトを直接変更できる。
 
@@ -205,6 +205,82 @@ post-scriptは生成されたファイルのリストとともに呼ばれる。
 |-----|-------------------------|
 |`:next`|戻り値を`frontmatter["next_article"]`にセットする|
 |`:prev`|戻り値を`frontmatter["prev_article"]`にセットする|
+
+一例として、次に示すのは[Chienomi](https://chienomi.org/)のblessing scriptである。
+
+```ruby
+#!/usr/bin/ruby
+
+load "./.lib/categories.rb"
+
+TOPICPATH = {
+  "" => ["TOP", "/"],
+  "/articles" => ["Articles", "/#Category"],
+  "/override" => ["Override", "/"],
+  "/archives" => ["Old Archives", "/articlelist-wp.html"]
+}
+
+ARTICLE_CATS.each do |k,v|
+  TOPICPATH[["/articles", k].join("/")] = [v, ["", "articles", k, ""].join("/")]
+end
+
+PureBuilder::BLESS = ->(frontmatter, pb) {
+  content = nil
+  filetype = nil
+  content = File.read(frontmatter["source_path"])
+  filetype = File.extname(frontmatter["_filename"])
+
+  url = frontmatter["page_url"].sub(/^\.?\/?/, "/")
+  frontmatter["topicpath"] = []
+  url = url.split("/")
+  (1 .. url.length).each do |i|
+    path = url[0, i].join("/")
+    if v = TOPICPATH[path]
+      frontmatter["topicpath"].push({"title" => v[0], "url" => v[1]})
+    else
+      frontmatter["topicpath"].push({"title" => frontmatter["title"]})
+      break
+    end
+  end
+
+  if frontmatter["category"] && url.include?("articles")
+    frontmatter["category_spec"] = [ARTICLE_CATS[url[-2]], frontmatter["category"]].join("::")
+  end
+
+  if content
+    if((filetype == ".md" && content =~ %r:\!\[.*\]\(/img/thumb/:) || (filetype == ".rst" || filetype == ".rest") && content =~ %r!\.\. image:: .*?/img/thumb!)
+      frontmatter["lightbox"] = true
+    end
+  end
+}
+
+article_order = nil
+rev_article_order_index = {}
+
+PureBuilder::ACCS::BLESS = -> (frontmatter, pb) {
+  frontmatter["ACCS"] = true
+  unless article_order
+    article_order = pb.indexes.to_a.sort_by {|i| i[1]["date"]}
+    article_order.each_with_index {|x,i| rev_article_order_index[x[0]] = i }
+  end
+}
+
+PureBuilder::ACCS::DEFINITIONS[:next] = ->(frontmatter, pb) {
+  index = rev_article_order_index[frontmatter["_filename"]] or next nil
+  if article_order[index + 1]
+    {"url" => article_order[index + 1][1]["page_url"],
+     "title" => article_order[index + 1][1]["title"]}
+  end
+}
+
+PureBuilder::ACCS::DEFINITIONS[:prev] = ->(frontmatter, pb) {
+  index = rev_article_order_index[frontmatter["_filename"]] or next nil
+  if index > 0
+    {"url" => article_order[index - 1][1]["page_url"],
+     "title" => article_order[index - 1][1]["title"]}
+  end
+}
+```
 
 ## ファイル
 
