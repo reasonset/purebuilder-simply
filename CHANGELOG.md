@@ -74,6 +74,8 @@
 
 # v1.8 2020-02-25
 
+**INCONPARTIBLE CHANGES!!!**
+
 * Change to use `defaults` and `metadata-file`. Now PureBuilder Simply requires Pandoc >= 2.8.
 * Add metadata `timestamp_str`.
 * Add some metadata about timestamp and encoded value.
@@ -113,3 +115,8 @@ Add JSON support.
 
 * Bless after all indexes stored.
 * Find modify with any frontmatter modified.
+
+# v1.11.2 2020-03-18
+
+* Fix update checking on JSON db mode.
+* rename `parse_frontmatter` to `proc_dir`.

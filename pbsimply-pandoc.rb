@@ -16,15 +16,15 @@ class PureBuilder
   class DocDB
     def dump(object)
       File.open(File.join(@dir, ".indexes.#{@ext}"), "w") do |f|
-        @store_class.dump(object, f)
+        f.write @store_class.dump(object)
       end
     end
 
     def load
       File.open(File.join(@dir, ".indexes.#{@ext}"), "r") do |f|
         next @store_class.load(f)
-      end
     end
+  end
 
     def exist?
       File.exist?(File.join(@dir, ".indexes.#{@ext}"))
@@ -34,11 +34,19 @@ class PureBuilder
       File.join(@dir, ".indexes.#{@ext}")
     end
 
+    def cmp_obj(frontmatter)
+      @store_class.load(@store_class.dump(frontmatter))
+    end
+
     class Marshal < DocDB
       def initialize(dir)
         @dir = dir
         @store_class = ::Marshal
         @ext = "rbm"
+      end
+
+      def cmp_obj(frontmatter)
+        frontmatter.dup
       end
     end
 
@@ -51,23 +59,12 @@ class PureBuilder
       end
     end
 
-    class Oj < DocDB
+    class Oj < DocDB::JSON
       def initialize(dir)
         require 'oj'
         @dir = dir
         @ext = "json"
-      end
-
-      def dump(object)
-        File.open(File.join(@dir, ".indexes.json"), "w") do |f|
-          f.write ::Oj.dump(object)
-        end
-      end
-  
-      def load
-        File.open(File.join(@dir, ".indexes.json"), "r") do |f|
-          next ::Oj.load(f)
-        end
+        @store_class = ::Oj
       end
     end
   end
@@ -205,7 +202,7 @@ class PureBuilder
 
   # Directory mode's main function.
   # Read Frontmatters from all documents and proc each documents.
-  def parse_frontmatter
+  def proc_dir
     target_docs = []
     @indexes_orig = {}
     STDERR.puts "in #{@dir}..."
@@ -254,6 +251,11 @@ class PureBuilder
       STDERR.puts "Processing #{filename}"
       lets_pandoc(@dir, filename, frontmatter)
     end
+
+    # ACCS processing
+    if @accs && !target_docs.empty?
+      process_accs
+    end
   end
 
   def main
@@ -299,7 +301,7 @@ class PureBuilder
       # Check existing in indexes.
       @indexes.delete_if {|k,v| ! File.exist?([@dir, k].join("/")) }
 
-      parse_frontmatter
+      proc_dir
 
       unless @skip_index
         @db.dump(@indexes)
@@ -307,9 +309,6 @@ class PureBuilder
 
       post_plugins
 
-      if @accs
-        process_accs
-      end
     end
   ensure
     File.delete ".pbsimply-defaultfiles.yaml" if File.exist?(".pbsimply-defaultfiles.yaml")
@@ -558,7 +557,7 @@ class PureBuilder
   def check_modify(path, frontmatter)
     modify = true
     index = @indexes_orig[path[1]].dup || {}
-    frontmatter = frontmatter.dup
+    frontmatter = @db.cmp_obj(frontmatter)
     index.delete("_last_proced")
     frontmatter.delete("_last_proced")
 
