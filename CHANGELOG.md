@@ -108,3 +108,8 @@ Add JSON support.
 
 * Add `dbstyle` in configuration.
 * Blessing with external command.
+
+# v1.11.1 2020-03-17
+
+* Bless after all indexes stored.
+* Find modify with any frontmatter modified.

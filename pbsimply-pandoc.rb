@@ -227,11 +227,22 @@ class PureBuilder
       @indexes_orig[filename] = @indexes[filename]
       @indexes[filename] = frontmatter
 
-      if check_modify([@dir, filename], frontmatter)
-        target_docs.push([filename, frontmatter, pos])
-      end
+      # Push to target documents without checking modification.
+      target_docs.push([filename, frontmatter, pos])
     end
 
+    # Modify frontmatter
+    target_docs.each do |filename, frontmatter, pos|
+      if @config["bless_style"] == "cmd"
+        bless_cmd(frontmatter)
+      else
+        bless_ruby(frontmatter)
+      end  
+    end
+
+    target_docs.delete_if {|filename, frontmatter, pos| !check_modify([@dir, filename], frontmatter)}
+
+    # Proccess documents
     target_docs.each do |filename, frontmatter, pos|
       ext = File.extname filename
       @index = frontmatter
@@ -540,21 +551,18 @@ class PureBuilder
 
     frontmatter["date"] ||= now.strftime("%Y-%m-%d %H:%M:%S")
 
-    if @config["bless_style"] == "cmd"
-      bless_cmd(frontmatter)
-    else
-      bless_ruby(frontmatter)
-    end
-
     return frontmatter, pos
   end
 
   # Check is the article modified? (or force update?)
   def check_modify(path, frontmatter)
     modify = true
-    index = @indexes_orig[path[1]] || {}
+    index = @indexes_orig[path[1]].dup || {}
+    frontmatter = frontmatter.dup
+    index.delete("_last_proced")
+    frontmatter.delete("_last_proced")
 
-    if index && index["_size"] == frontmatter["_size"] && (frontmatter["_mtime"] < index["_last_proced"] || index["_mtime"] == frontmatter["_mtime"])
+    if index == frontmatter
       STDERR.puts "#{path[1]} is not modified."
       modify = false
     else
