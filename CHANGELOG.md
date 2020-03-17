@@ -120,3 +120,4 @@ Add JSON support.
 
 * Fix update checking on JSON db mode.
 * rename `parse_frontmatter` to `proc_dir`.
+* Fix sample `.pbsimply.yaml` file.

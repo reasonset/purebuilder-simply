@@ -8,28 +8,38 @@ outdir: ../Build
 css:
   - /css/layout.css
   - /css/base.css
-# Enable TOC. yes or no. no by default.
-toc: yes
-# Enable eRuby template expansion. yes or no. no by default.
-post_eruby: no
-# Additional options for Pandoc on every generation.
+# Enable TOC. true or false. false by default.
+toc: true
+# Enable eRuby template expansion. true or false. false by default.
+post_eruby: false
+# Pandoc's default file settings.
+# It is merge into default file. See https://pandoc.org/MANUAL.html#default-files
 pandoc_additional_options:
-  - "-M"
-  - "lang:ja"
-  - "-M"
-  - "title-prefix:Powered by PureBuilder Simply"
-# Pandoc "-B" options means include document as "before".
-# Sample template use "before" document as sidebar's content.
-#  - "-B"
-#  - before.html
-#  - "-A"
-#  - after.html
+  metadata:
+    lang: ja
+    title-prefix: "Powered by PureBuilder Simply"
+#  include-before-body:
+#    - before.html
+#  include-after-body:
+#    - after.html
+#
+# Default metadata. If same key exists in document's frontmatter, document's frontmatter is given priority to this settings.
+default_meta:
+  author: "John Doe"
 # Override every ACCS index page's frontmatter.
-#alt_frontmatter:
-#  title: Serial documents by ACCS
+alt_frontmatter:
+  title: Serial documents by ACCS
 # Testserver (pbsimply-testserver.rb)'s port. 8000 by default.
-#testserver_port: 8080
+#testserver_port: 8000
 # Generated document's URL absolute prefix. This value replaces reading /.
 #self_url_prefix: /foowebsite/
 # Generated document's URL absolute prefix. This value replaces reading /. Used by page_url_encoded_external.
 self_url_external_prefix: https://example.com/
+# Database format. use JSON if set json or oj.
+#dbstyle: json
+# Blessing way. If cmd given, you external command instead of Ruby function.
+#bless_style: cmd
+# Blessing external command
+#bless_cmd: [echo, BLESS]
+# Blessing external command on ACCS.
+#bless_accscmd: [echo, ACCS]
