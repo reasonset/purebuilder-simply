@@ -1,21 +1,23 @@
-# v1.2 2018-02-07
+# CHANGELOG
+
+## v1.2 2018-02-07
 
 * Support docinfo in ReST
 * Skip if filename start with `draft-`
 * Delete entry in indexes if not exist.
 
-# v1.2.1 2018-02-21
+## v1.2.1 2018-02-21
 
 * .accs_index.rbm is added index file list.
 * Support Array metadata.
 
-# v1.3 2018-05-20
+## v1.3 2018-05-20
 
 * More suitable support for ReSTreuctured Text's docinfo.
 * Commented out adding parsed metadata to commandline function.
   This feature is not necessary because Pandoc understand metadata right anyway.
 
-# v1.4 2018-07-07
+## v1.4 2018-07-07
 
 * Process temporary file instead of real document file.
 * Support draft metadata. if draft is true, skip processing document.
@@ -24,35 +26,35 @@
 * Change $pbsimply-indexes to $pbsimply_indexes
 * Add support Pre plugins.
 
-# v1.4.1 2018-07-09
+## v1.4.1 2018-07-09
 
 * Meta data give to pandoc with argument when ReST + docinfo for multiple element
 * Add support docinfo term characters - and _.
 
-# v1.4.2 2018-07-22
+## v1.4.2 2018-07-22
 
 * Read .accsindex.erb on ACCS directory instead of the file on document root.
 
-# v1.4.3 2018-08-02
+## v1.4.3 2018-08-02
 
 * Keep plugin order.
 
-# v1.4.4 2018-08-06
+## v1.4.4 2018-08-06
 
 * Plugins can access subdirectory path with pbsimply_subdir environment variable.
 
-# v1.4.5 2018-08-12
+## v1.4.5 2018-08-12
 
 * Add Japanese README.
 
-# v1.5 2018-08-14
+## v1.5 2018-08-14
 
 * CHANGE LICENSE BSD 3-clause TO APACHE LICENSE 2.0
 * Move document sample files to docroot-sample directory.
 * New template and CSS files.
 * Add JavaScript plugins.
 
-# v1.6 2019-10-13
+## v1.6 2019-10-13
 
 * Additional meta data support.
 * Auto creating target directory.
@@ -60,19 +62,19 @@
 * Support command line options.
 * Bug fix: Post plugins didn't work in single mode.
 
-# v1.6.1 2019-10-21
+## v1.6.1 2019-10-21
 
 * More additional meta data support. (timestamp)
 * Bug fix: wrong behavior on `-f` option.
 
-# v1.7 2019-10-23
+## v1.7 2019-10-23
 
 * Change test server's default port 80 to 8000.
 * Converted timestamp uses dete if timestamp isn't defined.
 * Add and rearrange sample docs.
 * Directly execute plugins if it is executable, or call with script engine if known extension.
 
-# v1.8 2020-02-25
+## v1.8 2020-02-25
 
 **INCONPARTIBLE CHANGES!!!**
 
@@ -82,16 +84,16 @@
 
 NOW `pandoc_additional_options` IS MERGED INTO `defaults`. IT IS NOT COMMANDLINE OPTION.
 
-# v1.8.1 2020-02-26
+## v1.8.1 2020-02-26
 
 * Add commandline options (`-o`, `-m`, `-I`, `-A`)
 * Fix ACCS system (to use `pbsimply-pandoc.rb` command).
 
-# v1.9 2020-03-11
+## v1.9 2020-03-11
 
 * Add "Blessing" function.
 
-# v1.10 2020-03-17
+## v1.10 2020-03-17
 
 **INCONPARTIBLE CHANGES!!!**
 
@@ -104,20 +106,24 @@ NOW `pandoc_additional_options` IS MERGED INTO `defaults`. IT IS NOT COMMANDLINE
 * Call blessing procs with `frontmatter, self`.
 * Change timing to bless.
 
-# v1.11 2020-03-17
+## v1.11 2020-03-17
 
 Add JSON support.
 
 * Add `dbstyle` in configuration.
 * Blessing with external command.
 
-# v1.11.1 2020-03-17
+## v1.11.1 2020-03-17
 
 * Bless after all indexes stored.
 * Find modify with any frontmatter modified.
 
-# v1.11.2 2020-03-18
+## v1.11.2 2020-03-18
 
 * Fix update checking on JSON db mode.
 * rename `parse_frontmatter` to `proc_dir`.
 * Fix sample `.pbsimply.yaml` file.
+
+## v1.11.3 2020-03-18
+
+* Fix bug: Skipped save to indexes DB when ACCS enabled.

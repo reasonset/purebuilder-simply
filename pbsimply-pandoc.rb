@@ -250,6 +250,10 @@ class PureBuilder
 
       STDERR.puts "Processing #{filename}"
       lets_pandoc(@dir, filename, frontmatter)
+
+      unless @skip_index
+        @db.dump(@indexes)
+      end
     end
 
     # ACCS processing
@@ -302,13 +306,7 @@ class PureBuilder
       @indexes.delete_if {|k,v| ! File.exist?([@dir, k].join("/")) }
 
       proc_dir
-
-      unless @skip_index
-        @db.dump(@indexes)
-      end
-
       post_plugins
-
     end
   ensure
     File.delete ".pbsimply-defaultfiles.yaml" if File.exist?(".pbsimply-defaultfiles.yaml")
