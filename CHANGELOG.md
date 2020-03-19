@@ -127,3 +127,8 @@ Add JSON support.
 ## v1.11.3 2020-03-18
 
 * Fix bug: Skipped save to indexes DB when ACCS enabled.
+
+## v1.11.4 2020-03-20
+
+* Improve calculating.
+* Some timing probrem are solved.

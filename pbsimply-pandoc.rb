@@ -207,8 +207,16 @@ class PureBuilder
     @indexes_orig = {}
     STDERR.puts "in #{@dir}..."
 
+    STDERR.puts "Checking Frontmatter..."
     Dir.foreach(@dir) do |filename|
-      next if filename =~ /^\./ || filename =~ /^draft-/
+      next if filename == "." || filename == ".." 
+      if filename =~ /^\./ || filename =~ /^draft-/
+        if File.exist?(File.join(@config["outdir"], @dir, filename.sub(/^(?:\.|draft-)/, "").sub(/\.(?:md|rst)$/, ".html"))) && filename != ".index.md"
+          STDERR.puts "#{filename} was turn to draft. deleting..."
+          File.delete(File.join(@config["outdir"], @dir, filename.sub(/^(?:\.|draft-)/, "").sub(/\.(?:md|rst)$/, ".html")))
+        end
+        next
+      end
       next unless File.file?([@dir, filename].join("/"))
       next unless %w:.md .rst:.include? File.extname filename
       STDERR.puts "Checking frontmatter in #{filename}"
@@ -218,6 +226,10 @@ class PureBuilder
       
       if frontmatter["draft"]
         @indexes.delete(filename) if @indexes[filename]
+        if File.exist?(File.join(@config["outdir"], @dir, filename.sub(/\.(?:md|rst)$/, ".html")))
+          STDERR.puts "#{filename} was turn to draft. deleting..."
+          File.delete(File.join(@config["outdir"], @dir, filename.sub(/\.(?:md|rst)$/, ".html")))
+        end
         next
       end
 
@@ -228,6 +240,10 @@ class PureBuilder
       target_docs.push([filename, frontmatter, pos])
     end
 
+    @db.dump(@indexes) unless @skip_index
+
+    STDERR.puts "Blessing..."
+
     # Modify frontmatter
     target_docs.each do |filename, frontmatter, pos|
       if @config["bless_style"] == "cmd"
@@ -237,7 +253,11 @@ class PureBuilder
       end  
     end
 
+    STDERR.puts "Checking modification..."
+
     target_docs.delete_if {|filename, frontmatter, pos| !check_modify([@dir, filename], frontmatter)}
+
+    STDERR.puts "Okay, Now ready. Let's Pandoc..."
 
     # Proccess documents
     target_docs.each do |filename, frontmatter, pos|
@@ -250,11 +270,11 @@ class PureBuilder
 
       STDERR.puts "Processing #{filename}"
       lets_pandoc(@dir, filename, frontmatter)
-
-      unless @skip_index
-        @db.dump(@indexes)
-      end
     end
+
+    @db.dump(@indexes) unless @skip_index
+
+    post_plugins
 
     # ACCS processing
     if @accs && !target_docs.empty?
@@ -306,10 +326,14 @@ class PureBuilder
       @indexes.delete_if {|k,v| ! File.exist?([@dir, k].join("/")) }
 
       proc_dir
-      post_plugins
+
     end
   ensure
     File.delete ".pbsimply-defaultfiles.yaml" if File.exist?(".pbsimply-defaultfiles.yaml")
+    File.delete ".pbsimply-frontmatter.json" if File.exist?(".pbsimply-frontmatter.json")
+    File.delete ".current_document.md" if File.exist?(".current_document.md")
+    File.delete ".current_document.rst" if File.exist?(".current_document.rst")
+    File.delete ".pbsimply-frontmatter.yaml" if File.exist?(".pbsimply-frontmatter.yaml")
   end
 
   def pre_plugins(procdoc, frontmatter)
@@ -622,8 +646,6 @@ class PureBuilder
     end
     mod_frontmatter = JSON.load(File.read(".pbsimply-frontmatter.json"))
     frontmatter.replace(mod_frontmatter)
-  ensure
-    File.delete(".pbsimply-frontmatter.json") if File.exist?(".pbsimply-frontmatter.json")
   end
 
   # Invoke pandoc, parse and format and write out.
@@ -645,9 +667,6 @@ class PureBuilder
       doc = io.read
     end
     
-    File.delete procdoc if File.exist?(procdoc)
-    File.delete ".pbsimply-frontmatter.yaml" if File.exist?(".pbsimply-frontmatter.yaml")
-
     # Abort if pandoc returns non-zero status
     if $?.exitstatus != 0
       abort "Pandoc returns exit code #{$?.exitstatus}"
@@ -708,7 +727,6 @@ class PureBuilder
     @dir = File.join(@dir, ".index.md")
     main
   end
-
 end
 
 PureBuilder.new.main
