@@ -577,7 +577,7 @@ class PureBuilder
       frontmatter["_docformat"] = "ReST"
     end
 
-    frontmatter["date"] ||= now.strftime("%Y-%m-%d %H:%M:%S")
+    frontmatter["date"] ||= @now.strftime("%Y-%m-%d %H:%M:%S")
 
     return frontmatter, pos
   end
