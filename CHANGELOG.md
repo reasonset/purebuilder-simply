@@ -132,3 +132,11 @@ Add JSON support.
 
 * Improve calculating.
 * Some timing probrem are solved.
+
+## v1.12 2020-03-22
+
+**INCONPARTIBLE CHANGES!!!**
+
+* Add automatic blessing methods.
+* Change specific environment variables in pre/post plugins and blessing command.
+* Use `Oj` instead of `JSON` if avilable.

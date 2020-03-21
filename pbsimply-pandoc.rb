@@ -7,6 +7,14 @@ require 'date'
 require 'fileutils'
 require 'optparse'
 
+begin
+  require 'oj'
+  JSON_LIB = Oj
+rescue LoadError
+  require 'json'
+  JSON_LIB = JSON
+end
+
 class PureBuilder
   module ACCS
     DEFINITIONS = {}
@@ -52,7 +60,6 @@ class PureBuilder
 
     class JSON < DocDB
       def initialize(dir)
-        require 'json'
         @dir = dir
         @store_class = ::JSON
         @ext = "json"
@@ -138,6 +145,8 @@ class PureBuilder
     # Required values
     @config["outdir"] or abort "Output directory is not set (outdir)."
     @config["template"] ||= "./template.html"
+
+    ENV["pbsimply_outdir"] = @config["outdir"]
 
     @docobject[:config] = @config
 
@@ -363,19 +372,17 @@ class PureBuilder
   def post_plugins(frontmatter=nil)
     if File.directory?(".post_generate")
 
-      ENV["pbsimply_indexes"] = @db.path
       STDERR.puts("Processing with post plugins")
 
-      indexes = nil
-      File.open(ENV["pbsimply_indexes"]) {|f| indexes = Marshal.load(f) }
-
-      Dir.entries(".post_generate").sort.each do |script_file|
-        next if script_file =~ /^\./
-        STDERR.puts "Running script: #{script_file}"
-        script_file = File.join(".post_generate", script_file)
-        @this_time_processed.each do |v|
-          STDERR.puts "Processing #{v[:dest]} (from #{v[:source]})"
-          procdoc = v[:dest]
+      @this_time_processed.each do |v|
+        STDERR.puts "Processing #{v[:dest]} (from #{v[:source]})"
+        procdoc = v[:dest]
+        frontmatter ||= @indexes[File.basename v[:source]]
+        File.open(".pbsimply-frontmatter.json", "w") {|f| f.write JSON_LIB.dump(frontmatter)}
+        Dir.entries(".post_generate").sort.each do |script_file|
+          next if script_file =~ /^\./
+          STDERR.puts "Running script: #{script_file}"
+          script_file = File.join(".post_generate", script_file)
           post_script_result = nil
           script_cmdline = case
           when File.executable?(script_file)
@@ -385,7 +392,7 @@ class PureBuilder
           else
             ["perl", script_file, procdoc]
           end
-          IO.popen({"pbsimply_doc_frontmatter" => YAML.dump(frontmatter || indexes[File.basename v[:source]])}, script_cmdline) do |io|  
+          IO.popen({"pbsimply_frontmatter" => ".pbsimply-frontmatter.json", "pbsimply_indexes" => @db.path}, script_cmdline) do |io| 
             post_script_result = io.read
           end
 
@@ -587,7 +594,7 @@ class PureBuilder
       STDERR.puts "#{path[1]} is not modified."
       modify = false
     else
-      STDERR.puts "#{path[1]} last modified at #{frontmatter["_mtime"]}, last processed at #{index["_last_proced"] || 0}"
+      STDERR.puts "#{path[1]} last modified at #{frontmatter["_mtime"]}, last processed at #{@indexes_orig[path[1]]&.[]("_last_proced") || 0}"
       frontmatter["last_update"] = @now.strftime("%Y-%m-%d %H:%M:%S")
     end
 
@@ -631,21 +638,67 @@ class PureBuilder
         frontmatter["prev_article"] = i if i
       end
     end
+
+    autobless(frontmatter)
   end
 
   def bless_cmd(frontmatter)
-    require 'json'
-    File.open(".pbsimply-frontmatter.json", "w") {|f| JSON.dump(frontmatter, f) }
+    File.open(".pbsimply-frontmatter.json", "w") {|f| f.write JSON_LIB.dump(frontmatter) }
     # BLESSING (Always)
     if @config["bless_cmd"]
       (Array === @config["bless_cmd"] ? system(*@config["bless_cmd"]) : system(@config["bless_cmd"]) ) or abort "*** BLESS COMMAND RETURNS NON-ZERO STATUS"
     end
     # BLESSING (ACCS)
     if @config["bless_accscmd"]
-      (Array === @config["bless_accscmd"] ? system(*@config["bless_accscmd"]) : system(@config["bless_accscmd"]) ) or abort "*** BLESS COMMAND RETURNS NON-ZERO STATUS"
+      (Array === @config["bless_accscmd"] ? system({"pbsimply_frontmatter" => ".pbsimply-frontmatter.json", "pbsimply_indexes" => @db.path}, *@config["bless_accscmd"]) : system({"pbsimply_frontmatter" => ".pbsimply-frontmatter.json", "pbsimply_indexes" => @db.path}, @config["bless_accscmd"]) ) or abort "*** BLESS COMMAND RETURNS NON-ZERO STATUS"
     end
     mod_frontmatter = JSON.load(File.read(".pbsimply-frontmatter.json"))
     frontmatter.replace(mod_frontmatter)
+
+    autobless(frontmatter)
+  end
+
+  # Blessing automatic method with configuration.
+  def autobless(frontmatter)
+    catch(:accs_rel) do
+      # find Next/Prev page on accs
+      if @accs && @config["blessmethod_accs_rel"]
+        # Preparing. Run at once.
+        if !@article_order
+          @rev_article_order_index = {}
+
+          case @config["blessmethod_accs_rel"]
+          when "numbering"
+            @article_order = @indexes.to_a.sort_by {|i| i[1]["_filename"].to_i }
+          when "date"
+            begin
+              @article_order = @indexes.to_a.sort_by {|i| i[1]["date"]}
+            rescue
+              abort "*** Automatic Blessing Method Error: Maybe some article have no date."
+            end
+          when "timestamp"
+            begin
+              @article_order = @indexes.to_a.sort_by {|i| i[1]["timestamp"]}
+            rescue
+              abort "*** Automatic Blessing Method Error: Maybe some article have no timetsamp."
+            end
+          when "lexical"
+            @article_order = @indexes.to_a.sort_by {|i| i[1]["_filename"]}
+          end
+          @article_order.each_with_index {|x,i| @rev_article_order_index[x[0]] = i }
+        end
+
+        throw(:accs_rel) unless index = @rev_article_order_index[frontmatter["_filename"]]
+        if @article_order[index + 1]
+          frontmatter["next_article"] = {"url" => @article_order[index + 1][1]["page_url"],
+                                         "title" => @article_order[index + 1][1]["title"]}
+        end
+        if index > 0
+          frontmatter["prev_article"] = {"url" => @article_order[index - 1][1]["page_url"],
+                                         "title" => @article_order[index - 1][1]["title"]}
+        end
+      end
+    end
   end
 
   # Invoke pandoc, parse and format and write out.

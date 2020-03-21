@@ -103,6 +103,7 @@ Ruby Marshalの代わりにJSONが使用され、ファイル名も`.indexes.jso
 |bless\_style|String|`cmd`の場合、Ruby Procを使用する通常のblessではなくコマンドを使用する|
 |bless\_cmd|String / Array|blessに使用するコマンド|
 |bless\_accscmd|String / Array|ACCSのblessに使用するコマンド|
+|blessmethod\_accs\_rel|String|「次」「前」の記事を探索する自動blessメソッド|
 
 ## 特別な値
 
@@ -138,6 +139,17 @@ Ruby Marshalの代わりにJSONが使用され、ファイル名も`.indexes.jso
 |timestamp\_rubytimestr|system|system|Rubyの`Time#to_s`のようなフォーマットされたドキュメント日時。`timestamp`が定義されていない場合、`date`を使う|
 |timestamp\_str|system||`%Y-%m-%d[ %H:%M:%S %Z]`形式の日時。 `timestamp`が定義されていない場合、`date`を使う|
 
+## 環境変数
+
+Pre Plugins, Post plugins, Blessing commandにおいて利用できる環境変数
+
+|変数|Pre|Post|Bless|説明|
+|---------|---|---|---|--------------------|
+|`pbsimply_outdir`|Yes|Yes|Yes|出力先ドキュメントルートのパス|
+|`pbsimply_subdir`|Yes|Yes|Yes|ドキュメントルートからのドキュメントディレクトリのパス|
+|`pbsimply_indexes`|Yes|Yes|Yes|インデックスデータベースのファイルパス|
+|`pbsimply_frontmatter`|Yes|Yes|Yes|現在のドキュメントのfrontmatter(JSON)のパス|
+
 ## Testing
 
 ドキュメント中のリンクはローカルな場所に **すべきではなく** 、 *web上のURLでなくてはいけない* 。
@@ -170,10 +182,6 @@ PureBuilder Simply Pandocはtemporary_source_fileをこのスクリプトの出�
 
 データベース構築より前に実行されるため、
 スクリプトは`indexes.rbm`を利用することはできない。
-
-ドキュメントメタデータは環境変数`$pbsimply_doc_frontmatter`で、YAML形式でアクセスできる。
-
-ドキュメントのサブディレクトリ部分は環境変数`$pbsimply_subdir`でアクセスできる。
 
 pre-scriptはドキュメントを生成する前に呼ばれ、スキップされる(更新されていない、あるいは草稿の)ドキュメントでは呼ばれない。
 
@@ -306,6 +314,17 @@ PureBuilder::ACCS::DEFINITIONS[:prev] = ->(frontmatter, pb) {
 
 いずれの場合も`.pbsimply-frontmatter.json`ファイルからドキュメントメタデータを読み取ることができ、
 同ファイルを書き換えることで変更を反映することができる。
+
+### 自動的な祝福
+
+いくつかの設定は自動的に予め用意されたメソッドで祝福する。
+
+#### ACCSの前後関係
+
+`blessmethod_accs_rel`は`next_article`と`prev_article`を設定する。
+これらは`url`と`title`からなる連想配列である。
+
+`numbering` (ファイル名先頭の数値), `lexical` (ファイル名辞書順), `date`, `timestamp`が用意されている。
 
 ## ファイル
 

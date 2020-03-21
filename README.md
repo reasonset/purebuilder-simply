@@ -100,6 +100,7 @@ JSON is used instead of Ruby Marshal and hhe filename is `.indexes.json`
 |bless\_style|String|If `cmd` given, blessing with command instead of Ruby procs.|
 |bless\_cmd|String / Array|Command for blessing.|
 |bless\_accscmd|String / Array|Command for ACCS blessing.|
+|blessmethod\_accs\_rel|String|Automatic blessing method for find next/prev article.|
 
 ## Special values in @index
 
@@ -135,6 +136,17 @@ JSON is used instead of Ruby Marshal and hhe filename is `.indexes.json`
 |timestamp\_rubytimestr|system||Ruby's `Time#to_s` like formatted Timestamp. Use `date` instead of `timestamp` if `timestamp` isn't defined.|
 |timestamp\_str|system||`%Y-%m-%d[ %H:%M:%S %Z]`. Use `date` instead of `timestamp` if `timestamp` isn't defined.|
 
+## Environment variables
+
+Environment variables that able to use in Pre Plugins, Post plugins, Blessing command.
+
+|Name|Pre|Post|Bless|Description|
+|---------|---|---|---|--------------------|
+|`pbsimply_outdir`|Yes|Yes|Yes|Path for output directory root.|
+|`pbsimply_subdir`|Yes|Yes|Yes|Path for document directory from document root.|
+|`pbsimply_indexes`|Yes|Yes|Yes|Path for index database.|
+|`pbsimply_frontmatter`|Yes|Yes|Yes|Path for current document's frontmatter (JSON).|
+
 ## Testing
 
 CSS, image or link locations should **not** be local place, *path to web URL*, so you cannot test generated documents normally case of suppose to put to WWW.
@@ -167,10 +179,6 @@ perl <script> <temporary_source_file>
 PureBuilder Simply replaces temporary source file with script output.
 
 Script **cannot** use index database because this script is called each generating.
-
-Processing document's meta infomation is in `$pbsimply_doc_frontmatter` environment variable with YAML.
-
-You can access the document's sub-directory part with `$pbsimply_subdir` environment variable.
 
 Pre script called just before generating. Not called with skipped document.
 
@@ -308,6 +316,17 @@ If `cmd` is set to `bless_style` in configuration, use external command instead 
 
 You can read document metadata from `.pbsimply-frontmatter.json` file,
 and you can apply changes with write to the file.
+
+### Automatic blessing
+
+Some configuration applies prepared blessing method.
+
+#### ACCS Relation
+
+`blessmethod_accs_rel` makes `next_article` and `prev_article` property.
+They are an associative array that have keys `url` and `title`.
+
+`numbering` (heading number of filename), `lexical` (filename), `date` and `timestamp` are avilable.
 
 ## Files
 
