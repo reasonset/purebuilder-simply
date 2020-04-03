@@ -18,7 +18,6 @@ PB Simply ACCS make `index.md` with indexes build by PureBuilder.
 * Make your document root
 * Create and edit `.pbsimply.yaml` in your document root.
 * Make directory and documents (Markdown or ReSTructured Text)
-* Copy `accsindex.erb` to `.accsindex.erb` in your document root and edit.
 * Make template with `pandoc -D html5 > template.html` and edit it.
 
 ## Dependency
@@ -101,6 +100,9 @@ JSON is used instead of Ruby Marshal and hhe filename is `.indexes.json`
 |bless\_cmd|String / Array|Command for blessing.|
 |bless\_accscmd|String / Array|Command for ACCS blessing.|
 |blessmethod\_accs\_rel|String|Automatic blessing method for find next/prev article.|
+|accs\_order|String|If `desc` is set, ACCS article list is sorted by descending order (on default template.)|
+|accs\_across\_category|Boolian|Don't separate ACCS article lists by category (on default template.)|
+|accs\_sort\_by|String|Sorting method for ACCS article list. `default` (date, title, last update), `title` (title, date), `name` (filename, title, date) and `serial` (`serial`, date, filename) are avilable. It works on default template.|
 
 ## Special values in @index
 
@@ -121,8 +123,6 @@ JSON is used instead of Ruby Marshal and hhe filename is `.indexes.json`
 |\_docformat|system||Document Format. `Markdown` or `ReST`.|
 |categories|frontmatter|ACCS|Document category. Sort documents by this value.
 |pagetype|frontmatter/config|ACCS|Document type of this page. `accsindex` is set if processed by ACCS, set `post` by default.|
-|accs\_order|config|ACCS|Document order. If `desc` is set, document sort by descending order.|
-|blogmode|config|ACCS|Document sort by descending order if this value is true.|
 |source\_directory|system||Source directory string. Set by PureBuilder.|
 |source\_file|system||Source Filename. Set by PureBuilder.|
 |source\_path|system||Source path string. Set by PureBuilder.|

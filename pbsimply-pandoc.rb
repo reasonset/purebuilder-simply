@@ -16,6 +16,61 @@ rescue LoadError
 end
 
 class PureBuilder
+  # Built-in Accs index eRuby string.
+
+  ACCS_INDEX = <<'EOF'
+<%= YAML.dump(
+  {
+    "title" => @index["title"],
+    "date" => @index["date"],
+    "author" => @index["author"]
+  }
+) %>
+---
+
+<%
+articles = Hash.new {|h,k| h[k] = Array.new }
+
+if @config["accs_across_category"]
+  @indexes.each {|filename, index| articles["default"].push index }
+else
+  @indexes.each {|filename, index| articles[(index["category"] || "default")].push index }
+end
+
+%>
+
+% articles.keys.sort.each do |catname|
+% cat = articles[catname]
+
+% unless articles.length == 1
+# <%= catname %>
+% end
+
+<%
+  sort_method = case @config["accs_sort_by"]
+  when "title"
+    lambda {|i| [i["title"].to_s, i["date"]] }
+  when "name"
+    lambda {|i| [i["_filename"].to_s, i["title"].to_s, i["date"]] }
+  when "serial"
+    lambda {|i| [i["serial"].to_s, i["date"], i["_filename"].to_s] }
+  else
+    lambda {|i| [i["date"], i["title"].to_s, i["_last_update"].to_i] }
+  end
+  
+  list = if @config["accs_order"] == "desc"
+    cat.sort_by(&sort_method).reverse
+  else
+    cat.sort_by(&sort_method)
+  end
+
+  list.each do |i|
+%>* [<%= i["title"] %>](<%= i["page_url"] %>)
+<% end %>
+
+% end
+EOF
+
   module ACCS
     DEFINITIONS = {}
   end
@@ -759,7 +814,7 @@ class PureBuilder
     elsif File.exist?(".accsindex.erb")
       erbtemplate = File.read(".accsindex.erb")
     else
-      abort "No .accesindex.erb"
+      erbtemplate = ACCS_INDEX
     end
 
     # Get infomation

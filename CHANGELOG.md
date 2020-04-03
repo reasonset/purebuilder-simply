@@ -140,3 +140,11 @@ Add JSON support.
 * Add automatic blessing methods.
 * Change specific environment variables in pre/post plugins and blessing command.
 * Use `Oj` instead of `JSON` if avilable.
+
+## v1.13 2020-04-03
+
+* Delete `blogmode` and `accs_order` support in `@index`
+* Add default built-in `.accsindex.erb`, and add configurations `accs_across_category` and `accs_sort_by`.
+* Add tutorial documents.
+* Fix sample `.accsindex.erb`.
+* Delete `util` (not worked).

@@ -18,7 +18,6 @@ PureBuilder Simply ACCS はPureBuilder Simplyによって `index.html` ファイ
 * ドキュメントルートディレクトリを作成する
 * ドキュメントルートディレクトリに `.pbsimply.yaml`ファイルを設置する
 * ディレクトリ及びドキュメント(MarkdownまたはReST)を書く
-* `accsindex.erb`をドキュメントルートに`.accsindex.erb`として配置し、編集する
 * `pandoc -D html5 > template.html` としてテンプレートファイルを作成し、編集する
 
 ## Dependency
@@ -124,8 +123,6 @@ Ruby Marshalの代わりにJSONが使用され、ファイル名も`.indexes.jso
 |\_docformat|system|system|Document Format. `Markdown` or `ReST`.|
 |categories|frontmatter|ACCS|ドキュメントのカテゴリ。ACCSによって使われる|
 |pagetype|frontmatter/config|ACCS|ページタイプ。デフォルトは`post`。ACCSによって生成されるインデックスページは`accsindex`|
-|accs\_order|config|ACCS|ACCSのドキュメントの並び。もし`desc`である場合、逆順に並べられる|
-|blogmode|config|ACCS|ACCSのドキュメントの並び。真の時、降順に並べる|
 |source\_directory|system|system|ソースディレクトリ|
 |source\_file|system|system|ソースファイル名|
 |source\_path|system|system|ソースファイルパス|
