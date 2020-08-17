@@ -148,3 +148,8 @@ Add JSON support.
 * Add tutorial documents.
 * Fix sample `.accsindex.erb`.
 * Delete `util` (not worked).
+
+## v1.14 2020-08-17
+
+* Add `yaml` to `dbstyle`
+* Add documents for PureBuilder Simply on Windows.
