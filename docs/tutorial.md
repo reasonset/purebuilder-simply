@@ -8,7 +8,7 @@
 4. Write `index.md` on your document root.
 5. Write Markdown or ReST documents on `post` directory.
 
-## Manual minimal
+## Manual minimal start
 
 1. Make your source document root. I recommend that it is `sitename/Sources`.
 2. Make your build document root. I recommend that it is `sitename/Build`.

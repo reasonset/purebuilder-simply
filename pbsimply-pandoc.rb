@@ -129,6 +129,14 @@ EOF
         @store_class = ::Oj
       end
     end
+
+    class YAML < DocDB
+      def initialize(dir)
+        @dir = dir
+        @store_class = ::YAML
+        @ext = "yaml"
+      end
+    end
   end
   
 
