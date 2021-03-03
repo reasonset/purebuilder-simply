@@ -57,7 +57,7 @@ end
   else
     lambda {|i| [i["date"], i["title"].to_s, i["_last_update"].to_i] }
   end
-  
+
   list = if @config["accs_order"] == "desc"
     cat.sort_by(&sort_method).reverse
   else
@@ -138,7 +138,7 @@ EOF
       end
     end
   end
-  
+
 
   POST_PROCESSORS = {
     ".rb" => "ruby",
@@ -226,21 +226,23 @@ EOF
     if @config["toc"]
       @pandoc_default_file["toc"] = true
     end
-    
+
     @pandoc_default_file["template"] = @config["template"]
-    
+
     if Hash === @config["pandoc_additional_options"]
       @pandoc_default_file.merge! @config["pandoc_additional_options"]
     end
-    
+
     if @singlemode
       outdir = [@config["outdir"], @dir.sub(%r:/[^/]*$:, "")].join("/")
     else
       outdir = [@config["outdir"], @dir].join("/")
     end
-    
+
     # Format for Indexes database
     @db = case @config["dbstyle"]
+    when "yaml"
+      DocDB::YAML.new(dir)
     when "json"
       DocDB::JSON.new(dir)
     when "oj"
@@ -281,7 +283,7 @@ EOF
 
     STDERR.puts "Checking Frontmatter..."
     Dir.foreach(@dir) do |filename|
-      next if filename == "." || filename == ".." 
+      next if filename == "." || filename == ".."
       if filename =~ /^\./ || filename =~ /^draft-/
         if File.exist?(File.join(@config["outdir"], @dir, filename.sub(/^(?:\.|draft-)/, "").sub(/\.(?:md|rst)$/, ".html"))) && filename != ".index.md"
           STDERR.puts "#{filename} was turn to draft. deleting..."
@@ -295,7 +297,7 @@ EOF
       frontmatter, pos = read_frontmatter(@dir, filename)
       frontmatter = @frontmatter.merge frontmatter
       frontmatter.merge!(@add_meta) if @add_meta
-      
+
       if frontmatter["draft"]
         @indexes.delete(filename) if @indexes[filename]
         if File.exist?(File.join(@config["outdir"], @dir, filename.sub(/\.(?:md|rst)$/, ".html")))
@@ -322,7 +324,7 @@ EOF
         bless_cmd(frontmatter)
       else
         bless_ruby(frontmatter)
-      end  
+      end
     end
 
     STDERR.puts "Checking modification..."
@@ -381,7 +383,7 @@ EOF
       File.open(File.join(dir, filename)) do |f|
         f.seek(pos)
         File.open(".current_document#{ext}", "w") {|fo| fo.write f.read}
-      end      
+      end
 
       lets_pandoc(dir, filename, frontmatter)
 
@@ -393,7 +395,7 @@ EOF
       load_index
 
       @accs = true if File.exist?(File.join(@dir, ".accs.yaml"))
-      
+
       # Check existing in indexes.
       @indexes.delete_if {|k,v| ! File.exist?([@dir, k].join("/")) }
 
@@ -455,7 +457,7 @@ EOF
           else
             ["perl", script_file, procdoc]
           end
-          IO.popen({"pbsimply_frontmatter" => ".pbsimply-frontmatter.json", "pbsimply_indexes" => @db.path}, script_cmdline) do |io| 
+          IO.popen({"pbsimply_frontmatter" => ".pbsimply-frontmatter.json", "pbsimply_indexes" => @db.path}, script_cmdline) do |io|
             post_script_result = io.read
           end
 
@@ -604,7 +606,7 @@ EOF
     # Title with URL Encoded.
     frontmatter["title_encoded"] = ERB::Util.url_encode(frontmatter["title"])
     frontmatter["title_html_escaped"] = ERB::Util.html_escape(frontmatter["title"])
-    fts = frontmatter["timestamp"] 
+    fts = frontmatter["timestamp"]
     fts = fts.to_datetime if Time === fts
     if DateTime === fts
       frontmatter["timestamp_xmlschema"] = fts.xmlschema
@@ -633,7 +635,7 @@ EOF
     frontmatter["_size"] = fsize
     frontmatter["_mtime"] = mtime
     frontmatter["_last_proced"] = @now.to_i
-    
+
     if File.extname(filename) == ".md"
       frontmatter["_docformat"] = "Markdown"
     elsif File.extname(filename) == ".rst" || File.extname(filename) == ".rest"
@@ -782,7 +784,7 @@ EOF
     IO.popen((["pandoc"] + ["-d", ".pbsimply-defaultfiles.yaml", "--metadata-file", ".pbsimply-frontmatter.yaml", "-M", "title:#{frontmatter["title"]}"] + [ procdoc ] )) do |io|
       doc = io.read
     end
-    
+
     # Abort if pandoc returns non-zero status
     if $?.exitstatus != 0
       abort "Pandoc returns exit code #{$?.exitstatus}"

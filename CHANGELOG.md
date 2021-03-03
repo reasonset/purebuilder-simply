@@ -153,3 +153,7 @@ Add JSON support.
 
 * Add `yaml` to `dbstyle`
 * Add documents for PureBuilder Simply on Windows.
+
+## v1.14.1 2021-03-03
+
+* Enable YAML DBStyle
