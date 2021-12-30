@@ -174,6 +174,7 @@ EOF
     # Options definition.
     opts = OptionParser.new
     opts.on("-f", "--force-refresh") { @refresh = true }
+    opts.on("-X", "--ignore-ext") { @ignore_ext = true }
     opts.on("-I", "--skip-index") { @skip_index = true }
     opts.on("-o FILE", "--output") {|v| @outfile = v }
     opts.on("-m FILE", "--additional-metafile") {|v| @add_meta = YAML.load(File.read(v))}
@@ -292,7 +293,11 @@ EOF
         next
       end
       next unless File.file?([@dir, filename].join("/"))
-      next unless %w:.md .rst:.include? File.extname filename
+      
+      if !@ignore_ext and not %w:.md .rst:.include? File.extname filename
+        next
+      end
+      
       STDERR.puts "Checking frontmatter in #{filename}"
       frontmatter, pos = read_frontmatter(@dir, filename)
       frontmatter = @frontmatter.merge frontmatter
@@ -483,107 +488,114 @@ EOF
     frontmatter = nil
     pos = nil
 
-    case File.extname filename
-    when ".md"
+    if File.exist? File.join(dir, ".meta." + filename)
+      # Load standalone metadata YAML.
+      frontmatter = YAML.load(File.read(File.join(dir, (".meta." + filename))))
+      pos = 0
+    else
 
-      # Load Markdown's YAML frontmatter.
-      File.open(File.join(dir, filename)) do |f|
-        l = f.gets
-        next unless l && l.chomp == "---"
+      case File.extname filename
+      when ".md"
 
-        lines = []
+        # Load Markdown's YAML frontmatter.
+        File.open(File.join(dir, filename)) do |f|
+          l = f.gets
+          next unless l && l.chomp == "---"
 
-        while l = f.gets
-          break if l.nil?
-
-          break if  l.chomp == "---"
-          lines.push l
-        end
-
-        next if f.eof?
-
-        begin
-          frontmatter = YAML.load(lines.join)
-        rescue => e
-          STDERR.puts "!CRITICAL: Cannot parse frontmatter."
-          raise e
-        end
-
-        pos = f.pos
-      end
-
-    when ".rst"
-      # ReSTRUCTURED Text
-
-      File.open(File.join(dir, filename)) do |f|
-        l = f.gets
-        if l =~ /:([A-Za-z_-]+): (.*)/ #docinfo
-          frontmatter = { $1 => [$2.chomp] }
-          last_key = $1
-
-          # Read docinfo
-          while(l = f.gets)
-            break if l =~ /^\s*$/ # End of docinfo
-            if l =~ /^\s+/ # Continuous line
-              docinfo_lines.last.push($'.chomp)
-            elsif l =~ /:([A-Za-z_-]+): (.*)/
-              frontmatter[$1] = [$2.chomp]
-              last_key = $1
-            end
-          end
-
-          # Treat docinfo lines
-          frontmatter.each do |k,v|
-            v = v.join(" ")
-            #if((k == "author" || k == "authors") && v.include?(";")) # Multiple authors.
-            if(v.include?(";")) # Multiple element.
-              v = v.split(/\s*;\s*/)
-
-            elsif k == "date" # Date?
-              # Datetime?
-              if v =~ /[0-2][0-9]:[0-6][0-9]/
-                v = DateTime.parse(v)
-              else
-                v = Date.parse(v)
-              end
-            elsif v == "yes" || v == "true"
-              v = true
-            else # Simple String.
-              nil # keep v
-            end
-
-            frontmatter[k] = v
-          end
-
-        elsif l && l.chomp == ".." #YAML
-          # Load ReST YAML that document begins comment and block is yaml.
           lines = []
 
-          while(l = f.gets)
-            if(l !~ /^\s*$/ .. l =~ /^\s*$/)
-              if l=~ /^\s*$/
-                break
-              else
-                lines.push l
-              end
-            end
+          while l = f.gets
+            break if l.nil?
+
+            break if  l.chomp == "---"
+            lines.push l
           end
+
           next if f.eof?
 
-
-          # Rescue for failed to read YAML.
           begin
-            frontmatter = YAML.load(lines.map {|i| i.sub(/^\s*/, "") }.join)
-          rescue
-            STDERR.puts "Error in parsing ReST YAML frontmatter (#{$!})"
-            next
+            frontmatter = YAML.load(lines.join)
+          rescue => e
+            STDERR.puts "!CRITICAL: Cannot parse frontmatter."
+            raise e
           end
-        else
-          next
+
+          pos = f.pos
         end
 
-        pos = f.pos
+      when ".rst"
+        # ReSTRUCTURED Text
 
+        File.open(File.join(dir, filename)) do |f|
+          l = f.gets
+          if l =~ /:([A-Za-z_-]+): (.*)/ #docinfo
+            frontmatter = { $1 => [$2.chomp] }
+            last_key = $1
+
+            # Read docinfo
+            while(l = f.gets)
+              break if l =~ /^\s*$/ # End of docinfo
+              if l =~ /^\s+/ # Continuous line
+                docinfo_lines.last.push($'.chomp)
+              elsif l =~ /:([A-Za-z_-]+): (.*)/
+                frontmatter[$1] = [$2.chomp]
+                last_key = $1
+              end
+            end
+
+            # Treat docinfo lines
+            frontmatter.each do |k,v|
+              v = v.join(" ")
+              #if((k == "author" || k == "authors") && v.include?(";")) # Multiple authors.
+              if(v.include?(";")) # Multiple element.
+                v = v.split(/\s*;\s*/)
+
+              elsif k == "date" # Date?
+                # Datetime?
+                if v =~ /[0-2][0-9]:[0-6][0-9]/
+                  v = DateTime.parse(v)
+                else
+                  v = Date.parse(v)
+                end
+              elsif v == "yes" || v == "true"
+                v = true
+              else # Simple String.
+                nil # keep v
+              end
+
+              frontmatter[k] = v
+            end
+
+          elsif l && l.chomp == ".." #YAML
+            # Load ReST YAML that document begins comment and block is yaml.
+            lines = []
+
+            while(l = f.gets)
+              if(l !~ /^\s*$/ .. l =~ /^\s*$/)
+                if l=~ /^\s*$/
+                  break
+                else
+                  lines.push l
+                end
+              end
+            end
+            next if f.eof?
+
+
+            # Rescue for failed to read YAML.
+            begin
+              frontmatter = YAML.load(lines.map {|i| i.sub(/^\s*/, "") }.join)
+            rescue
+              STDERR.puts "Error in parsing ReST YAML frontmatter (#{$!})"
+              next
+            end
+          else
+            next
+          end
+
+          pos = f.pos
+
+        end
       end
     end
 
@@ -781,7 +793,11 @@ EOF
     File.open(".pbsimply-frontmatter.yaml", "w") {|f| YAML.dump(frontmatter, f)}
 
     # Go Pandoc
-    IO.popen((["pandoc"] + ["-d", ".pbsimply-defaultfiles.yaml", "--metadata-file", ".pbsimply-frontmatter.yaml", "-M", "title:#{frontmatter["title"]}"] + [ procdoc ] )) do |io|
+    pandoc_cmdline = ["pandoc"]
+    pandoc_cmdline += ["-d", ".pbsimply-defaultfiles.yaml", "--metadata-file", ".pbsimply-frontmatter.yaml", "-M", "title:#{frontmatter["title"]}"]
+    pandoc_cmdline += ["-f", frontmatter["input_format"]] if frontmatter["input_format"]
+    pandoc_cmdline += [ procdoc ]
+    IO.popen((pandoc_cmdline)) do |io|
       doc = io.read
     end
 
@@ -797,13 +813,14 @@ EOF
     end
 
     # Write out
+    outext = frontmatter["force_ext"] || ".html"
     outpath = case
     when @outfile
       @outfile
     when @accs_processing
-      File.join(@config["outdir"], @dir, "index") + ".html"
+      File.join(@config["outdir"], @dir, "index") + outext
     else
-      File.join(@config["outdir"], @dir, File.basename(filename, ".*")) + ".html"
+      File.join(@config["outdir"], @dir, File.basename(filename, ".*")) + outext
     end
 
     File.open(outpath, "w") do |f|
@@ -836,7 +853,7 @@ EOF
 
     @index = @frontmatter.merge @accs_index
 
-    doc = ERB.new(erbtemplate, nil, "%<>").result(binding)
+    doc = ERB.new(erbtemplate, trim_mode: "%<>").result(binding)
     File.open(File.join(@dir, ".index.md"), "w") do |f|
       f.write doc
     end
