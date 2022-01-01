@@ -157,3 +157,9 @@ Add JSON support.
 ## v1.14.1 2021-03-03
 
 * Enable YAML DBStyle
+
+## v1.15 2022-01-01
+
+* Support `-X` option
+* Support separated metadata file
+* Fix `ERb.new` arguments
