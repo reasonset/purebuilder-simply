@@ -1,24 +1,26 @@
-#!/usr/bin/ruby
-# -*- mode: ruby; coding: UTF-8 -*-
-
+#!/bin/env ruby
 require 'yaml'
 require 'erb'
 require 'date'
 require 'fileutils'
 require 'optparse'
 
-begin
-  require 'oj'
-  JSON_LIB = Oj
-rescue LoadError
-  require 'json'
-  JSON_LIB = JSON
-end
+class PBSimply
+  # Use Oj as JSON library for frontmatter passing if possible.
+  begin
+    require 'oj'
+    JSON_LIB = Oj
+  rescue LoadError
+    require 'json'
+    JSON_LIB = JSON
+  end
 
-class PureBuilder
-  # Built-in Accs index eRuby string.
+  # ACCS namespace.
+  module ACCS
+    DEFINITIONS = {}
 
-  ACCS_INDEX = <<'EOF'
+    # Built-in Accs index eRuby string.
+    INDEX = <<'EOF'
 <%= YAML.dump(
   {
     "title" => @index["title"],
@@ -70,9 +72,6 @@ end
 
 % end
 EOF
-
-  module ACCS
-    DEFINITIONS = {}
   end
 
   # Abstruct super class.
@@ -86,8 +85,8 @@ EOF
     def load
       File.open(File.join(@dir, ".indexes.#{@ext}"), "r") do |f|
         next @store_class.load(f)
+      end
     end
-  end
 
     def exist?
       File.exist?(File.join(@dir, ".indexes.#{@ext}"))
@@ -151,94 +150,40 @@ EOF
     ".sed" => ["sed", ->(script, target) { ["-f", script, target] } ]
   }
 
-  def initialize(dir=nil)
-    @docobject = {}
-    @this_time_processed = []
-
-    # -d
-    @pandoc_default_file = {
-      "to" => "html5",
-      "standalone" => true
-    }
-    # --metadata-file
-    @frontmatter = {}
-
-    @refresh = false # Force generate all documents.
-    @skip_index = false # Don't register to index.
-    @outfile = nil # Fixed output filename
-    @add_meta = nil
-    @accs = nil
-    @accs_index = {}
-    @now = Time.now
-
-    # Options definition.
-    opts = OptionParser.new
-    opts.on("-f", "--force-refresh") { @refresh = true }
-    opts.on("-X", "--ignore-ext") { @ignore_ext = true }
-    opts.on("-I", "--skip-index") { @skip_index = true }
-    opts.on("-o FILE", "--output") {|v| @outfile = v }
-    opts.on("-m FILE", "--additional-metafile") {|v| @add_meta = YAML.load(File.read(v))}
-    opts.parse!(ARGV)
-
-    if File.exist?(".pbsimply-bless.rb")
-      require "./.pbsimply-bless.rb"
-    end
-
-    # Set target directory.
-    @dir = ARGV.shift unless dir
-    @dir ||= "."
-    ENV["pbsimply_subdir"] = @dir
-  end
-
-  def doc
-    @docobject
-  end
-
-  attr :indexes
+  ###############################################
+  #               SETUP FUNCTIONS               #
+  ###############################################
 
   # Load config file.
-  def load_config(dir)
+  def self.load_config
+    config = nil
     begin
       File.open(".pbsimply.yaml") do |f|
-        @config = YAML.load(f)
+        config = YAML.load(f)
       end
     rescue
-      abort "Failed to load config file (.pbsimply.yaml)"
+      abort "Failed to load config file (./.pbsimply.yaml)"
     end
 
     # Required values
-    @config["outdir"] or abort "Output directory is not set (outdir)."
-    @config["template"] ||= "./template.html"
+    config["outdir"] or abort "Output directory is not set (outdir)."
+    config["template"] ||= "./template.html"
 
+    config
+  end
+
+  # initialize phase,
+  def setup_config(dir)
     ENV["pbsimply_outdir"] = @config["outdir"]
-
     @docobject[:config] = @config
-
-    if @config["css"]
-      if @config["css"].kind_of?(String)
-        @pandoc_default_file["css"] = [@config["css"]]
-      elsif @config["css"].kind_of?(Array)
-        @pandoc_default_file["css"] = @config["css"]
-      else
-        abort "css in Config should be a String or an Array."
-      end
-    end
-
-    if @config["toc"]
-      @pandoc_default_file["toc"] = true
-    end
-
-    @pandoc_default_file["template"] = @config["template"]
-
-    if Hash === @config["pandoc_additional_options"]
-      @pandoc_default_file.merge! @config["pandoc_additional_options"]
-    end
 
     if @singlemode
       outdir = [@config["outdir"], @dir.sub(%r:/[^/]*$:, "")].join("/")
     else
       outdir = [@config["outdir"], @dir].join("/")
     end
+
+    p dir
 
     # Format for Indexes database
     @db = case @config["dbstyle"]
@@ -265,6 +210,44 @@ EOF
     end
   end
 
+  def initialize(config)
+    @config = config
+    @docobject = {}
+    @this_time_processed = []
+
+    # --metadata-file
+    @frontmatter = {}
+
+    @refresh = false # Force generate all documents.
+    @skip_index = false # Don't register to index.
+    @outfile = nil # Fixed output filename
+    @add_meta = nil
+    @accs = nil
+    @accs_index = {}
+    @now = Time.now
+  end
+
+  # Process command-line
+  def treat_cmdline(dir=nil)
+    # Options definition.
+    opts = OptionParser.new
+    opts.on("-f", "--force-refresh") { @refresh = true }
+    opts.on("-X", "--ignore-ext") { @ignore_ext = true }
+    opts.on("-I", "--skip-index") { @skip_index = true }
+    opts.on("-o FILE", "--output") {|v| @outfile = v }
+    opts.on("-m FILE", "--additional-metafile") {|v| @add_meta = YAML.load(File.read(v))}
+    opts.parse!(ARGV)
+
+    if File.exist?(".pbsimply-bless.rb")
+      require "./.pbsimply-bless.rb"
+    end
+
+    # Set target directory.
+    @dir = ARGV.shift unless dir
+    @dir ||= "."
+    ENV["pbsimply_subdir"] = @dir
+  end
+
   # Load document index database (.indexes.${ext}).
   def load_index
     if @db.exist?
@@ -274,6 +257,18 @@ EOF
     end
     @docobject[:indexes] = @indexes
   end
+
+  # Accessor reader.
+  def doc
+    @docobject
+  end
+
+  attr :indexes
+
+
+  ###############################################
+  #            PROCESSING FUNCTIONS             #
+  ###############################################
 
   # Directory mode's main function.
   # Read Frontmatters from all documents and proc each documents.
@@ -293,11 +288,11 @@ EOF
         next
       end
       next unless File.file?([@dir, filename].join("/"))
-      
+
       if !@ignore_ext and not %w:.md .rst:.include? File.extname filename
         next
       end
-      
+
       STDERR.puts "Checking frontmatter in #{filename}"
       frontmatter, pos = read_frontmatter(@dir, filename)
       frontmatter = @frontmatter.merge frontmatter
@@ -336,7 +331,7 @@ EOF
 
     target_docs.delete_if {|filename, frontmatter, pos| !check_modify([@dir, filename], frontmatter)}
 
-    STDERR.puts "Okay, Now ready. Let's Pandoc..."
+    STDERR.puts "Okay, Now ready. Process documents..."
 
     # Proccess documents
     target_docs.each do |filename, frontmatter, pos|
@@ -348,7 +343,7 @@ EOF
       end
 
       STDERR.puts "Processing #{filename}"
-      lets_pandoc(@dir, filename, frontmatter)
+      generate(@dir, filename, frontmatter)
     end
 
     @db.dump(@indexes) unless @skip_index
@@ -361,7 +356,9 @@ EOF
     end
   end
 
+  # Run PureBuilder Simply.
   def main
+    # If target file is regular file, run as single mode.
     @singlemode = true if File.file?(@dir)
 
     # Check single file mode.
@@ -375,13 +372,12 @@ EOF
         filename = @dir
       end
       @dir = dir
+      setup_config(dir)
 
-      load_config(dir)
       load_index
 
       frontmatter, pos = read_frontmatter(dir, filename)
       frontmatter = @frontmatter.merge frontmatter
-      check_modify([dir, filename], frontmatter)
       @index = frontmatter
 
       ext = File.extname filename
@@ -390,13 +386,13 @@ EOF
         File.open(".current_document#{ext}", "w") {|fo| fo.write f.read}
       end
 
-      lets_pandoc(dir, filename, frontmatter)
+      generate(dir, filename, frontmatter)
 
       post_plugins(frontmatter)
 
     else
       # Normal (directory) mode.
-      load_config(@dir)
+      setup_config(@dir)
       load_index
 
       @accs = true if File.exist?(File.join(@dir, ".accs.yaml"))
@@ -405,7 +401,6 @@ EOF
       @indexes.delete_if {|k,v| ! File.exist?([@dir, k].join("/")) }
 
       proc_dir
-
     end
   ensure
     File.delete ".pbsimply-defaultfiles.yaml" if File.exist?(".pbsimply-defaultfiles.yaml")
@@ -471,6 +466,78 @@ EOF
       end
     end
   end
+
+  def generate(dir, filename, frontmatter)
+    print_fileproc_msg(filename) # at sub-class
+
+    # Preparing and pre script.
+    orig_filepath = [dir, filename].join("/")
+    ext = File.extname(filename)
+    procdoc = sprintf(".current_document%s", ext)
+    pre_plugins(procdoc, frontmatter)
+
+    doc = process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc) # at sub-class
+
+    ##### Post eRuby
+    if @config["post_eruby"]
+      STDERR.puts "Porcessing with eRuby."
+      doc = ERB.new(doc, nil, "%<>").result(binding)
+    end
+
+    # Write out
+    outext = frontmatter["force_ext"] || ".html"
+    outpath = case
+    when @outfile
+      @outfile
+    when @accs_processing
+      File.join(@config["outdir"], @dir, "index") + outext
+    else
+      File.join(@config["outdir"], @dir, File.basename(filename, ".*")) + outext
+    end
+
+    File.open(outpath, "w") do |f|
+      f.write(doc)
+    end
+
+    # Mark processed
+    @this_time_processed.push({source: orig_filepath, dest: outpath})
+  end
+
+  # letsaccs
+  #
+  # This method called on the assumption that processed all documents and run as directory mode.
+  def process_accs
+    STDERR.puts "Processing ACCS index..."
+    if File.exist?(File.join(@dir, ".accsindex.erb"))
+      erbtemplate = File.read(File.join(@dir, ".accsindex.erb"))
+    elsif File.exist?(".accsindex.erb")
+      erbtemplate = File.read(".accsindex.erb")
+    else
+      erbtemplate = ACCS::INDEX
+    end
+
+    # Get infomation
+    @accs_index = YAML.load(File.read([@dir, ".accs.yaml"].join("/")))
+
+    @accs_index["title"] ||= (@config["accs_index_title"] || "Index")
+    @accs_index["date"] ||= Time.now.strftime("%Y-%m-%d")
+    @accs_index["pagetype"] = "accs_index"
+
+    @index = @frontmatter.merge @accs_index
+
+    doc = ERB.new(erbtemplate, trim_mode: "%<>").result(binding)
+    File.open(File.join(@dir, ".index.md"), "w") do |f|
+      f.write doc
+    end
+
+    accsmode
+    @dir = File.join(@dir, ".index.md")
+    main
+  end
+
+  ###############################################
+  #      PRIVATE METHODS (treat document)       #
+  ###############################################
 
   private
 
@@ -778,90 +845,204 @@ EOF
     end
   end
 
-  # Invoke pandoc, parse and format and write out.
-  def lets_pandoc(dir, filename, frontmatter)
-    STDERR.puts "#{filename} is going Pandoc."
-    doc = nil
+  ###############################################
+  #           DOCUMENT PROCESSORS               #
+  ###############################################
 
-    # Preparing and pre script.
-    orig_filepath = [dir, filename].join("/")
-    ext = File.extname(filename)
-    procdoc = sprintf(".current_document%s", ext)
-    pre_plugins(procdoc, frontmatter)
 
-    File.open(".pbsimply-defaultfiles.yaml", "w") {|f| YAML.dump(@pandoc_default_file, f)}
-    File.open(".pbsimply-frontmatter.yaml", "w") {|f| YAML.dump(frontmatter, f)}
+  module Processor
 
-    # Go Pandoc
-    pandoc_cmdline = ["pandoc"]
-    pandoc_cmdline += ["-d", ".pbsimply-defaultfiles.yaml", "--metadata-file", ".pbsimply-frontmatter.yaml", "-M", "title:#{frontmatter["title"]}"]
-    pandoc_cmdline += ["-f", frontmatter["input_format"]] if frontmatter["input_format"]
-    pandoc_cmdline += [ procdoc ]
-    IO.popen((pandoc_cmdline)) do |io|
-      doc = io.read
+    # Pandoc processor
+    class Pandoc < PBSimply
+      def initialize(config)
+        @pandoc_default_file = {}
+
+        # -d
+        @pandoc_default_file = {
+          "to" => "html5",
+          "standalone" => true
+        }
+        super
+      end
+
+      def setup_config(dir)
+        super
+        @pandoc_default_file["template"] = @config["template"]
+
+        if @config["css"]
+          if @config["css"].kind_of?(String)
+            @pandoc_default_file["css"] = [@config["css"]]
+          elsif @config["css"].kind_of?(Array)
+            @pandoc_default_file["css"] = @config["css"]
+          else
+            abort "css in Config should be a String or an Array."
+          end
+        end
+
+        if @config["toc"]
+          @pandoc_default_file["toc"] = true
+        end
+
+        if Hash === @config["pandoc_additional_options"]
+          @pandoc_default_file.merge! @config["pandoc_additional_options"]
+        end
+
+      end
+
+      # Invoke pandoc, parse and format and write out.
+      def print_fileproc_msg(filename)
+        STDERR.puts "#{filename} is going Pandoc."
+      end
+
+      def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)
+        doc = nil
+
+        File.open(".pbsimply-defaultfiles.yaml", "w") {|f| YAML.dump(@pandoc_default_file, f)}
+        File.open(".pbsimply-frontmatter.yaml", "w") {|f| YAML.dump(frontmatter, f)}
+
+        # Go Pandoc
+        pandoc_cmdline = ["pandoc"]
+        pandoc_cmdline += ["-d", ".pbsimply-defaultfiles.yaml", "--metadata-file", ".pbsimply-frontmatter.yaml", "-M", "title:#{frontmatter["title"]}"]
+        pandoc_cmdline += ["-f", frontmatter["input_format"]] if frontmatter["input_format"]
+        pandoc_cmdline += [ procdoc ]
+        IO.popen((pandoc_cmdline)) do |io|
+          doc = io.read
+        end
+
+        # Abort if pandoc returns non-zero status
+        if $?.exitstatus != 0
+          abort "Pandoc returns exit code #{$?.exitstatus}"
+        end
+
+        doc
+      end
     end
 
-    # Abort if pandoc returns non-zero status
-    if $?.exitstatus != 0
-      abort "Pandoc returns exit code #{$?.exitstatus}"
+    # RDoc family Base
+    class PbsRBase < PBSimply
+      def initialize(config)
+        require 'rdoc'
+        require 'rdoc/markup/to_html'
+
+        @rdoc_options = RDoc::Options.new
+        @rdoc_markup = RDoc::Markup.new
+
+        super
+      end
+
+      def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)
+        # Getting HTML string.
+        rdoc = RDoc::Markup::ToHtml.new(@rdoc_options, @rdoc_markup)
+        article_body = rdoc.convert(get_markup_document(procdoc))
+
+        # Process with eRuby temaplte.
+        erb_template = ERB.new(File.read(@config["template"]), trim_mode: '%<>')
+        doc = erb_template.result(binding)
+
+        doc
+      end
     end
 
-    ##### Post eRuby
-    if @config["post_eruby"]
-      STDERR.puts "Porcessing with eRuby."
-      doc = ERB.new(doc, nil, "%<>").result(binding)
+    # RDoc/Markdown processor
+    class PbsRMakrdown < PbsRBase
+      def initialize(config)
+        require 'rdoc'
+        require 'rdoc/markdown'
+        super
+      end
+
+      def print_fileproc_msg(filename)
+        STDERR.puts "#{filename} generate with RDoc/Markdown"
+      end
+
+      def get_markup_document procdoc
+        RDoc::Markdown.parse(File.read procdoc)
+      end
     end
 
-    # Write out
-    outext = frontmatter["force_ext"] || ".html"
-    outpath = case
-    when @outfile
-      @outfile
-    when @accs_processing
-      File.join(@config["outdir"], @dir, "index") + outext
-    else
-      File.join(@config["outdir"], @dir, File.basename(filename, ".*")) + outext
+    # RDoc processor
+    class PbsRDoc < PbsRBase
+      def print_fileproc_msg(filename)
+        STDERR.puts "#{filename} generate with RDoc"
+      end
+
+      def get_markup_document procdoc
+        File.read procdoc
+      end
     end
 
-    File.open(outpath, "w") do |f|
-      f.write(doc)
+    class PbsRedCarpet < PBSimply
+      def initialize(config)
+        require 'redcarpet'
+        super
+      end
+
+      def setup_config(dir)
+        super
+        @rc_extension = @config["redcarpet_extensions"] || {}
+      end
+
+      def print_fileproc_msg(filename)
+        STDERR.puts "#{filename} generate with Redcarpet Markdown"
+      end
+
+      def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)
+        # Getting HTML string.
+        markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML, **@rc_extension)
+        article_body = markdown.render(File.read procdoc)
+
+        # Process with eRuby temaplte.
+        erb_template = ERB.new(File.read(@config["template"]), trim_mode: '%<>')
+        doc = erb_template.result(binding)
+
+        doc
+      end
     end
 
-    # Mark processed
-    @this_time_processed.push({source: orig_filepath, dest: outpath})
-  end
+    class PbsKramdown < PBSimply
+      def initialize(config)
+        require 'kramdown'
+        super
+      end
 
-  # letsaccs
-  #
-  # This method called on the assumption that processed all documents and run as directory mode.
-  def process_accs
-    STDERR.puts "Processing ACCS index..."
-    if File.exist?(File.join(@dir, ".accsindex.erb"))
-      erbtemplate = File.read(File.join(@dir, ".accsindex.erb"))
-    elsif File.exist?(".accsindex.erb")
-      erbtemplate = File.read(".accsindex.erb")
-    else
-      erbtemplate = ACCS_INDEX
+      def print_fileproc_msg(filename)
+        STDERR.puts "#{filename} generate with Kramdown"
+      end
+
+      def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)
+        # Getting HTML string.
+        markdown = Kramdown::Document.new(File.read procdoc)
+        article_body = markdown.to_html
+
+        # Process with eRuby temaplte.
+        erb_template = ERB.new(File.read(@config["template"]), trim_mode: '%<>')
+        doc = erb_template.result(binding)
+
+        doc
+      end
     end
 
-    # Get infomation
-    @accs_index = YAML.load(File.read([@dir, ".accs.yaml"].join("/")))
+    class PbsCommonMark < PBSimply
+      def initialize(config)
+        require 'commonmarker'
+        super
+      end
 
-    @accs_index["title"] ||= (@config["accs_index_title"] || "Index")
-    @accs_index["date"] ||= Time.now.strftime("%Y-%m-%d")
-    @accs_index["pagetype"] = "accs_index"
+      def print_fileproc_msg(filename)
+        STDERR.puts "#{filename} generate with CommonMarker (cmark-gfm)"
+      end
 
-    @index = @frontmatter.merge @accs_index
+      def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)
+        # Getting HTML string.
+        article_body = CommonMarker.render_doc(File.read(procdoc), :DEFAULT, [:table, :strikethrough]).to_html
 
-    doc = ERB.new(erbtemplate, trim_mode: "%<>").result(binding)
-    File.open(File.join(@dir, ".index.md"), "w") do |f|
-      f.write doc
+        # Process with eRuby temaplte.
+        erb_template = ERB.new(File.read(@config["template"]), trim_mode: '%<>')
+        doc = erb_template.result(binding)
+
+        doc
+      end
     end
 
-    accsmode
-    @dir = File.join(@dir, ".index.md")
-    main
   end
 end
-
-PureBuilder.new.main

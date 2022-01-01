@@ -163,3 +163,11 @@ Add JSON support.
 * Support `-X` option
 * Support separated metadata file
 * Fix `ERb.new` arguments
+
+## v2.0 2022-01-02
+
+* Support multiple (RDoc, RDoc/Markdown, Kramdown, Redcarpet, CommonMarker) processors
+* Fix bug when single mode
+* Change filename
+* Support RubyGems
+
