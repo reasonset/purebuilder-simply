@@ -12,9 +12,25 @@ ACCSはウェブサイト上で連載を構築するためのスクリプトで�
 
 PureBuilder Simply ACCS はPureBuilder Simplyによって `index.html` ファイルを生成する。
 
-## Install
+## インストール
 
-* Rubyスクリプトを実行ディレクトリにコピーする
+### RubyGems.orgからインストールする
+
+`gem install pbsimply`
+
+### 手動でRubyGemsをインストールする
+
+* `gem build pbsimply.gemspec`
+* `gem install pbsimply-$version.gem`
+
+### 手動でインストールする
+
+* `git clobe git://github.com/reasonset/purebuilder-simply.git`
+* `bin/`ディレクトリのファイルをPATHの通ったディレクトリにコピーする
+* `lib/`ディレクトリのファイルをRubyライブラリのディレクトリにコピーする
+
+## はじめる
+
 * ドキュメントルートディレクトリを作成する
 * ドキュメントルートディレクトリに `.pbsimply.yaml`ファイルを設置する
 * ディレクトリ及びドキュメント(MarkdownまたはReST)を書く
@@ -410,3 +426,148 @@ JavaScriptプラグインファイル。
 ### Bloggy
 
 ![よくあるブログっぽいテーマ](img/theme-bloggy.png)]
+
+## Pandoc以外のプロセッサを使う
+
+### 基本事項
+
+PureBuilder SimplyはPandocを使うことで非常に強力なツールとなるが、Pandocを好まない場合、他のドキュメントプロセッサを使うこともできる。
+
+ただし、機能的には制約を受ける。
+
+使用するプロセッサは`.pbsimply.yaml`の`pbsimply_processor`の値を用いて指定する。
+
+|Processor|pbsimply_processor|
+|--------|-------------------|
+|RDoc|`rdoc`|
+|RDoc/Markdown|`rdoc_markdown`|
+|Kramdown|`kramdown`|
+|Redcarpet|`redcarpet`|
+|CommonMarker (cmark-gfm)|`cmark`|
+
+また、テンプレートをeRubyテンプレートとして評価するものについては、テンプレート上で次の値を利用することができる
+(ほとんどの場合、`frontmatter`と`article_body`を使う)。
+
+|変数名|内容|
+|--------|--------------------------|
+|`dir`|ドキュメントルートからの相対ディレクトリ|
+|`filename`|ソースファイル名|
+|`frontmatter`|blessの行われたメタデータ|
+|`orig_filepath`|処理対象のもとのファイルパス|
+|`procdoc`|ソースとして実際に処理されているファイルパス|
+|`article_body`|生成されたHTMLドキュメント|
+
+### RDoc
+
+#### 説明
+
+Rubyの標準ドキュメントシステムのRDocを用いる。
+ソースファイルはRDocであるとして処理し、対象は`*.rdoc`ファイルに限られる。
+
+テンプレートはeRubyテンプレートとして扱う。
+
+#### Dependency
+
+* rdoc library
+
+#### 使用できない設定
+
+* `css`
+* `toc`
+* `pandoc_additional_options`
+* `post_eruby`
+
+### RDoc/Markdown
+
+#### 説明
+
+Rubyの標準ドキュメントシステムのRDocのMarkdownプロセッサを用いる。
+ソースファイルはMarkdownであるとして処理し、対象は`*.md`ファイルに限られる。
+
+テンプレートはeRubyテンプレートとして扱う。
+
+#### Dependency
+
+* rdoc library
+
+#### 使用できない設定
+
+* `css`
+* `toc`
+* `pandoc_additional_options`
+* `post_eruby`
+
+### Kramdown
+
+#### 説明
+
+RubyのMarkdownライブラリ、Kramdownを用いて生成する。
+ソースファイルはMarkdownであるとして処理し、対象は`*.md`ファイルに限られる。
+
+テンプレートはeRubyテンプレートとして扱う。
+
+#### Dependency
+
+* kramdown library
+
+#### 使用できない設定
+
+* `css`
+* `toc`
+* `pandoc_additional_options`
+* `post_eruby`
+
+#### 追加される設定
+
+|Key|Type|Description|
+|-------|-----|-----------------------|
+|`kramdown_features`|Hash|`Kramdown::Document.new`の第2引数として渡される連想配列。詳細は[APIドキュメントを参照すること。](https://kramdown.gettalong.org/rdoc/Kramdown/Options.html)|
+
+### Redcarpet
+
+#### 説明
+
+RubyのMarkdownライブラリ、Redcarpetを用いて生成する。
+ソースファイルはMarkdownであるとして処理し、対象は`*.md`ファイルに限られる。
+
+テンプレートはeRubyテンプレートとして扱う。
+
+#### Dependency
+
+* redcarpet library
+
+#### 使用できない設定
+
+* `css`
+* `toc`
+* `pandoc_additional_options`
+* `post_eruby`
+
+#### 追加される設定
+
+|Key|Type|Description|
+|-------|-----|-----------------------|
+|`redcarpet_extensions`|Hash|Redcarpetの拡張を示す連想配列。詳細は[Redcarpetのページ](https://github.com/vmg/redcarpet)を参照|
+
+### CommonMarker
+
+#### 説明
+
+`libcmark-gfm`のRubyラッパーであるCommonMarkerを用いて生成する。
+ソースファイルはMarkdownであるとして処理し、対象は`*.md`ファイルに限られる。
+
+`table`及び`strikethrough`拡張が有効になる。
+
+テンプレートはeRubyテンプレートとして扱う。
+
+#### Dependency
+
+* libcmark-gfm
+* commonmarker library
+
+#### 使用できない設定
+
+* `css`
+* `toc`
+* `pandoc_additional_options`
+* `post_eruby`

@@ -14,7 +14,23 @@ PB Simply ACCS make `index.md` with indexes build by PureBuilder.
 
 ## Install
 
-* Copy every Ruby script your PATH directory.
+### Install from rubygems.org
+
+`gem install pbsimply`
+
+### Manually make Gem
+
+* `gem build pbsimply.gemspec`
+* `gem install pbsimply-$version.gem`
+
+### Manually from GitHub
+
+* `git clobe git://github.com/reasonset/purebuilder-simply.git`
+* Copy under `bin/` files on your PATH directory.
+* Copy under `lib/` files on your Ruby library directory.
+
+## Get start
+
 * Make your document root
 * Create and edit `.pbsimply.yaml` in your document root.
 * Make directory and documents (Markdown or ReSTructured Text)
@@ -418,3 +434,147 @@ You can use sample Themes with merge content to copied sample document directory
 ### Bloggy
 
 ![Typical blog theme](img/theme-bloggy.png)
+
+## Use a processor instead of Pandoc
+
+### Basics
+
+PureBuilder Simply is a very powerful tool when used with Pandoc, but if you do not prefer Pandoc, you can use other document processors.
+
+However, it is limited in its functionality.
+
+The processor to use is specified with the value of `pbsimply_processor` in `.pbsimply.yaml`.
+
+|Processor|pbsimply_processor|
+|--------|-------------------|
+|RDoc|`rdoc`|
+|RDoc/Markdown|`rdoc_markdown`|
+|Kramdown|`kramdown`|
+|Redcarpet|`redcarpet`|
+|CommonMarker (cmark-gfm)|`cmark`|
+
+Also, for those templates that evaluate as eRuby templates, you can use the following values on the template (in most cases, use `frontmatter` and `article_body`.)
+
+|Variable name|Description|
+|--------|--------------------------|
+|`dir`|Relative directory path from document root.|
+|`filename`|Source file name.|
+|`frontmatter`|Blessed metadata.|
+|`orig_filepath`|Original source filepath.|
+|`procdoc`|Actual (treated) source filepath.|
+|`article_body`|Generated document body.|
+
+### RDoc
+
+#### Summery
+
+It uses RDoc, the standard documentation system of Ruby.
+Source files are treated as RDoc, and the target is limited to `*.rdoc` files.
+
+Templates are handled as eRuby templates.
+
+#### Dependency
+
+* rdoc library
+
+#### Disabled configurations
+
+* `css`
+* `toc`
+* `pandoc_additional_options`
+* `post_eruby`
+
+### RDoc/Markdown
+
+#### Summery
+
+Use the Markdown processor of RDoc, Ruby's standard document system.
+Treat source files as if they were Markdown, limited to `*.md` files.
+
+Templates are handled as eRuby templates.
+
+#### Dependency
+
+* rdoc library
+
+#### Disabled configurations
+
+* `css`
+* `toc`
+* `pandoc_additional_options`
+* `post_eruby`
+
+### Kramdown
+
+#### Summery
+
+It is generated using Kramdown, Ruby's Markdown library.
+Treat source files as if they were Markdown, limited to `*.md` files.
+
+Templates are handled as eRuby templates.
+
+#### Dependency
+
+* kramdown library
+
+#### Disabled configurations
+
+* `css`
+* `toc`
+* `pandoc_additional_options`
+* `post_eruby`
+
+#### Additional configurations
+
+|Key|Type|Description|
+|-------|-----|-----------------------|
+|`kramdown_features`|Hash|An associative array passed as the second argument to `Kramdown::Document.new`. See the [API documentation for details]. (https://kramdown.gettalong.org/rdoc/Kramdown/Options.html)|
+
+### Redcarpet
+
+#### Summery
+
+It is generated using Redcarpet, Ruby's Markdown library.
+Treat source files as if they were Markdown, limited to `*.md` files.
+
+Templates are handled as eRuby templates.
+
+#### Dependency
+
+* redcarpet library
+
+#### Disabled configurations
+
+* `css`
+* `toc`
+* `pandoc_additional_options`
+* `post_eruby`
+
+#### Additional configurations
+
+|Key|Type|Description|
+|-------|-----|-----------------------|
+|`redcarpet_extensions`|Hash|An associative array showing the extensions to Redcarpet. See the [Redcarpet page](https://github.com/vmg/redcarpet) for details.|
+
+### Redcarpet
+
+#### Summery
+
+Generated using CommonMarker, a Ruby wrapper for `libcmark-gfm`.
+Source files are treated as Markdown, and the target is limited to `*.md` files.
+
+The `table` and `strikethrough` extensions are enabled.
+
+Templates are handled as eRuby templates.
+
+#### Dependency
+
+* libcmark-gfm
+* commonmarker library
+*
+#### Disabled configurations
+
+* `css`
+* `toc`
+* `pandoc_additional_options`
+* `post_eruby`
