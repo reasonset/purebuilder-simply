@@ -47,7 +47,7 @@ PB Simply ACCS make `index.md` with indexes build by PureBuilder.
 
 Move your document root before running.
 
-	pbsimply-pandoc.rb directory
+	pbsimply directory
 
 PureBuilder builds documents in the directory.
 
@@ -64,7 +64,7 @@ PureBuilder skip if filename start with `draft-` or `.`, or `draft` value in fro
 
 ### Make ACCS index
 
-`pbsimply-pandoc.rb` find ACCS documents directory automatically.
+`pbsimply` find ACCS documents directory automatically.
 You mark as "ACCS documents directory" with putting `.accs.yaml` file to the directory.
 
 ACCS processor makes and puts `index.html` file.
@@ -81,7 +81,7 @@ Loaded config YAML file (`.pbsimply.yaml`).
 
 Compiled index.
 
-This object may be uncompleted when generating `pbsimply-pandoc.rb`.
+This object may be uncompleted when generating `pbsimply`.
 
 ### @index
 
@@ -167,7 +167,7 @@ Environment variables that able to use in Pre Plugins, Post plugins, Blessing co
 
 CSS, image or link locations should **not** be local place, *path to web URL*, so you cannot test generated documents normally case of suppose to put to WWW.
 
-You can test in case like it with `pbsimply-testserver.rb`.
+You can test in case like it with `pbsimply-testserver`.
 
 How to use is very simple.
 
@@ -350,7 +350,7 @@ They are an associative array that have keys `url` and `title`.
 
 |Filename|Description|
 |--------|-------------|
-|pbsimply-testserver.rb|Satrt web server for testing.|
+|pbsimply-testserver|Satrt web server for testing.|
 |accsindex.erb|Sample for `.accsindex.erb`. Normaly you don't need to edit template.|
 |docroot-sample|For (part) copy to your document root.|
 |template.html|Sample for PureBuilder template.|
