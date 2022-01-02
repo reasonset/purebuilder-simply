@@ -258,6 +258,10 @@ EOF
     @docobject[:indexes] = @indexes
   end
 
+  def target_file_extensions
+    [".md"]
+  end
+
   # Accessor reader.
   def doc
     @docobject
@@ -273,6 +277,7 @@ EOF
   # Directory mode's main function.
   # Read Frontmatters from all documents and proc each documents.
   def proc_dir
+    draft_articles = []
     target_docs = []
     @indexes_orig = {}
     STDERR.puts "in #{@dir}..."
@@ -281,15 +286,12 @@ EOF
     Dir.foreach(@dir) do |filename|
       next if filename == "." || filename == ".."
       if filename =~ /^\./ || filename =~ /^draft-/
-        if File.exist?(File.join(@config["outdir"], @dir, filename.sub(/^(?:\.|draft-)/, "").sub(/\.(?:md|rst)$/, ".html"))) && filename != ".index.md"
-          STDERR.puts "#{filename} was turn to draft. deleting..."
-          File.delete(File.join(@config["outdir"], @dir, filename.sub(/^(?:\.|draft-)/, "").sub(/\.(?:md|rst)$/, ".html")))
-        end
+        draft_articles.push filename.sub(/^(?:\.|draft-)/, "")
         next
       end
       next unless File.file?([@dir, filename].join("/"))
 
-      if !@ignore_ext and not %w:.md .rst:.include? File.extname filename
+      if !@ignore_ext and not target_file_extensions.include? File.extname filename
         next
       end
 
@@ -300,10 +302,7 @@ EOF
 
       if frontmatter["draft"]
         @indexes.delete(filename) if @indexes[filename]
-        if File.exist?(File.join(@config["outdir"], @dir, filename.sub(/\.(?:md|rst)$/, ".html")))
-          STDERR.puts "#{filename} was turn to draft. deleting..."
-          File.delete(File.join(@config["outdir"], @dir, filename.sub(/\.(?:md|rst)$/, ".html")))
-        end
+        draft_articles.push filename
         next
       end
 
@@ -314,11 +313,21 @@ EOF
       target_docs.push([filename, frontmatter, pos])
     end
 
+    # Delete turn to draft article.
+    draft_articles.each do |df|
+      STDERR.puts "#{df} was turn to draft. deleting..."
+      [df, (df + ".html"), File.basename(df, ".*"), (File.basename(df, ".*") + ".html")].each do |tfn|
+        tfp = File.join(@config["outdir"], @dir, tfn)
+        File.delete tfp if File.file?(tfp)
+      end
+    end
+
+    # Save index.
     @db.dump(@indexes) unless @skip_index
 
     STDERR.puts "Blessing..."
 
-    # Modify frontmatter
+    # Modify frontmatter `BLESSING`
     target_docs.each do |filename, frontmatter, pos|
       if @config["bless_style"] == "cmd"
         bless_cmd(frontmatter)
@@ -403,11 +412,14 @@ EOF
       proc_dir
     end
   ensure
-    File.delete ".pbsimply-defaultfiles.yaml" if File.exist?(".pbsimply-defaultfiles.yaml")
-    File.delete ".pbsimply-frontmatter.json" if File.exist?(".pbsimply-frontmatter.json")
-    File.delete ".current_document.md" if File.exist?(".current_document.md")
-    File.delete ".current_document.rst" if File.exist?(".current_document.rst")
-    File.delete ".pbsimply-frontmatter.yaml" if File.exist?(".pbsimply-frontmatter.yaml")
+    # Clean up temporary files.
+    Dir.children(".").each do |fn|
+      if fn[0, 22] == ".pbsimply-defaultfiles.yaml" or
+         fn[0, 21] == ".pbsimply-frontmatter" or
+         fn[0, 17] == ".current_document"
+        File.delete fn
+      end
+    end
   end
 
   def pre_plugins(procdoc, frontmatter)
@@ -916,6 +928,10 @@ EOF
 
         doc
       end
+
+      def target_file_extensions
+        [".md", ".rst"]
+      end
     end
 
     # RDoc family Base
@@ -969,6 +985,10 @@ EOF
       def get_markup_document procdoc
         File.read procdoc
       end
+
+      def target_file_extensions
+        [".rdoc"]
+      end
     end
 
     class PbsRedCarpet < PBSimply
@@ -1010,8 +1030,11 @@ EOF
       end
 
       def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)
+        # Set feature options
+        features = @config["kramdown_features"] || {}
+
         # Getting HTML string.
-        markdown = Kramdown::Document.new(File.read procdoc)
+        markdown = Kramdown::Document.new(File.read(procdoc), **features)
         article_body = markdown.to_html
 
         # Process with eRuby temaplte.

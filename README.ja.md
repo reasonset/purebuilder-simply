@@ -12,9 +12,25 @@ ACCSはウェブサイト上で連載を構築するためのスクリプトで�
 
 PureBuilder Simply ACCS はPureBuilder Simplyによって `index.html` ファイルを生成する。
 
-## Install
+## インストール
 
-* Rubyスクリプトを実行ディレクトリにコピーする
+### RubyGems.orgからインストールする
+
+`gem install pbsimply`
+
+### 手動でRubyGemsをインストールする
+
+* `gem build pbsimply.gemspec`
+* `gem install pbsimply-$version.gem`
+
+### 手動でインストールする
+
+* `git clobe git://github.com/reasonset/purebuilder-simply.git`
+* `bin/`ディレクトリのファイルをPATHの通ったディレクトリにコピーする
+* `lib/`ディレクトリのファイルをRubyライブラリのディレクトリにコピーする
+
+## はじめる
+
 * ドキュメントルートディレクトリを作成する
 * ドキュメントルートディレクトリに `.pbsimply.yaml`ファイルを設置する
 * ディレクトリ及びドキュメント(MarkdownまたはReST)を書く
@@ -501,6 +517,12 @@ RubyのMarkdownライブラリ、Kramdownを用いて生成する。
 * `pandoc_additional_options`
 * `post_eruby`
 
+#### 追加される設定
+
+|Key|Type|Description|
+|-------|-----|-----------------------|
+|`kramdown_features`|Hash|`Kramdown::Document.new`の第2引数として渡される連想配列。詳細は[APIドキュメントを参照すること。](https://kramdown.gettalong.org/rdoc/Kramdown/Options.html)|
+
 ### Redcarpet
 
 #### 説明
@@ -523,9 +545,9 @@ RubyのMarkdownライブラリ、Redcarpetを用いて生成する。
 
 #### 追加される設定
 
-|Key|Description|
-|-------|-----------------------|
-|`redcarpet_extensions`|Redcarpetの拡張を示す連想配列。詳細は[Redcarpetのページ](https://github.com/vmg/redcarpet)を参照|
+|Key|Type|Description|
+|-------|-----|-----------------------|
+|`redcarpet_extensions`|Hash|Redcarpetの拡張を示す連想配列。詳細は[Redcarpetのページ](https://github.com/vmg/redcarpet)を参照|
 
 ### CommonMarker
 

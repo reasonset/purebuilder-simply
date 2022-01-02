@@ -14,6 +14,10 @@ PB Simply ACCS make `index.md` with indexes build by PureBuilder.
 
 ## Install
 
+### Install from rubygems.org
+
+`gem install pbsimply`
+
 ### Manually make Gem
 
 * `gem build pbsimply.gemspec`
@@ -21,6 +25,7 @@ PB Simply ACCS make `index.md` with indexes build by PureBuilder.
 
 ### Manually from GitHub
 
+* `git clobe git://github.com/reasonset/purebuilder-simply.git`
 * Copy under `bin/` files on your PATH directory.
 * Copy under `lib/` files on your Ruby library directory.
 
@@ -519,6 +524,12 @@ Templates are handled as eRuby templates.
 * `pandoc_additional_options`
 * `post_eruby`
 
+#### Additional configurations
+
+|Key|Type|Description|
+|-------|-----|-----------------------|
+|`kramdown_features`|Hash|An associative array passed as the second argument to `Kramdown::Document.new`. See the [API documentation for details]. (https://kramdown.gettalong.org/rdoc/Kramdown/Options.html)|
+
 ### Redcarpet
 
 #### Summery
@@ -541,9 +552,9 @@ Templates are handled as eRuby templates.
 
 #### Additional configurations
 
-|Key|Description|
-|-------|-----------------------|
-|`redcarpet_extensions`|An associative array showing the extensions to Redcarpet. See the [Redcarpet page](https://github.com/vmg/redcarpet) for details.|
+|Key|Type|Description|
+|-------|-----|-----------------------|
+|`redcarpet_extensions`|Hash|An associative array showing the extensions to Redcarpet. See the [Redcarpet page](https://github.com/vmg/redcarpet) for details.|
 
 ### Redcarpet
 
@@ -560,7 +571,7 @@ Templates are handled as eRuby templates.
 
 * libcmark-gfm
 * commonmarker library
-* 
+*
 #### Disabled configurations
 
 * `css`
