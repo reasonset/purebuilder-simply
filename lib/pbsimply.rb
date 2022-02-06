@@ -159,7 +159,7 @@ EOF
     config = nil
     begin
       File.open(".pbsimply.yaml") do |f|
-        config = YAML.load(f)
+        config = Psych.unsafe_load(f)
       end
     rescue
       abort "Failed to load config file (./.pbsimply.yaml)"
@@ -235,7 +235,7 @@ EOF
     opts.on("-X", "--ignore-ext") { @ignore_ext = true }
     opts.on("-I", "--skip-index") { @skip_index = true }
     opts.on("-o FILE", "--output") {|v| @outfile = v }
-    opts.on("-m FILE", "--additional-metafile") {|v| @add_meta = YAML.load(File.read(v))}
+    opts.on("-m FILE", "--additional-metafile") {|v| @add_meta = Psych.unsafe_load(File.read(v))}
     opts.parse!(ARGV)
 
     if File.exist?(".pbsimply-bless.rb")
@@ -529,7 +529,7 @@ EOF
     end
 
     # Get infomation
-    @accs_index = YAML.load(File.read([@dir, ".accs.yaml"].join("/")))
+    @accs_index = Psych.unsafe_load(File.read([@dir, ".accs.yaml"].join("/")))
 
     @accs_index["title"] ||= (@config["accs_index_title"] || "Index")
     @accs_index["date"] ||= Time.now.strftime("%Y-%m-%d")
@@ -569,7 +569,7 @@ EOF
 
     if File.exist? File.join(dir, ".meta." + filename)
       # Load standalone metadata YAML.
-      frontmatter = YAML.load(File.read(File.join(dir, (".meta." + filename))))
+      frontmatter = Psych.unsafe_load(File.read(File.join(dir, (".meta." + filename))))
       pos = 0
     else
 
@@ -593,7 +593,7 @@ EOF
           next if f.eof?
 
           begin
-            frontmatter = YAML.load(lines.join)
+            frontmatter = Psych.unsafe_load(lines.join)
           rescue => e
             STDERR.puts "!CRITICAL: Cannot parse frontmatter."
             raise e
@@ -663,7 +663,7 @@ EOF
 
             # Rescue for failed to read YAML.
             begin
-              frontmatter = YAML.load(lines.map {|i| i.sub(/^\s*/, "") }.join)
+              frontmatter = Psych.unsafe_load(lines.map {|i| i.sub(/^\s*/, "") }.join)
             rescue
               STDERR.puts "Error in parsing ReST YAML frontmatter (#{$!})"
               next
