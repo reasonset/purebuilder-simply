@@ -1,9 +1,15 @@
 #!/bin/env ruby
+
 require 'yaml'
 require 'erb'
 require 'date'
+require 'time'
+require 'tmpdir'
 require 'fileutils'
 require 'optparse'
+require 'digest/sha1'
+
+autoload :Depot, 'depot'
 
 class PBSimply
   # Use Oj as JSON library for frontmatter passing if possible.
@@ -225,6 +231,10 @@ EOF
     @accs = nil
     @accs_index = {}
     @now = Time.now
+    @hooks = {
+      process: [],
+      delete: [],
+    }
   end
 
   # Process command-line
@@ -315,10 +325,15 @@ EOF
 
     # Delete turn to draft article.
     draft_articles.each do |df|
-      STDERR.puts "#{df} was turn to draft. deleting..."
       [df, (df + ".html"), File.basename(df, ".*"), (File.basename(df, ".*") + ".html")].each do |tfn|
         tfp = File.join(@config["outdir"], @dir, tfn)
-        File.delete tfp if File.file?(tfp)
+        if File.file?(tfp)
+          STDERR.puts "#{df} was turn to draft. deleting..."
+          @hooks[:delete].each do |hk|
+            hk.(tfp)
+          end
+          File.delete tfp
+        end
       end
     end
 
@@ -348,7 +363,7 @@ EOF
       @index = frontmatter
       File.open(File.join(@dir, filename)) do |f|
         f.seek(pos)
-        File.open(".current_document#{ext}", "w") {|fo| fo.write f.read}
+        File.open(File.join(@workdir, "current_document#{ext}"), "w") {|fo| fo.write f.read}
       end
 
       STDERR.puts "Processing #{filename}"
@@ -367,59 +382,59 @@ EOF
 
   # Run PureBuilder Simply.
   def main
-    # If target file is regular file, run as single mode.
-    @singlemode = true if File.file?(@dir)
+    Dir.mktmpdir("pbsimply") do |dir|
+      @workdir ||= dir
+      @workfile_frontmatter ||= File.join(@workdir, "pbsimply-frontmatter.json")
+      @workfile_pandoc_defaultfiles ||= File.join(@workdir, "pbsimply-defaultfiles.yaml")
+      # If target file is regular file, run as single mode.
+      @singlemode = true if File.file?(@dir)
 
-    # Check single file mode.
-    if @singlemode
-      # Single file mode
-      if @dir =~ %r:(.*)/([^/]+):
-        dir = $1
-        filename = $2
+      # Check single file mode.
+      if @singlemode
+        # Single file mode
+        if @dir =~ %r:(.*)/([^/]+):
+          dir = $1
+          filename = $2
+        else
+          dir = "."
+          filename = @dir
+        end
+        @dir = dir
+        setup_config(dir)
+
+        load_index
+
+        frontmatter, pos = read_frontmatter(dir, filename)
+        frontmatter = @frontmatter.merge frontmatter
+        @index = frontmatter
+
+        ext = File.extname filename
+        File.open(File.join(dir, filename)) do |f|
+          f.seek(pos)
+          File.open(File.join(@workdir, "current_document#{ext}"), "w") {|fo| fo.write f.read}
+        end
+
+        generate(dir, filename, frontmatter)
+
+        post_plugins(frontmatter)
+
       else
-        dir = "."
-        filename = @dir
+        # Normal (directory) mode.
+        setup_config(@dir)
+        load_index
+
+        @accs = true if File.exist?(File.join(@dir, ".accs.yaml"))
+
+        # Check existing in indexes.
+        @indexes.delete_if {|k,v| ! File.exist?([@dir, k].join("/")) }
+
+        proc_dir
       end
-      @dir = dir
-      setup_config(dir)
-
-      load_index
-
-      frontmatter, pos = read_frontmatter(dir, filename)
-      frontmatter = @frontmatter.merge frontmatter
-      @index = frontmatter
-
-      ext = File.extname filename
-      File.open(File.join(dir, filename)) do |f|
-        f.seek(pos)
-        File.open(".current_document#{ext}", "w") {|fo| fo.write f.read}
-      end
-
-      generate(dir, filename, frontmatter)
-
-      post_plugins(frontmatter)
-
-    else
-      # Normal (directory) mode.
-      setup_config(@dir)
-      load_index
-
-      @accs = true if File.exist?(File.join(@dir, ".accs.yaml"))
-
-      # Check existing in indexes.
-      @indexes.delete_if {|k,v| ! File.exist?([@dir, k].join("/")) }
-
-      proc_dir
     end
   ensure
-    # Clean up temporary files.
-    Dir.children(".").each do |fn|
-      if fn[0, 22] == ".pbsimply-defaultfiles.yaml" or
-         fn[0, 21] == ".pbsimply-frontmatter" or
-         fn[0, 17] == ".current_document"
-        File.delete fn
-      end
-    end
+    @workdir = nil
+    @workfile_frontmatter = nil
+    @workfile_pandoc_defaultfiles = nil
   end
 
   def pre_plugins(procdoc, frontmatter)
@@ -455,7 +470,7 @@ EOF
         STDERR.puts "Processing #{v[:dest]} (from #{v[:source]})"
         procdoc = v[:dest]
         frontmatter ||= @indexes[File.basename v[:source]]
-        File.open(".pbsimply-frontmatter.json", "w") {|f| f.write JSON_LIB.dump(frontmatter)}
+        File.open(@workfile_frontmatter, "w") {|f| f.write JSON_LIB.dump(frontmatter)}
         Dir.entries(".post_generate").sort.each do |script_file|
           next if script_file =~ /^\./
           STDERR.puts "Running script: #{script_file}"
@@ -469,7 +484,7 @@ EOF
           else
             ["perl", script_file, procdoc]
           end
-          IO.popen({"pbsimply_frontmatter" => ".pbsimply-frontmatter.json", "pbsimply_indexes" => @db.path}, script_cmdline) do |io|
+          IO.popen({"pbsimply_workdir" => @workdir,"pbsimply_frontmatter" => @workfile_frontmatter, "pbsimply_indexes" => @db.path}, script_cmdline) do |io|
             post_script_result = io.read
           end
 
@@ -485,7 +500,7 @@ EOF
     # Preparing and pre script.
     orig_filepath = [dir, filename].join("/")
     ext = File.extname(filename)
-    procdoc = sprintf(".current_document%s", ext)
+    procdoc = File.join(@workdir, "current_document#{ext}")
     pre_plugins(procdoc, frontmatter)
 
     doc = process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc) # at sub-class
@@ -509,6 +524,11 @@ EOF
 
     File.open(outpath, "w") do |f|
       f.write(doc)
+    end
+
+    # Hooks for processed document.
+    @hooks[:process].each do |hk|
+      hk.(outpath, frontmatter, procdoc)
     end
 
     # Mark processed
@@ -632,7 +652,7 @@ EOF
               elsif k == "date" # Date?
                 # Datetime?
                 if v =~ /[0-2][0-9]:[0-6][0-9]/
-                  v = DateTime.parse(v)
+                  v = Time.parse(v)
                 else
                   v = Date.parse(v)
                 end
@@ -799,16 +819,16 @@ EOF
   end
 
   def bless_cmd(frontmatter)
-    File.open(".pbsimply-frontmatter.json", "w") {|f| f.write JSON_LIB.dump(frontmatter) }
+    File.open(@workfile_frontmatter, "w") {|f| f.write JSON_LIB.dump(frontmatter) }
     # BLESSING (Always)
     if @config["bless_cmd"]
       (Array === @config["bless_cmd"] ? system(*@config["bless_cmd"]) : system(@config["bless_cmd"]) ) or abort "*** BLESS COMMAND RETURNS NON-ZERO STATUS"
     end
     # BLESSING (ACCS)
     if @config["bless_accscmd"]
-      (Array === @config["bless_accscmd"] ? system({"pbsimply_frontmatter" => ".pbsimply-frontmatter.json", "pbsimply_indexes" => @db.path}, *@config["bless_accscmd"]) : system({"pbsimply_frontmatter" => ".pbsimply-frontmatter.json", "pbsimply_indexes" => @db.path}, @config["bless_accscmd"]) ) or abort "*** BLESS COMMAND RETURNS NON-ZERO STATUS"
+      (Array === @config["bless_accscmd"] ? system({"pbsimply_workdir" => @workdir, "pbsimply_frontmatter" => @workfile_frontmatter, "pbsimply_indexes" => @db.path}, *@config["bless_accscmd"]) : system({"pbsimply_workdir" => @workdir, "pbsimply_frontmatter" => @workfile_frontmatter, "pbsimply_indexes" => @db.path}, @config["bless_accscmd"]) ) or abort "*** BLESS COMMAND RETURNS NON-ZERO STATUS"
     end
-    mod_frontmatter = JSON.load(File.read(".pbsimply-frontmatter.json"))
+    mod_frontmatter = JSON.load(File.read(@workfile_frontmatter))
     frontmatter.replace(mod_frontmatter)
 
     autobless(frontmatter)
@@ -909,12 +929,12 @@ EOF
       def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)
         doc = nil
 
-        File.open(".pbsimply-defaultfiles.yaml", "w") {|f| YAML.dump(@pandoc_default_file, f)}
-        File.open(".pbsimply-frontmatter.yaml", "w") {|f| YAML.dump(frontmatter, f)}
+        File.open(@workfile_pandoc_defaultfiles, "w") {|f| YAML.dump(@pandoc_default_file, f)}
+        File.open(@workfile_frontmatter, "w") {|f| YAML.dump(frontmatter, f)}
 
         # Go Pandoc
         pandoc_cmdline = ["pandoc"]
-        pandoc_cmdline += ["-d", ".pbsimply-defaultfiles.yaml", "--metadata-file", ".pbsimply-frontmatter.yaml", "-M", "title:#{frontmatter["title"]}"]
+        pandoc_cmdline += ["-d", @workfile_pandoc_defaultfiles, "--metadata-file", @workfile_frontmatter, "-M", "title:#{frontmatter["title"]}"]
         pandoc_cmdline += ["-f", frontmatter["input_format"]] if frontmatter["input_format"]
         pandoc_cmdline += [ procdoc ]
         IO.popen((pandoc_cmdline)) do |io|
@@ -1064,6 +1084,61 @@ EOF
         doc = erb_template.result(binding)
 
         doc
+      end
+    end
+
+    # Docutils processor
+    class Docutils < PBSimply
+      def initialize(config)
+        @docutils_cli_options = []
+        super
+      end
+
+      def setup_config(dir)
+        super
+        @docutils_cli_options.push("--template=#{@config["template"]}") if @config["template"]
+
+        if @config["css"]
+          if @config["css"].kind_of?(String)
+            @docutils_cli_options.push("--stylesheet=#{@config["css"]}")
+          elsif @config["css"].kind_of?(Array)
+            @docutils_cli_options.push("--stylesheet=#{@config["css"].join(",")}")
+          else
+            abort "css in Config should be a String or an Array."
+          end
+        end
+
+        if Array === @config["docutils_options"]
+          @docutils_cli_options.concat! @config["docutils_options"]
+        end
+      end
+
+      # Invoke pandoc, parse and format and write out.
+      def print_fileproc_msg(filename)
+        STDERR.puts "#{filename} is going Docutils."
+      end
+
+      def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)
+        doc = nil
+
+        # Go Docutils
+        cmdline = ["rst2html5"]
+        cmdline += @docutils_cli_options
+        cmdline += [ procdoc ]
+        IO.popen((cmdline)) do |io|
+          doc = io.read
+        end
+
+        # Abort if pandoc returns non-zero status
+        if $?.exitstatus != 0
+          abort "Docutils (rst2html5) returns exit code #{$?.exitstatus}"
+        end
+
+        doc
+      end
+
+      def target_file_extensions
+        [".rst"]
       end
     end
 

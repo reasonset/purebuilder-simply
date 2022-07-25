@@ -1,9 +1,12 @@
+#!/bin/env ruby
 
 require 'pbsimply'
 
 config = PBSimply.load_config
 
 pbs_class = case config["pbsimply_processor"]
+when "docutils"
+  PBSimply::Processor::Docutils
 when "redcarpet"
   PBSimply::Processor::PbsRedCarpet
 when "kramdown"

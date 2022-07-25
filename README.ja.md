@@ -444,6 +444,7 @@ PureBuilder SimplyはPandocを使うことで非常に強力なツールとな�
 |Kramdown|`kramdown`|
 |Redcarpet|`redcarpet`|
 |CommonMarker (cmark-gfm)|`cmark`|
+|Docutils (実験的)|`docutils`|
 
 また、テンプレートをeRubyテンプレートとして評価するものについては、テンプレート上で次の値を利用することができる
 (ほとんどの場合、`frontmatter`と`article_body`を使う)。
@@ -571,3 +572,62 @@ RubyのMarkdownライブラリ、Redcarpetを用いて生成する。
 * `toc`
 * `pandoc_additional_options`
 * `post_eruby`
+
+### Docutils
+
+#### 説明
+
+Pythonで書かれたReSTructured Textプロセッサ、Docutilsを用いて生成する。
+ソースファイルはReSTructured Textであるとして処理し、対象は`*.rst`ファイルに限られる。
+
+#### Dependency
+
+* Docutils (`rst2html5`)
+
+#### 使用できない設定
+
+* `toc`
+* `pandoc_additional_options`
+
+#### 追加される設定
+
+|Key|Type|Description|
+|-------|-----|-----------------------|
+|`docutils_options`|Array|`rst2html5`コマンドに渡されるコマンドラインオプション引数|
+
+# ソースドキュメントの保存
+
+検索インデックスの作成などを目的として、ソースドキュメントのデータを保存することができる。
+これは連動するプログラムと併用する上級者向けのオプションだが、PBsimply-Searchutilがversion 2.0でこれに対応している。
+
+保存を行うには`.pbsimply.yaml`の`save_proceeded_document`に連想配列として設定を行う。
+
+|キー|説明|
+|--------|---------------------|
+|`database`|保存の形式を選択する|
+|`content`|保存する内容を選択する|
+|`outdir`|出力先を指定する。デフォルトは`./.save_proceeded`|
+|`target_path`|配列で正規表現文字列を指定する。指定された場合、ソースファイルパスがいずれかの正規表現に一致する場合のみ生成を行う。指定されていない場合、常に生成を行う。ソースファイルパスが`./`が始まるとき、`./`は除去した上で比較される|
+
+databaseは次の値から指定する。
+
+|値|説明|
+|-------|------------------------|
+|`dbm`|`YAML::DBM`を用いて保存する|
+|`qdbm`|QDBM内にYAMLとして保存する。 `Depot`ライブラリが必要|
+|`yaml`|YAMLのファイルとして保存する|
+|`json`|JSONのファイルとして保存する。利用可能なら`Oj`クラスを利用する|
+|`pbss`|ディレクトリを分けてドキュメントソースをテキストファイルとして保存し、メタデータをYAMLで保存する。PBSimply-Searchutil向け|
+|default|Marshalのファイルとして保存する|
+
+contentは次の値から指定する。
+
+|値|説明|
+|-------|------------------------|
+|`meta`|メタデータのみを保存する|
+|`pandoc_plain`|`article_body`の値としてPandocを用いてplain形式に出力したものを格納する|
+|default|`article_body`の値としてソースファイルそのものの内容を格納する|
+
+# 関連ツール
+
+* 

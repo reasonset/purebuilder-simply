@@ -578,3 +578,25 @@ Templates are handled as eRuby templates.
 * `toc`
 * `pandoc_additional_options`
 * `post_eruby`
+
+### Docutils
+
+#### 説明
+
+Generated using Docutils ReSTructured Text processor written by Python.
+Source files are treated as ReSTructured Text, and the target is limited to `*.rst` files.
+
+#### Dependency
+
+* Docutils (`rst2html5`)
+
+#### 使用できない設定
+
+* `toc`
+* `pandoc_additional_options`
+
+#### 追加される設定
+
+|Key|Type|Description|
+|-------|-----|-----------------------|
+|`docutils_options`|Array|Command-line option arguments for `rst2html5` command.|
