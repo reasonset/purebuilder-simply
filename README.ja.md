@@ -58,10 +58,11 @@ frontmatterの`draft`の値を真にする。
 
 |オプション|内容|
 |------|------------------------------|
-|`-f`|すべてのドキュメントを強制的に更新する。テンプレートを更新した場合に便利|
-|`-I`|`.indexes.rbm`に登録しない|
-|`-o FILE`|出力ファイルをFILEに指定する|
-|`-m FILE`|さらに追加のメタデータYAMLファイル|
+|`-f`, `--force-refresh`|すべてのドキュメントを強制的に更新する。テンプレートを更新した場合に便利|
+|`-I`, `--skip-index`|`.indexes.rbm`に登録しない|
+|`-A`, `--skip-accs`|ACCSの処理をしない|
+|`-o FILE`, `--output`|出力ファイルをFILEに指定する|
+|`-m FILE`, `--additional-metafile`|さらに追加のメタデータYAMLファイル|
 
 ### Make ACCS index
 

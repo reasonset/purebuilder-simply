@@ -189,8 +189,6 @@ EOF
       outdir = [@config["outdir"], @dir].join("/")
     end
 
-    p dir
-
     # Format for Indexes database
     @db = case @config["dbstyle"]
     when "yaml"
@@ -244,6 +242,7 @@ EOF
     opts.on("-f", "--force-refresh") { @refresh = true }
     opts.on("-X", "--ignore-ext") { @ignore_ext = true }
     opts.on("-I", "--skip-index") { @skip_index = true }
+    opts.on("-A", "--skip-accs") { @skip_accs = true }
     opts.on("-o FILE", "--output") {|v| @outfile = v }
     opts.on("-m FILE", "--additional-metafile") {|v| @add_meta = Psych.unsafe_load(File.read(v))}
     opts.parse!(ARGV)
@@ -418,6 +417,9 @@ EOF
 
         post_plugins(frontmatter)
 
+        if File.exist?(File.join(@dir, ".accs.yaml")) && !@accs_processing && !@skip_accs
+          single_accs filename, frontmatter
+        end
       else
         # Normal (directory) mode.
         setup_config(@dir)
@@ -533,6 +535,15 @@ EOF
 
     # Mark processed
     @this_time_processed.push({source: orig_filepath, dest: outpath})
+  end
+
+  # letsaccs in single page.
+  def single_accs filename, frontmatter
+    unless @skip_index
+      @indexes[filename] = frontmatter
+      @db.dump(@indexes)
+    end
+    process_accs
   end
 
   # letsaccs

@@ -59,6 +59,7 @@ PureBuilder skip if filename start with `draft-` or `.`, or `draft` value in fro
 |------|------------------------------|
 |`-f`|Refresh all documents (force update mode.) This options useful when update template.|
 |`-I`|Don't register to index database.|
+|`-A`|Don't treat ACCS.|
 |`-o FILE`|Output to FILE.|
 |`-m FILE`|Additional meta (YAML) File.|
 
