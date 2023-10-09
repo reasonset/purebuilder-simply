@@ -171,8 +171,13 @@ Add JSON support.
 * Change filename
 * Support RubyGems
 
-## v2.1
+## v2.1 2022-06-26 (dev)
 
 * Add exporting article index feature
 * Add `rst2html5` (docutils) support.
 * Use tempdir for defaultfiles, frontmatter and current document.
+
+## v2.2 2023-08-22 (dev)
+
+* HOOKS feature is now working
+* Update single mode features
