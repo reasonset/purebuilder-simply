@@ -10,6 +10,8 @@ module PBSimply::Frontmatter
     frontmatter = nil
     pos = nil
 
+    source_path = File.join(dir, filename)
+
     if File.exist? File.join(dir, ".meta." + filename)
       # Load standalone metadata YAML.
       frontmatter = Psych.unsafe_load(File.read(File.join(dir, (".meta." + filename))))
@@ -20,7 +22,7 @@ module PBSimply::Frontmatter
       when ".md"
 
         # Load Markdown's YAML frontmatter.
-        File.open(File.join(dir, filename)) do |f|
+        File.open(source_path) do |f|
           l = f.gets
           next unless l && l.chomp == "---"
 
@@ -48,7 +50,7 @@ module PBSimply::Frontmatter
       when ".rst"
         # ReSTRUCTURED Text
 
-        File.open(File.join(dir, filename)) do |f|
+        File.open(source_path) do |f|
           l = f.gets
           if l =~ /:([A-Za-z_-]+): (.*)/ #docinfo
             frontmatter = { $1 => [$2.chomp] }
@@ -124,18 +126,36 @@ module PBSimply::Frontmatter
     abort "This document has no frontmatter" unless frontmatter
     abort "This document has no title." unless frontmatter["title"]
 
+    outext = frontmatter["force_ext"] || ".html"
+    outpath = case
+    when @outfile
+      @outfile
+    when @accs_processing
+      File.join(@config["outdir"], @dir, "index") + outext
+    else
+      File.join(@config["outdir"], @dir, File.basename(filename, ".*")) + outext
+    end
+
+    absolute_current = File.absolute_path Dir.pwd
+    absolute_docdir = File.absolute_path dir
+    absolute_docpath = File.absolute_path source_path
+    pwd_length = absolute_current.length
+
     ### Additional meta values. ###
     frontmatter["source_directory"] = dir # Source Directory
     frontmatter["source_filename"] = filename # Source Filename
-    frontmatter["source_path"] = File.join(dir, filename) # Source Path
+    frontmatter["source_path"] = source_path # Source Path
+    frontmatter["dest_path"] = outpath
+    frontmatter["normalized_docdir"] = absolute_docdir[pwd_length..]
+    frontmatter["normalized_docpath"] = absolute_docpath[pwd_length..]
     # URL in site.
-    this_url = (File.join(dir, filename)).sub(/^[\.\/]*/) { @config["self_url_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html")
+    this_url = (source_path).sub(/^[\.\/]*/) { @config["self_url_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html")
     frontmatter["page_url"] = this_url
     # URL in site with URI encode.
     frontmatter["page_url_encoded"] = ERB::Util.url_encode(this_url)
-    frontmatter["page_url_encoded_external"] = ERB::Util.url_encode((File.join(dir, filename)).sub(/^[\.\/]*/) { @config["self_url_external_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html"))
+    frontmatter["page_url_encoded_external"] = ERB::Util.url_encode((source_path).sub(/^[\.\/]*/) { @config["self_url_external_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html"))
     frontmatter["page_html_escaped"] = ERB::Util.html_escape(this_url)
-    frontmatter["page_html_escaped_external"] = ERB::Util.html_escape((File.join(dir, filename)).sub(/^[\.\/]*/) { @config["self_url_external_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html"))
+    frontmatter["page_html_escaped_external"] = ERB::Util.html_escape((source_path).sub(/^[\.\/]*/) { @config["self_url_external_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html"))
     # Title with URL Encoded.
     frontmatter["title_encoded"] = ERB::Util.url_encode(frontmatter["title"])
     frontmatter["title_html_escaped"] = ERB::Util.html_escape(frontmatter["title"])
@@ -159,8 +179,8 @@ module PBSimply::Frontmatter
       frontmatter["timestamp_str"] = fts.strftime("%Y-%m-%d")
     end
 
-    fsize = FileTest.size(File.join(dir, filename))
-    mtime = File.mtime(File.join(dir, filename)).to_i
+    fsize = FileTest.size(source_path)
+    mtime = File.mtime(source_path).to_i
 
     frontmatter["_filename"] ||= filename
     frontmatter["pagetype"] ||= "post"
@@ -173,6 +193,8 @@ module PBSimply::Frontmatter
       frontmatter["_docformat"] = "Markdown"
     elsif File.extname(filename) == ".rst" || File.extname(filename) == ".rest"
       frontmatter["_docformat"] = "ReST"
+    elsif File.extname(filename) == ".rdoc"
+      frontmatter["_docformat"] = "RDoc"
     end
 
     frontmatter["date"] ||= @now.strftime("%Y-%m-%d %H:%M:%S")

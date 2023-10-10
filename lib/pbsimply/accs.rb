@@ -80,6 +80,8 @@ EOF
 
     @index = @frontmatter.merge @accs_index
 
+    @hooks.accs.run({index: @index, indexes: @indexes})
+
     doc = ERB.new(erbtemplate, trim_mode: "%<>").result(binding)
     File.open(File.join(@dir, ".index.md"), "w") do |f|
       f.write doc

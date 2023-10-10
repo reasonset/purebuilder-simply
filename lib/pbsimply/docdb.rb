@@ -1,6 +1,17 @@
 #!/usr/bin/ruby
+require 'yaml'
 
 class PBSimply
+  class CustomYAML
+    def self.dump(*arg)
+      YAML.dump(*arg)
+    end
+
+    def self.load(*arg)
+      Psych.unsafe_load(*arg)
+    end
+  end
+
   # Abstruct super class.
   class DocDB
     def dump(object)
@@ -43,6 +54,7 @@ class PBSimply
     # Use JSON with bundled library
     class JSON < DocDB
       def initialize(dir)
+        require 'json'
         @dir = dir
         @store_class = ::JSON
         @ext = "json"
@@ -63,7 +75,7 @@ class PBSimply
     class YAML < DocDB
       def initialize(dir)
         @dir = dir
-        @store_class = ::YAML
+        @store_class = CustomYAML
         @ext = "yaml"
       end
     end

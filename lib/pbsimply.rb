@@ -139,6 +139,7 @@ class PBSimply
       @indexes = Hash.new
     end
     @docobject[:indexes] = @indexes
+    ENV["pbsimply_indexes"] = @db.path
   end
 
   def target_file_extensions
@@ -166,12 +167,15 @@ class PBSimply
 
     STDERR.puts "Checking Frontmatter..."
     Dir.foreach(@dir) do |filename|
-      next if filename == "." || filename == ".."
+      next if filename == "." || filename == ".." || filename == ".index.md"
       if filename =~ /^\./ || filename =~ /^draft-/
-        draft_articles.push filename.sub(/^(?:\.|draft-)/, "")
+        draft_articles.push({
+          article_filename: filename.sub(/^(?:\.|draft-)/, ""),
+          filename: filename,
+          source_file_path: File.join(@dir, filename)
+        })
         next
       end
-      next unless File.file?([@dir, filename].join("/"))
 
       if !@ignore_ext and not target_file_extensions.include? File.extname filename
         next
@@ -183,8 +187,11 @@ class PBSimply
       frontmatter.merge!(@add_meta) if @add_meta
 
       if frontmatter["draft"]
-        @indexes.delete(filename) if @indexes[filename]
-        draft_articles.push filename
+        draft_articles.push({
+          article_filename: filename,
+          filename: filename,
+          source_file_path: File.join(@dir, filename)
+        })
         next
       end
 
@@ -195,22 +202,14 @@ class PBSimply
       target_docs.push([filename, frontmatter, pos])
     end
 
-    # Delete turn to draft article.
-    draft_articles.each do |df|
-      [df, (df + ".html"), File.basename(df, ".*"), (File.basename(df, ".*") + ".html")].each do |tfn|
-        tfp = File.join(@config["outdir"], @dir, tfn)
-        if File.file?(tfp)
-          STDERR.puts "#{df} was turn to draft. deleting..."
-          @hooks.delete.run({target_file_path: tfp})
-          File.delete tfp
-        end
-      end
-    end
+    delete_turn_draft draft_articles
+
+    proc_docs target_docs
+
+    delete_missing
 
     # Save index.
     @db.dump(@indexes) unless @skip_index
-
-    proc_docs(target_docs)
 
     # ACCS processing
     if @accs && !target_docs.empty?
@@ -225,7 +224,7 @@ class PBSimply
       target_docs.delete_if {|filename, frontmatter, pos| !check_modify([@dir, filename], frontmatter)}
     end
 
-    # Modify frontmatter `BLESSING`
+    # Modify frontmatter `BLESSING'
     target_docs.each do |filename, frontmatter, pos|
       STDERR.puts "Blessing #{filename}..."
       bless frontmatter
@@ -254,11 +253,48 @@ class PBSimply
     @hooks.post.run({this_time_processed: @this_time_processed})
   end
 
+  # Delete turn to draft article.
+  def delete_turn_draft draft_articles
+    STDERR.puts "Checking turn to draft..."
+    draft_articles.each do |dah|
+      df = dah[:article_filename]
+      [df, (df + ".html"), File.basename(df, ".*"), (File.basename(df, ".*") + ".html")].each do |tfn|
+        tfp = File.join(@config["outdir"], @dir, tfn)
+        if File.file?(tfp)
+          STDERR.puts "#{df} was turn to draft."
+          @hooks.delete.run({target_file_path: tfp, source_file_path: dah[:source_file_path]})
+          File.delete tfp if @config["auto_delete"]
+        end
+      end
+      @indexes.delete df if @indexes[df]
+    end
+  end
+
+  # Delete missing source
+  def delete_missing
+    return unless @indexes
+    STDERR.puts "Checking missing article..."
+    missing_keys = []
+    @indexes.each do |k, v|
+      next if !v["source_path"] || !v["dest_path"]
+      unless File.exist? v["source_path"]
+        STDERR.puts "#{k} is missing."
+        missing_keys.push k
+        @hooks.delete.run({target_file_path: v["dest_path"] ,source_file_path: v["source_path"]})
+        File.delete v["dest_path"] if @config["auto_delete"]
+      end
+    end
+    missing_keys.each {|k| @indexes.delete k }
+  end
+
   # Run PureBuilder Simply.
   def main
+    @hooks.load
     Dir.mktmpdir("pbsimply") do |dir|
+      ENV["pbsimply_working_dir"] = dir
       @workdir ||= dir
       @workfile_frontmatter ||= File.join(@workdir, "pbsimply-frontmatter.json")
+      ENV["pbsimply_frontmatter"] = @workfile_frontmatter
       @workfile_pandoc_defaultfiles ||= File.join(@workdir, "pbsimply-defaultfiles.yaml")
       # If target file is regular file, run as single mode.
       @singlemode = true if File.file?(@dir)
@@ -326,15 +362,7 @@ class PBSimply
     end
 
     # Write out
-    outext = frontmatter["force_ext"] || ".html"
-    outpath = case
-    when @outfile
-      @outfile
-    when @accs_processing
-      File.join(@config["outdir"], @dir, "index") + outext
-    else
-      File.join(@config["outdir"], @dir, File.basename(filename, ".*")) + outext
-    end
+    outpath = frontmatter["dest_path"]
 
     File.open(outpath, "w") do |f|
       f.write(doc)
@@ -348,7 +376,7 @@ class PBSimply
     })
 
     # Mark processed
-    @this_time_processed.push({source: orig_filepath, dest: outpath})
+    @this_time_processed.push({source: orig_filepath, dest: outpath, frontmatter: frontmatter})
   end
 
   ###############################################
@@ -362,8 +390,16 @@ class PBSimply
     modify = true
     index = @indexes_orig[path[1]].dup || {}
     frontmatter = @db.cmp_obj(frontmatter)
+
+    # Remove unstable metadata for compartion.
     index.delete("_last_proced")
+    index.delete("source_path")
+    index.delete("source_directory")
+    index.delete("dest_path")
     frontmatter.delete("_last_proced")
+    frontmatter.delete("source_path")
+    frontmatter.delete("source_directory")
+    frontmatter.delete("dest_path")
 
     if index == frontmatter
       STDERR.puts "#{path[1]} is not modified."
