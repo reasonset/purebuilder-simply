@@ -25,7 +25,7 @@ PureBuilder Simply ACCS はPureBuilder Simplyによって `index.html` ファイ
 
 ### 手動でインストールする
 
-* `git clobe git://github.com/reasonset/purebuilder-simply.git`
+* `git clone https://github.com/reasonset/purebuilder-simply`
 * `bin/`ディレクトリのファイルをPATHの通ったディレクトリにコピーする
 * `lib/`ディレクトリのファイルをRubyライブラリのディレクトリにコピーする
 

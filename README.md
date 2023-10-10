@@ -25,7 +25,7 @@ PB Simply ACCS make `index.md` with indexes build by PureBuilder.
 
 ### Manually from GitHub
 
-* `git clobe git://github.com/reasonset/purebuilder-simply.git`
+* `git clone https://github.com/reasonset/purebuilder-simply`
 * Copy under `bin/` files on your PATH directory.
 * Copy under `lib/` files on your Ruby library directory.
 
