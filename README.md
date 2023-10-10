@@ -38,7 +38,7 @@ PB Simply ACCS make `index.md` with indexes build by PureBuilder.
 
 ## Dependency
 
-* Ruby >= 2.3
+* Ruby >= 3.0
 * Pandoc >= 2.8
 
 ## Usage
@@ -59,6 +59,7 @@ PureBuilder skip if filename start with `draft-` or `.`, or `draft` value in fro
 |------|------------------------------|
 |`-f`|Refresh all documents (force update mode.) This options useful when update template.|
 |`-I`|Don't register to index database.|
+|`-A`|Don't treat ACCS.|
 |`-o FILE`|Output to FILE.|
 |`-m FILE`|Additional meta (YAML) File.|
 
@@ -103,9 +104,9 @@ JSON is used instead of Ruby Marshal and hhe filename is `.indexes.json`
 |outdir|String|Base directory for output. Required|
 |template|String|Path to Pandoc HTML template file. If not set, template is `temaplte.html`|
 |css|String / Array|Path to CSS file(s)|
-|toc|Boolian|Turn on TOC if true|
+|toc|Boolean|Turn on TOC if true|
 |pandoc\_additional\_options|Array|Extra pandoc options|
-|post\_eruby|Boolian|Process Pandoc output with eRuby if true|
+|post\_eruby|Boolean|Process Pandoc output with eRuby if true|
 |alt\_frontmatter|Hash|Default frontmatter in ACCS index|
 |default\_meta|Hash|Default frontmatter|
 |testserver\_port|Fixnum|Port number of pbsimply-testserver (default 8000)|
@@ -117,8 +118,9 @@ JSON is used instead of Ruby Marshal and hhe filename is `.indexes.json`
 |bless\_accscmd|String / Array|Command for ACCS blessing.|
 |blessmethod\_accs\_rel|String|Automatic blessing method for find next/prev article.|
 |accs\_order|String|If `desc` is set, ACCS article list is sorted by descending order (on default template.)|
-|accs\_across\_category|Boolian|Don't separate ACCS article lists by category (on default template.)|
+|accs\_across\_category|Boolean|Don't separate ACCS article lists by category (on default template.)|
 |accs\_sort\_by|String|Sorting method for ACCS article list. `default` (date, title, last update), `title` (title, date), `name` (filename, title, date) and `serial` (`serial`, date, filename) are avilable. It works on default template.|
+|auto\_delete|Boolean|Delete output file when source file is deleted or turned to draft.|
 
 ## Special values in @index
 
@@ -131,7 +133,7 @@ JSON is used instead of Ruby Marshal and hhe filename is `.indexes.json`
 |keywords|frontmatter|Pandoc template|An array, used as keywords in meta tag.|
 |description|frontmatter|Sample template|Used as description in meta tag.|
 |draft|frontmatter|System|Draft status. Skip process document if true.|
-|\_last\_proced|system||*Integer*. DateTime of last processed by PureBuilder. `0` if this document is processed first.|
+|\_last\_proced|system|system|*Integer*. DateTime of last processed by PureBuilder. `0` if this document is processed first.|
 |last\_updated|system||*String*. DateTime of last processed by Pandoc.|
 |\_size|system||File size (byte)|
 |\_mtime|system||*Integer*. mtime of this file.|
@@ -139,13 +141,16 @@ JSON is used instead of Ruby Marshal and hhe filename is `.indexes.json`
 |\_docformat|system||Document Format. `Markdown` or `ReST`.|
 |categories|frontmatter|ACCS|Document category. Sort documents by this value.
 |pagetype|frontmatter/config|ACCS|Document type of this page. `accsindex` is set if processed by ACCS, set `post` by default.|
-|source\_directory|system||Source directory string. Set by PureBuilder.|
-|source\_file|system||Source Filename. Set by PureBuilder.|
-|source\_path|system||Source path string. Set by PureBuilder.|
-|page\_url|system||This (generated) page's URL. Set by PureBuilder.|
-|page\_url\_encoded|system||This (generated) page's URI encoded URL. Set by PureBuilder.|
-|page\_url\_encoded\_external|system||This (generated) page's URI encoded URL with `self_url_external_prefix`. Set by PureBuilder.|
-|title\_encoded|system||URI encoded document title. Set by PureBuilder.|
+|source\_directory|system||Source directory string.|
+|source\_file|system||Source Filename.|
+|source\_path|system||Source path string.|
+|dest\_path|system|system|Output file path.|
+|normalized\_docdir|system||Normalized source document directory path, begin with `/`.|
+|normalized\_docpath|system||Normalized source document path, begin with `/`.|
+|page\_url|system||This (generated) page's URL.|
+|page\_url\_encoded|system||This (generated) page's URI encoded URL.|
+|page\_url\_encoded\_external|system||This (generated) page's URI encoded URL with `self_url_external_prefix`.|
+|title\_encoded|system||URI encoded document title.|
 |timestamp|frontmatter|system|The date and time of the document which is more detailed than `date`.|
 |timestamp\_xmlschema|system||XML Schema formatted Timestamp. Use `date` instead of `timestamp` if `timestamp` isn't defined.|
 |timestamp\_jplocal|system||Japanese local formatted Timestamp. Use `date` instead of `timestamp` if `timestamp` isn't defined.|
@@ -162,6 +167,7 @@ Environment variables that able to use in Pre Plugins, Post plugins, Blessing co
 |`pbsimply_subdir`|Yes|Yes|Yes|Path for document directory from document root.|
 |`pbsimply_indexes`|Yes|Yes|Yes|Path for index database.|
 |`pbsimply_frontmatter`|Yes|Yes|Yes|Path for current document's frontmatter (JSON).|
+|`pbsimply_working_dir`|Yes|Yes|Yes|Temporary firectory path for putting processing data.|
 
 ## Testing
 
@@ -179,48 +185,6 @@ You can config port with `testserver_port` in config file. default is 8000.
 
 If you think to put subdirectory like `http://example.com/site/index.html`,
 I recommend that you put document in `site` subdirectory, and sync under there.
-
-## Pre processing
-
-if you put scripts in `.pre_generate`, PureBuilder Simply Pandoc executes these files each of before generating.
-
-Scripts are invoked by `perl` for udnerstanding shebang line.
-
-Each scriped is called with
-
-```
-perl <script> <temporary_source_file>
-```
-
-PureBuilder Simply replaces temporary source file with script output.
-
-Script **cannot** use index database because this script is called each generating.
-
-Pre script called just before generating. Not called with skipped document.
-
-## Post processing
-
-if you put scripts in `.post_generate`, PureBuilder Simply Pandoc executes these files after generating.
-
-Scripts are invoked by `perl` for udnerstanding shebang line.
-
-Each scriped is called with
-
-```
-perl <script> <generated_file>
-```
-
-PureBuilder Simply replaces generated file with script output.
-
-Scripts can use index database.
-You can get database path from `$pbsimply_indexes` environment variable.
-
-Processing document's meta infomation is in `$pbsimply_doc_frontmatter` environment variable with YAML.
-
-You can access the document's sub-directory part with `$pbsimply_subdir` environment variable.
-
-Post script called from generated file list.
-They aren't called by already generated files without generating this time.
 
 ## Blessing
 
@@ -330,7 +294,7 @@ If `cmd` is set to `bless_style` in configuration, use external command instead 
 `bless_cmd` is command for blessing.
 `bless_accscmd` is command for ACCS blessing.
 
-You can read document metadata from `.pbsimply-frontmatter.json` file,
+You can read document metadata from `pbsimply-frontmatter.json` file on directory `$pbsimply_working_dir` environment variable,
 and you can apply changes with write to the file.
 
 ### Automatic blessing
@@ -366,8 +330,6 @@ They are an associative array that have keys `url` and `title`.
 |.index.md|each|Index source generated by ACCS.|
 |.accsindex.erb|root or each ACCS|Markdown eRuby template for ACCS index.|
 |.accs.yaml|each|`@index` for the ACCS index.|
-|.post_generate|root|Script files for process each documents after generating.|
-|.pre\_generate|root|Script files for process each documents before generating.|
 |.pbsimply-bless.rb|root|Ruby script for blessing.|
 
 # Document Sample
@@ -578,3 +540,100 @@ Templates are handled as eRuby templates.
 * `toc`
 * `pandoc_additional_options`
 * `post_eruby`
+
+### Docutils
+
+#### 説明
+
+Generated using Docutils ReSTructured Text processor written by Python.
+Source files are treated as ReSTructured Text, and the target is limited to `*.rst` files.
+
+#### Dependency
+
+* Docutils (`rst2html5`)
+
+#### Disabled configurations
+
+* `toc`
+* `pandoc_additional_options`
+
+#### Additional configurations
+
+|Key|Type|Description|
+|-------|-----|-----------------------|
+|`docutils_options`|Array|Command-line option arguments for `rst2html5` command.|
+
+# Hooks
+
+You can tweak PureBuilder Simply behavior with hooks feature.
+
+write `.pbsimply-hooks.rb` on document root to use Hooks.
+It should define `PBSimply::Hooks.load_hooks`.
+
+It called with `PBSimply::Hooks` object.
+`PBSimply::Hooks` object has "timing" methods. You can add `Proc` to timing object with `<<` method.
+
+```ruby
+#!/bin/ruby
+
+def (PBSimply::Hooks).load_hooks h
+  h.process << ->(v) {
+    db[v["normalized_docpath"]] = v
+  }
+
+  h.post << ->(v) {
+    db.delete_if do |dbk, dbv|
+      not File.exist? dbv["dest_path"]
+    end
+  }
+end
+```
+
+Hook called with one argument. Ordinary it is a `Hash`, but keys and values are different between timing object.
+
+## pre
+
+`PBSimply::Hooks#pre` is called first on processing document.
+
+Argument are `frontmatter` and `procdoc`.
+
+`frontmatter` is frontmatter without BLESSing.
+
+`procdoc` is processing document's temporary path.
+Its content same as source document but without frontmatter.
+
+## process
+
+`PBSimply::Hooks#process` is called just before generating.
+
+Arguments are `frontmatter`, `procdoc`, `outpath`.
+
+`frontmatter` and `procdoc` are same as `#pre`, but after other process.
+`outpath` is intended output file path, but don't write yet.
+
+## delete
+
+`PBSimply::Hooks#delete` is called when document is lost include it turn to draft.
+
+Arguments are `target_file_path` and `source_file_path`.
+
+`target_file_path` is output file path (existing or non-existing.)
+
+`source_file_path` is source file path (existing or non-existing.)
+
+## post
+
+`PBsimply::Hooks#post` is called after all document processed.
+
+Argument is `this_time_processed`.
+
+`this_time_processed` is an `Array` of `Hash` actual processed documents in this time.
+
+It has `source` (original source file path,) `dest` (output file path,) `frontmatter`.
+
+## accs
+
+`PBSimply::Hooks#accs` is called before generating ACCS index.
+
+Arguments are `index` and `indexes`.
+They are same as `@index` and `@indexes` in `.accsindex.erb`.

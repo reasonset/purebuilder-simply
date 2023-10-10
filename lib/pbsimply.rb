@@ -1,11 +1,29 @@
 #!/bin/env ruby
+
 require 'yaml'
 require 'erb'
 require 'date'
+require 'time'
+require 'tmpdir'
 require 'fileutils'
 require 'optparse'
+require 'digest/sha1'
+
+# PureBuilder Simply Components
+require 'pbsimply/docdb'
+require 'pbsimply/docengine/base'
+require 'pbsimply/prayer'
+require 'pbsimply/plugger'
+require 'pbsimply/hooks'
+require 'pbsimply/frontmatter'
+require 'pbsimply/accs'
 
 class PBSimply
+  include Prayer
+  include Plugger
+  include Frontmatter
+  include ACCS
+
   # Use Oj as JSON library for frontmatter passing if possible.
   begin
     require 'oj'
@@ -14,141 +32,6 @@ class PBSimply
     require 'json'
     JSON_LIB = JSON
   end
-
-  # ACCS namespace.
-  module ACCS
-    DEFINITIONS = {}
-
-    # Built-in Accs index eRuby string.
-    INDEX = <<'EOF'
-<%= YAML.dump(
-  {
-    "title" => @index["title"],
-    "date" => @index["date"],
-    "author" => @index["author"]
-  }
-) %>
----
-
-<%
-articles = Hash.new {|h,k| h[k] = Array.new }
-
-if @config["accs_across_category"]
-  @indexes.each {|filename, index| articles["default"].push index }
-else
-  @indexes.each {|filename, index| articles[(index["category"] || "default")].push index }
-end
-
-%>
-
-% articles.keys.sort.each do |catname|
-% cat = articles[catname]
-
-% unless articles.length == 1
-# <%= catname %>
-% end
-
-<%
-  sort_method = case @config["accs_sort_by"]
-  when "title"
-    lambda {|i| [i["title"].to_s, i["date"]] }
-  when "name"
-    lambda {|i| [i["_filename"].to_s, i["title"].to_s, i["date"]] }
-  when "serial"
-    lambda {|i| [i["serial"].to_s, i["date"], i["_filename"].to_s] }
-  else
-    lambda {|i| [i["date"], i["title"].to_s, i["_last_update"].to_i] }
-  end
-
-  list = if @config["accs_order"] == "desc"
-    cat.sort_by(&sort_method).reverse
-  else
-    cat.sort_by(&sort_method)
-  end
-
-  list.each do |i|
-%>* [<%= i["title"] %>](<%= i["page_url"] %>)
-<% end %>
-
-% end
-EOF
-  end
-
-  # Abstruct super class.
-  class DocDB
-    def dump(object)
-      File.open(File.join(@dir, ".indexes.#{@ext}"), "w") do |f|
-        f.write @store_class.dump(object)
-      end
-    end
-
-    def load
-      File.open(File.join(@dir, ".indexes.#{@ext}"), "r") do |f|
-        next @store_class.load(f)
-      end
-    end
-
-    def exist?
-      File.exist?(File.join(@dir, ".indexes.#{@ext}"))
-    end
-
-    def path
-      File.join(@dir, ".indexes.#{@ext}")
-    end
-
-    def cmp_obj(frontmatter)
-      @store_class.load(@store_class.dump(frontmatter))
-    end
-
-    class Marshal < DocDB
-      def initialize(dir)
-        @dir = dir
-        @store_class = ::Marshal
-        @ext = "rbm"
-      end
-
-      def cmp_obj(frontmatter)
-        frontmatter.dup
-      end
-    end
-
-    class JSON < DocDB
-      def initialize(dir)
-        @dir = dir
-        @store_class = ::JSON
-        @ext = "json"
-      end
-    end
-
-    class Oj < DocDB::JSON
-      def initialize(dir)
-        require 'oj'
-        @dir = dir
-        @ext = "json"
-        @store_class = ::Oj
-      end
-    end
-
-    class YAML < DocDB
-      def initialize(dir)
-        @dir = dir
-        @store_class = ::YAML
-        @ext = "yaml"
-      end
-    end
-  end
-
-
-  POST_PROCESSORS = {
-    ".rb" => "ruby",
-    ".pl" => "perl",
-    ".py" => "python",
-    ".lua" => "lua",
-    ".bash" => "bash",
-    ".zsh" => "zsh",
-    ".php" => "php",
-    ".sed" => ["sed", ->(script, target) { ["-f", script, target] } ]
-  }
 
   ###############################################
   #               SETUP FUNCTIONS               #
@@ -182,8 +65,6 @@ EOF
     else
       outdir = [@config["outdir"], @dir].join("/")
     end
-
-    p dir
 
     # Format for Indexes database
     @db = case @config["dbstyle"]
@@ -225,6 +106,7 @@ EOF
     @accs = nil
     @accs_index = {}
     @now = Time.now
+    @hooks = PBSimply::Hooks.new(self)
   end
 
   # Process command-line
@@ -234,6 +116,7 @@ EOF
     opts.on("-f", "--force-refresh") { @refresh = true }
     opts.on("-X", "--ignore-ext") { @ignore_ext = true }
     opts.on("-I", "--skip-index") { @skip_index = true }
+    opts.on("-A", "--skip-accs") { @skip_accs = true }
     opts.on("-o FILE", "--output") {|v| @outfile = v }
     opts.on("-m FILE", "--additional-metafile") {|v| @add_meta = Psych.unsafe_load(File.read(v))}
     opts.parse!(ARGV)
@@ -256,6 +139,7 @@ EOF
       @indexes = Hash.new
     end
     @docobject[:indexes] = @indexes
+    ENV["pbsimply_indexes"] = @db.path
   end
 
   def target_file_extensions
@@ -268,7 +152,6 @@ EOF
   end
 
   attr :indexes
-
 
   ###############################################
   #            PROCESSING FUNCTIONS             #
@@ -284,12 +167,15 @@ EOF
 
     STDERR.puts "Checking Frontmatter..."
     Dir.foreach(@dir) do |filename|
-      next if filename == "." || filename == ".."
+      next if filename == "." || filename == ".." || filename == ".index.md"
       if filename =~ /^\./ || filename =~ /^draft-/
-        draft_articles.push filename.sub(/^(?:\.|draft-)/, "")
+        draft_articles.push({
+          article_filename: filename.sub(/^(?:\.|draft-)/, ""),
+          filename: filename,
+          source_file_path: File.join(@dir, filename)
+        })
         next
       end
-      next unless File.file?([@dir, filename].join("/"))
 
       if !@ignore_ext and not target_file_extensions.include? File.extname filename
         next
@@ -301,8 +187,11 @@ EOF
       frontmatter.merge!(@add_meta) if @add_meta
 
       if frontmatter["draft"]
-        @indexes.delete(filename) if @indexes[filename]
-        draft_articles.push filename
+        draft_articles.push({
+          article_filename: filename,
+          filename: filename,
+          source_file_path: File.join(@dir, filename)
+        })
         next
       end
 
@@ -313,33 +202,35 @@ EOF
       target_docs.push([filename, frontmatter, pos])
     end
 
-    # Delete turn to draft article.
-    draft_articles.each do |df|
-      STDERR.puts "#{df} was turn to draft. deleting..."
-      [df, (df + ".html"), File.basename(df, ".*"), (File.basename(df, ".*") + ".html")].each do |tfn|
-        tfp = File.join(@config["outdir"], @dir, tfn)
-        File.delete tfp if File.file?(tfp)
-      end
-    end
+    delete_turn_draft draft_articles
+
+    proc_docs target_docs
+
+    delete_missing
 
     # Save index.
     @db.dump(@indexes) unless @skip_index
 
-    STDERR.puts "Blessing..."
+    # ACCS processing
+    if @accs && !target_docs.empty?
+      process_accs
+    end
+  end
 
-    # Modify frontmatter `BLESSING`
-    target_docs.each do |filename, frontmatter, pos|
-      if @config["bless_style"] == "cmd"
-        bless_cmd(frontmatter)
-      else
-        bless_ruby(frontmatter)
-      end
+  def proc_docs target_docs
+    # Exclude unchanged documents.
+    if @indexes && @indexes_orig
+      STDERR.puts "Checking modification..."
+      target_docs.delete_if {|filename, frontmatter, pos| !check_modify([@dir, filename], frontmatter)}
     end
 
-    STDERR.puts "Checking modification..."
+    # Modify frontmatter `BLESSING'
+    target_docs.each do |filename, frontmatter, pos|
+      STDERR.puts "Blessing #{filename}..."
+      bless frontmatter
+    end
 
-    target_docs.delete_if {|filename, frontmatter, pos| !check_modify([@dir, filename], frontmatter)}
-
+    # Ready.
     STDERR.puts "Okay, Now ready. Process documents..."
 
     # Proccess documents
@@ -348,135 +239,107 @@ EOF
       @index = frontmatter
       File.open(File.join(@dir, filename)) do |f|
         f.seek(pos)
-        File.open(".current_document#{ext}", "w") {|fo| fo.write f.read}
+        File.open(File.join(@workdir, "current_document#{ext}"), "w") {|fo| fo.write f.read}
       end
 
       STDERR.puts "Processing #{filename}"
       generate(@dir, filename, frontmatter)
     end
-
-    @db.dump(@indexes) unless @skip_index
-
+    
+    # Call post plugins
     post_plugins
 
-    # ACCS processing
-    if @accs && !target_docs.empty?
-      process_accs
+    # Call hooks
+    @hooks.post.run({this_time_processed: @this_time_processed})
+  end
+
+  # Delete turn to draft article.
+  def delete_turn_draft draft_articles
+    STDERR.puts "Checking turn to draft..."
+    draft_articles.each do |dah|
+      df = dah[:article_filename]
+      [df, (df + ".html"), File.basename(df, ".*"), (File.basename(df, ".*") + ".html")].each do |tfn|
+        tfp = File.join(@config["outdir"], @dir, tfn)
+        if File.file?(tfp)
+          STDERR.puts "#{df} was turn to draft."
+          @hooks.delete.run({target_file_path: tfp, source_file_path: dah[:source_file_path]})
+          File.delete tfp if @config["auto_delete"]
+        end
+      end
+      @indexes.delete df if @indexes[df]
     end
+  end
+
+  # Delete missing source
+  def delete_missing
+    return unless @indexes
+    STDERR.puts "Checking missing article..."
+    missing_keys = []
+    @indexes.each do |k, v|
+      next if !v["source_path"] || !v["dest_path"]
+      unless File.exist? v["source_path"]
+        STDERR.puts "#{k} is missing."
+        missing_keys.push k
+        @hooks.delete.run({target_file_path: v["dest_path"] ,source_file_path: v["source_path"]})
+        File.delete v["dest_path"] if @config["auto_delete"]
+      end
+    end
+    missing_keys.each {|k| @indexes.delete k }
   end
 
   # Run PureBuilder Simply.
   def main
-    # If target file is regular file, run as single mode.
-    @singlemode = true if File.file?(@dir)
+    @hooks.load
+    Dir.mktmpdir("pbsimply") do |dir|
+      ENV["pbsimply_working_dir"] = dir
+      @workdir ||= dir
+      @workfile_frontmatter ||= File.join(@workdir, "pbsimply-frontmatter.json")
+      ENV["pbsimply_frontmatter"] = @workfile_frontmatter
+      @workfile_pandoc_defaultfiles ||= File.join(@workdir, "pbsimply-defaultfiles.yaml")
+      # If target file is regular file, run as single mode.
+      @singlemode = true if File.file?(@dir)
 
-    # Check single file mode.
-    if @singlemode
-      # Single file mode
-      if @dir =~ %r:(.*)/([^/]+):
-        dir = $1
-        filename = $2
+      # Check single file mode.
+      if @singlemode
+        # Single file mode
+        if @dir =~ %r:(.*)/([^/]+):
+          dir = $1
+          filename = $2
+        else
+          dir = "."
+          filename = @dir
+        end
+        @dir = dir
+        setup_config(dir)
+
+        load_index
+
+        frontmatter, pos = read_frontmatter(dir, filename)
+        frontmatter = @frontmatter.merge frontmatter
+        @index = frontmatter
+
+        proc_docs([[filename, frontmatter, pos]])
+
+        if File.exist?(File.join(@dir, ".accs.yaml")) && !@accs_processing && !@skip_accs
+          single_accs filename, frontmatter
+        end
       else
-        dir = "."
-        filename = @dir
+        # Normal (directory) mode.
+        setup_config(@dir)
+        load_index
+
+        @accs = true if File.exist?(File.join(@dir, ".accs.yaml"))
+
+        # Check existing in indexes.
+        @indexes.delete_if {|k,v| ! File.exist?([@dir, k].join("/")) }
+
+        proc_dir
       end
-      @dir = dir
-      setup_config(dir)
-
-      load_index
-
-      frontmatter, pos = read_frontmatter(dir, filename)
-      frontmatter = @frontmatter.merge frontmatter
-      @index = frontmatter
-
-      ext = File.extname filename
-      File.open(File.join(dir, filename)) do |f|
-        f.seek(pos)
-        File.open(".current_document#{ext}", "w") {|fo| fo.write f.read}
-      end
-
-      generate(dir, filename, frontmatter)
-
-      post_plugins(frontmatter)
-
-    else
-      # Normal (directory) mode.
-      setup_config(@dir)
-      load_index
-
-      @accs = true if File.exist?(File.join(@dir, ".accs.yaml"))
-
-      # Check existing in indexes.
-      @indexes.delete_if {|k,v| ! File.exist?([@dir, k].join("/")) }
-
-      proc_dir
     end
   ensure
-    # Clean up temporary files.
-    Dir.children(".").each do |fn|
-      if fn[0, 22] == ".pbsimply-defaultfiles.yaml" or
-         fn[0, 21] == ".pbsimply-frontmatter" or
-         fn[0, 17] == ".current_document"
-        File.delete fn
-      end
-    end
-  end
-
-  def pre_plugins(procdoc, frontmatter)
-    if File.directory?(".pre_generate")
-      STDERR.puts("Processing with pre plugins")
-      script_file = File.join(".pre_generate", script_file)
-      Dir.entries(".pre_generate").sort.each do |script_file|
-        next if script_file =~ /^\./
-        STDERR.puts "Running script: #{File.basename script_file}"
-        pre_script_result = nil
-        script_cmdline = case
-        when File.executable?(script_file)
-          [script_file, procdoc]
-        when POST_PROCESSORS[File.extname(script_file)]
-          [POST_PROCESSORS[File.extname(script_file)], script_file, procdoc]
-        else
-          ["perl", script_file, procdoc]
-        end
-        IO.popen({"pbsimply_doc_frontmatter" => YAML.dump(frontmatter)}, script_cmdline) do |io|
-          pre_script_result = io.read
-        end
-        File.open(procdoc, "w") {|f| f.write pre_script_result}
-      end
-    end
-  end
-
-  def post_plugins(frontmatter=nil)
-    if File.directory?(".post_generate")
-
-      STDERR.puts("Processing with post plugins")
-
-      @this_time_processed.each do |v|
-        STDERR.puts "Processing #{v[:dest]} (from #{v[:source]})"
-        procdoc = v[:dest]
-        frontmatter ||= @indexes[File.basename v[:source]]
-        File.open(".pbsimply-frontmatter.json", "w") {|f| f.write JSON_LIB.dump(frontmatter)}
-        Dir.entries(".post_generate").sort.each do |script_file|
-          next if script_file =~ /^\./
-          STDERR.puts "Running script: #{script_file}"
-          script_file = File.join(".post_generate", script_file)
-          post_script_result = nil
-          script_cmdline = case
-          when File.executable?(script_file)
-            [script_file, procdoc]
-          when POST_PROCESSORS[File.extname(script_file)]
-            [POST_PROCESSORS[File.extname(script_file)], script_file, procdoc]
-          else
-            ["perl", script_file, procdoc]
-          end
-          IO.popen({"pbsimply_frontmatter" => ".pbsimply-frontmatter.json", "pbsimply_indexes" => @db.path}, script_cmdline) do |io|
-            post_script_result = io.read
-          end
-
-          File.open(procdoc, "w") {|f| f.write post_script_result}
-        end
-      end
-    end
+    @workdir = nil
+    @workfile_frontmatter = nil
+    @workfile_pandoc_defaultfiles = nil
   end
 
   def generate(dir, filename, frontmatter)
@@ -485,8 +348,10 @@ EOF
     # Preparing and pre script.
     orig_filepath = [dir, filename].join("/")
     ext = File.extname(filename)
-    procdoc = sprintf(".current_document%s", ext)
+    procdoc = File.join(@workdir, "current_document#{ext}")
+
     pre_plugins(procdoc, frontmatter)
+    @hooks.pre.run({procdoc: procdoc, frontmatter: frontmatter})
 
     doc = process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc) # at sub-class
 
@@ -497,54 +362,21 @@ EOF
     end
 
     # Write out
-    outext = frontmatter["force_ext"] || ".html"
-    outpath = case
-    when @outfile
-      @outfile
-    when @accs_processing
-      File.join(@config["outdir"], @dir, "index") + outext
-    else
-      File.join(@config["outdir"], @dir, File.basename(filename, ".*")) + outext
-    end
+    outpath = frontmatter["dest_path"]
 
     File.open(outpath, "w") do |f|
       f.write(doc)
     end
 
+    # Hooks for processed document.
+    @hooks.process.run({
+      outpath: outpath,
+      frontmatter: frontmatter,
+      procdoc: procdoc
+    })
+
     # Mark processed
-    @this_time_processed.push({source: orig_filepath, dest: outpath})
-  end
-
-  # letsaccs
-  #
-  # This method called on the assumption that processed all documents and run as directory mode.
-  def process_accs
-    STDERR.puts "Processing ACCS index..."
-    if File.exist?(File.join(@dir, ".accsindex.erb"))
-      erbtemplate = File.read(File.join(@dir, ".accsindex.erb"))
-    elsif File.exist?(".accsindex.erb")
-      erbtemplate = File.read(".accsindex.erb")
-    else
-      erbtemplate = ACCS::INDEX
-    end
-
-    # Get infomation
-    @accs_index = Psych.unsafe_load(File.read([@dir, ".accs.yaml"].join("/")))
-
-    @accs_index["title"] ||= (@config["accs_index_title"] || "Index")
-    @accs_index["date"] ||= Time.now.strftime("%Y-%m-%d")
-    @accs_index["pagetype"] = "accs_index"
-
-    @index = @frontmatter.merge @accs_index
-
-    doc = ERB.new(erbtemplate, trim_mode: "%<>").result(binding)
-    File.open(File.join(@dir, ".index.md"), "w") do |f|
-      f.write doc
-    end
-
-    accsmode
-    @dir = File.join(@dir, ".index.md")
-    main
+    @this_time_processed.push({source: orig_filepath, dest: outpath, frontmatter: frontmatter})
   end
 
   ###############################################
@@ -553,198 +385,21 @@ EOF
 
   private
 
-  # Turn on ACCS processing mode.
-  def accsmode
-    @accs_processing = true
-    @singlemode = true
-    @skip_index = true
-  end
-
-  # Read Frontmatter from the document.
-  # This method returns frontmatter, pos.
-  # pos means position at end of Frontmatter on the file.
-  def read_frontmatter(dir, filename)
-    frontmatter = nil
-    pos = nil
-
-    if File.exist? File.join(dir, ".meta." + filename)
-      # Load standalone metadata YAML.
-      frontmatter = Psych.unsafe_load(File.read(File.join(dir, (".meta." + filename))))
-      pos = 0
-    else
-
-      case File.extname filename
-      when ".md"
-
-        # Load Markdown's YAML frontmatter.
-        File.open(File.join(dir, filename)) do |f|
-          l = f.gets
-          next unless l && l.chomp == "---"
-
-          lines = []
-
-          while l = f.gets
-            break if l.nil?
-
-            break if  l.chomp == "---"
-            lines.push l
-          end
-
-          next if f.eof?
-
-          begin
-            frontmatter = Psych.unsafe_load(lines.join)
-          rescue => e
-            STDERR.puts "!CRITICAL: Cannot parse frontmatter."
-            raise e
-          end
-
-          pos = f.pos
-        end
-
-      when ".rst"
-        # ReSTRUCTURED Text
-
-        File.open(File.join(dir, filename)) do |f|
-          l = f.gets
-          if l =~ /:([A-Za-z_-]+): (.*)/ #docinfo
-            frontmatter = { $1 => [$2.chomp] }
-            last_key = $1
-
-            # Read docinfo
-            while(l = f.gets)
-              break if l =~ /^\s*$/ # End of docinfo
-              if l =~ /^\s+/ # Continuous line
-                docinfo_lines.last.push($'.chomp)
-              elsif l =~ /:([A-Za-z_-]+): (.*)/
-                frontmatter[$1] = [$2.chomp]
-                last_key = $1
-              end
-            end
-
-            # Treat docinfo lines
-            frontmatter.each do |k,v|
-              v = v.join(" ")
-              #if((k == "author" || k == "authors") && v.include?(";")) # Multiple authors.
-              if(v.include?(";")) # Multiple element.
-                v = v.split(/\s*;\s*/)
-
-              elsif k == "date" # Date?
-                # Datetime?
-                if v =~ /[0-2][0-9]:[0-6][0-9]/
-                  v = DateTime.parse(v)
-                else
-                  v = Date.parse(v)
-                end
-              elsif v == "yes" || v == "true"
-                v = true
-              else # Simple String.
-                nil # keep v
-              end
-
-              frontmatter[k] = v
-            end
-
-          elsif l && l.chomp == ".." #YAML
-            # Load ReST YAML that document begins comment and block is yaml.
-            lines = []
-
-            while(l = f.gets)
-              if(l !~ /^\s*$/ .. l =~ /^\s*$/)
-                if l=~ /^\s*$/
-                  break
-                else
-                  lines.push l
-                end
-              end
-            end
-            next if f.eof?
-
-
-            # Rescue for failed to read YAML.
-            begin
-              frontmatter = Psych.unsafe_load(lines.map {|i| i.sub(/^\s*/, "") }.join)
-            rescue
-              STDERR.puts "Error in parsing ReST YAML frontmatter (#{$!})"
-              next
-            end
-          else
-            next
-          end
-
-          pos = f.pos
-
-        end
-      end
-    end
-
-    abort "This document has no frontmatter" unless frontmatter
-    abort "This document has no title." unless frontmatter["title"]
-
-
-    ### Additional meta values. ###
-    frontmatter["source_directory"] = dir # Source Directory
-    frontmatter["source_filename"] = filename # Source Filename
-    frontmatter["source_path"] = File.join(dir, filename) # Source Path
-    # URL in site.
-    this_url = (File.join(dir, filename)).sub(/^[\.\/]*/) { @config["self_url_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html")
-    frontmatter["page_url"] = this_url
-    # URL in site with URI encode.
-    frontmatter["page_url_encoded"] = ERB::Util.url_encode(this_url)
-    frontmatter["page_url_encoded_external"] = ERB::Util.url_encode((File.join(dir, filename)).sub(/^[\.\/]*/) { @config["self_url_external_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html"))
-    frontmatter["page_html_escaped"] = ERB::Util.html_escape(this_url)
-    frontmatter["page_html_escaped_external"] = ERB::Util.html_escape((File.join(dir, filename)).sub(/^[\.\/]*/) { @config["self_url_external_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html"))
-    # Title with URL Encoded.
-    frontmatter["title_encoded"] = ERB::Util.url_encode(frontmatter["title"])
-    frontmatter["title_html_escaped"] = ERB::Util.html_escape(frontmatter["title"])
-    fts = frontmatter["timestamp"]
-    fts = fts.to_datetime if Time === fts
-    if DateTime === fts
-      frontmatter["timestamp_xmlschema"] = fts.xmlschema
-      frontmatter["timestamp_jplocal"] = fts.strftime('%Y年%m月%d日 %H時%M分%S秒')
-      frontmatter["timestamp_rubytimestr"] = fts.strftime('%a %b %d %H:%M:%S %Z %Y')
-      frontmatter["timestamp_str"] = fts.strftime("%Y-%m-%d %H:%M:%S %Z")
-    elsif Date === fts
-      frontmatter["timestamp_xmlschema"] = fts.xmlschema
-      frontmatter["timestamp_jplocal"] = fts.strftime('%Y年%m月%d日')
-      frontmatter["timestamp_rubytimestr"] = fts.strftime('%a %b %d')
-      frontmatter["timestamp_str"] = fts.strftime("%Y-%m-%d")
-    elsif Date === frontmatter["Date"]
-      fts = frontmatter["Date"]
-      frontmatter["timestamp_xmlschema"] = fts.xmlschema
-      frontmatter["timestamp_jplocal"] = fts.strftime('%Y年%m月%d日')
-      frontmatter["timestamp_rubytimestr"] = fts.strftime('%a %b %d')
-      frontmatter["timestamp_str"] = fts.strftime("%Y-%m-%d")
-    end
-
-    fsize = FileTest.size(File.join(dir, filename))
-    mtime = File.mtime(File.join(dir, filename)).to_i
-
-    frontmatter["_filename"] ||= filename
-    frontmatter["pagetype"] ||= "post"
-
-    frontmatter["_size"] = fsize
-    frontmatter["_mtime"] = mtime
-    frontmatter["_last_proced"] = @now.to_i
-
-    if File.extname(filename) == ".md"
-      frontmatter["_docformat"] = "Markdown"
-    elsif File.extname(filename) == ".rst" || File.extname(filename) == ".rest"
-      frontmatter["_docformat"] = "ReST"
-    end
-
-    frontmatter["date"] ||= @now.strftime("%Y-%m-%d %H:%M:%S")
-
-    return frontmatter, pos
-  end
-
   # Check is the article modified? (or force update?)
   def check_modify(path, frontmatter)
     modify = true
     index = @indexes_orig[path[1]].dup || {}
     frontmatter = @db.cmp_obj(frontmatter)
+
+    # Remove unstable metadata for compartion.
     index.delete("_last_proced")
+    index.delete("source_path")
+    index.delete("source_directory")
+    index.delete("dest_path")
     frontmatter.delete("_last_proced")
+    frontmatter.delete("source_path")
+    frontmatter.delete("source_directory")
+    frontmatter.delete("dest_path")
 
     if index == frontmatter
       STDERR.puts "#{path[1]} is not modified."
@@ -760,312 +415,5 @@ EOF
     else
       modify
     end
-  end
-
-  def bless_ruby(frontmatter)
-    # BLESSING (Always)
-    if PureBuilder.const_defined?(:BLESS) && Proc === PureBuilder::BLESS
-      begin
-        PureBuilder::BLESS.(frontmatter, self)
-      rescue
-        STDERR.puts "*** BLESSING PROC ERROR ***"
-        raise
-      end
-    end
-
-    # BLESSING (ACCS)
-    if @accs && PureBuilder::ACCS.const_defined?(:BLESS) && Proc === PureBuilder::ACCS::BLESS
-      begin
-        PureBuilder::ACCS::BLESS.(frontmatter, self)
-      rescue
-        STDERR.puts "*** ACCS BLESSING PROC ERROR ***"
-        raise
-      end
-    end
-
-    # ACCS DEFINITIONS
-    if @accs
-      if Proc === PureBuilder::ACCS::DEFINITIONS[:next]
-        i = PureBuilder::ACCS::DEFINITIONS[:next].call(frontmatter, self)
-        frontmatter["next_article"] = i if i
-      end
-      if Proc === PureBuilder::ACCS::DEFINITIONS[:prev]
-        i = PureBuilder::ACCS::DEFINITIONS[:prev].call(frontmatter, self)
-        frontmatter["prev_article"] = i if i
-      end
-    end
-
-    autobless(frontmatter)
-  end
-
-  def bless_cmd(frontmatter)
-    File.open(".pbsimply-frontmatter.json", "w") {|f| f.write JSON_LIB.dump(frontmatter) }
-    # BLESSING (Always)
-    if @config["bless_cmd"]
-      (Array === @config["bless_cmd"] ? system(*@config["bless_cmd"]) : system(@config["bless_cmd"]) ) or abort "*** BLESS COMMAND RETURNS NON-ZERO STATUS"
-    end
-    # BLESSING (ACCS)
-    if @config["bless_accscmd"]
-      (Array === @config["bless_accscmd"] ? system({"pbsimply_frontmatter" => ".pbsimply-frontmatter.json", "pbsimply_indexes" => @db.path}, *@config["bless_accscmd"]) : system({"pbsimply_frontmatter" => ".pbsimply-frontmatter.json", "pbsimply_indexes" => @db.path}, @config["bless_accscmd"]) ) or abort "*** BLESS COMMAND RETURNS NON-ZERO STATUS"
-    end
-    mod_frontmatter = JSON.load(File.read(".pbsimply-frontmatter.json"))
-    frontmatter.replace(mod_frontmatter)
-
-    autobless(frontmatter)
-  end
-
-  # Blessing automatic method with configuration.
-  def autobless(frontmatter)
-    catch(:accs_rel) do
-      # find Next/Prev page on accs
-      if @accs && @config["blessmethod_accs_rel"]
-        # Preparing. Run at once.
-        if !@article_order
-          @rev_article_order_index = {}
-
-          case @config["blessmethod_accs_rel"]
-          when "numbering"
-            @article_order = @indexes.to_a.sort_by {|i| i[1]["_filename"].to_i }
-          when "date"
-            begin
-              @article_order = @indexes.to_a.sort_by {|i| i[1]["date"]}
-            rescue
-              abort "*** Automatic Blessing Method Error: Maybe some article have no date."
-            end
-          when "timestamp"
-            begin
-              @article_order = @indexes.to_a.sort_by {|i| i[1]["timestamp"]}
-            rescue
-              abort "*** Automatic Blessing Method Error: Maybe some article have no timetsamp."
-            end
-          when "lexical"
-            @article_order = @indexes.to_a.sort_by {|i| i[1]["_filename"]}
-          end
-          @article_order.each_with_index {|x,i| @rev_article_order_index[x[0]] = i }
-        end
-
-        throw(:accs_rel) unless index = @rev_article_order_index[frontmatter["_filename"]]
-        if @article_order[index + 1]
-          frontmatter["next_article"] = {"url" => @article_order[index + 1][1]["page_url"],
-                                         "title" => @article_order[index + 1][1]["title"]}
-        end
-        if index > 0
-          frontmatter["prev_article"] = {"url" => @article_order[index - 1][1]["page_url"],
-                                         "title" => @article_order[index - 1][1]["title"]}
-        end
-      end
-    end
-  end
-
-  ###############################################
-  #           DOCUMENT PROCESSORS               #
-  ###############################################
-
-
-  module Processor
-
-    # Pandoc processor
-    class Pandoc < PBSimply
-      def initialize(config)
-        @pandoc_default_file = {}
-
-        # -d
-        @pandoc_default_file = {
-          "to" => "html5",
-          "standalone" => true
-        }
-        super
-      end
-
-      def setup_config(dir)
-        super
-        @pandoc_default_file["template"] = @config["template"]
-
-        if @config["css"]
-          if @config["css"].kind_of?(String)
-            @pandoc_default_file["css"] = [@config["css"]]
-          elsif @config["css"].kind_of?(Array)
-            @pandoc_default_file["css"] = @config["css"]
-          else
-            abort "css in Config should be a String or an Array."
-          end
-        end
-
-        if @config["toc"]
-          @pandoc_default_file["toc"] = true
-        end
-
-        if Hash === @config["pandoc_additional_options"]
-          @pandoc_default_file.merge! @config["pandoc_additional_options"]
-        end
-
-      end
-
-      # Invoke pandoc, parse and format and write out.
-      def print_fileproc_msg(filename)
-        STDERR.puts "#{filename} is going Pandoc."
-      end
-
-      def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)
-        doc = nil
-
-        File.open(".pbsimply-defaultfiles.yaml", "w") {|f| YAML.dump(@pandoc_default_file, f)}
-        File.open(".pbsimply-frontmatter.yaml", "w") {|f| YAML.dump(frontmatter, f)}
-
-        # Go Pandoc
-        pandoc_cmdline = ["pandoc"]
-        pandoc_cmdline += ["-d", ".pbsimply-defaultfiles.yaml", "--metadata-file", ".pbsimply-frontmatter.yaml", "-M", "title:#{frontmatter["title"]}"]
-        pandoc_cmdline += ["-f", frontmatter["input_format"]] if frontmatter["input_format"]
-        pandoc_cmdline += [ procdoc ]
-        IO.popen((pandoc_cmdline)) do |io|
-          doc = io.read
-        end
-
-        # Abort if pandoc returns non-zero status
-        if $?.exitstatus != 0
-          abort "Pandoc returns exit code #{$?.exitstatus}"
-        end
-
-        doc
-      end
-
-      def target_file_extensions
-        [".md", ".rst"]
-      end
-    end
-
-    # RDoc family Base
-    class PbsRBase < PBSimply
-      def initialize(config)
-        require 'rdoc'
-        require 'rdoc/markup/to_html'
-
-        @rdoc_options = RDoc::Options.new
-        @rdoc_markup = RDoc::Markup.new
-
-        super
-      end
-
-      def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)
-        # Getting HTML string.
-        rdoc = RDoc::Markup::ToHtml.new(@rdoc_options, @rdoc_markup)
-        article_body = rdoc.convert(get_markup_document(procdoc))
-
-        # Process with eRuby temaplte.
-        erb_template = ERB.new(File.read(@config["template"]), trim_mode: '%<>')
-        doc = erb_template.result(binding)
-
-        doc
-      end
-    end
-
-    # RDoc/Markdown processor
-    class PbsRMakrdown < PbsRBase
-      def initialize(config)
-        require 'rdoc'
-        require 'rdoc/markdown'
-        super
-      end
-
-      def print_fileproc_msg(filename)
-        STDERR.puts "#{filename} generate with RDoc/Markdown"
-      end
-
-      def get_markup_document procdoc
-        RDoc::Markdown.parse(File.read procdoc)
-      end
-    end
-
-    # RDoc processor
-    class PbsRDoc < PbsRBase
-      def print_fileproc_msg(filename)
-        STDERR.puts "#{filename} generate with RDoc"
-      end
-
-      def get_markup_document procdoc
-        File.read procdoc
-      end
-
-      def target_file_extensions
-        [".rdoc"]
-      end
-    end
-
-    class PbsRedCarpet < PBSimply
-      def initialize(config)
-        require 'redcarpet'
-        super
-      end
-
-      def setup_config(dir)
-        super
-        @rc_extension = @config["redcarpet_extensions"] || {}
-      end
-
-      def print_fileproc_msg(filename)
-        STDERR.puts "#{filename} generate with Redcarpet Markdown"
-      end
-
-      def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)
-        # Getting HTML string.
-        markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML, **@rc_extension)
-        article_body = markdown.render(File.read procdoc)
-
-        # Process with eRuby temaplte.
-        erb_template = ERB.new(File.read(@config["template"]), trim_mode: '%<>')
-        doc = erb_template.result(binding)
-
-        doc
-      end
-    end
-
-    class PbsKramdown < PBSimply
-      def initialize(config)
-        require 'kramdown'
-        super
-      end
-
-      def print_fileproc_msg(filename)
-        STDERR.puts "#{filename} generate with Kramdown"
-      end
-
-      def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)
-        # Set feature options
-        features = @config["kramdown_features"] || {}
-
-        # Getting HTML string.
-        markdown = Kramdown::Document.new(File.read(procdoc), **features)
-        article_body = markdown.to_html
-
-        # Process with eRuby temaplte.
-        erb_template = ERB.new(File.read(@config["template"]), trim_mode: '%<>')
-        doc = erb_template.result(binding)
-
-        doc
-      end
-    end
-
-    class PbsCommonMark < PBSimply
-      def initialize(config)
-        require 'commonmarker'
-        super
-      end
-
-      def print_fileproc_msg(filename)
-        STDERR.puts "#{filename} generate with CommonMarker (cmark-gfm)"
-      end
-
-      def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)
-        # Getting HTML string.
-        article_body = CommonMarker.render_doc(File.read(procdoc), :DEFAULT, [:table, :strikethrough]).to_html
-
-        # Process with eRuby temaplte.
-        erb_template = ERB.new(File.read(@config["template"]), trim_mode: '%<>')
-        doc = erb_template.result(binding)
-
-        doc
-      end
-    end
-
   end
 end

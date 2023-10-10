@@ -29,7 +29,7 @@
 ## v1.4.1 2018-07-09
 
 * Meta data give to pandoc with argument when ReST + docinfo for multiple element
-* Add support docinfo term characters - and _.
+* Add support docinfo term characters `-` and `_`.
 
 ## v1.4.2 2018-07-22
 
@@ -170,4 +170,34 @@ Add JSON support.
 * Fix bug when single mode
 * Change filename
 * Support RubyGems
+
+## v2.1 2022-06-26 (dev)
+
+* Add exporting article index feature
+* Add `rst2html5` (docutils) support.
+* Use tempdir for defaultfiles, frontmatter and current document.
+
+## v2.2 2023-08-22 (dev)
+
+**INCONPARTIBLE CHANGES!!!**
+
+* Add Hooks feature
+* Update single mode features
+* *Use temporary directory for processing data instead of root directory*
+
+## v3.0 2023-10-10
+
+* Single mode improvement and bug fix
+* Big refactoring
+* Remove unused code
+* Extend Hooks feature
+* Find deleted article
+* Add `auto_delete` option
+* *Pre/Post plugins are now deprecated*
+* Add `dest_path`, `normalized_docdir`, `normalized_docpathz` to frontmatter
+* Fix `$pbsimply_indexes`, `$pbsimply_frontmatter` variable were not working
+* Add `$pbsimply_working_dir` environment variable
+* Fix `unsafe_load` problem in YAML docdb
+* Support `RDoc` in `_docformat` frontmatter
+* Update request Ruby version in README 2.3 to 3.0 (Actual required >=2.6 at least for endless range)
 

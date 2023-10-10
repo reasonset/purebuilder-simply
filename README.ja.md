@@ -38,7 +38,7 @@ PureBuilder Simply ACCS はPureBuilder Simplyによって `index.html` ファイ
 
 ## Dependency
 
-* Ruby >= 2.3
+* Ruby >= 3.0
 * Pandoc >= 2.8
 
 ## Usage
@@ -58,10 +58,11 @@ frontmatterの`draft`の値を真にする。
 
 |オプション|内容|
 |------|------------------------------|
-|`-f`|すべてのドキュメントを強制的に更新する。テンプレートを更新した場合に便利|
-|`-I`|`.indexes.rbm`に登録しない|
-|`-o FILE`|出力ファイルをFILEに指定する|
-|`-m FILE`|さらに追加のメタデータYAMLファイル|
+|`-f`, `--force-refresh`|すべてのドキュメントを強制的に更新する。テンプレートを更新した場合に便利|
+|`-I`, `--skip-index`|`.indexes.rbm`に登録しない|
+|`-A`, `--skip-accs`|ACCSの処理をしない|
+|`-o FILE`, `--output`|出力ファイルをFILEに指定する|
+|`-m FILE`, `--additional-metafile`|さらに追加のメタデータYAMLファイル|
 
 ### Make ACCS index
 
@@ -108,7 +109,7 @@ Ruby Marshalの代わりにJSONが使用され、ファイル名も`.indexes.jso
 |css|String / Array|CSSファイル|
 |toc|Boolian|真ならばTOCを生成する|
 |pandoc\_additional\_options|Array|追加で渡されるPandocのコマンドラインオプション|
-|post\_eruby|Boolian|真にするとPandocの出力をerbによってプロセッシングする|
+|post\_eruby|Boolean|真にするとPandocの出力をerbによってプロセッシングする|
 |alt\_frontmatter|Hash|ACCSインデックスファイルのデフォルトのfrontmatter|
 |default\_meta|Hash|デフォルトのfrontmatter|
 |testserver\_port|Fixnum|`pbsimply-testserver`が使用するポート(default 8000)|
@@ -119,6 +120,7 @@ Ruby Marshalの代わりにJSONが使用され、ファイル名も`.indexes.jso
 |bless\_cmd|String / Array|blessに使用するコマンド|
 |bless\_accscmd|String / Array|ACCSのblessに使用するコマンド|
 |blessmethod\_accs\_rel|String|「次」「前」の記事を探索する自動blessメソッド|
+|auto\_delete|Boolean|ソースドキュメントが消えた場合、出力ドキュメントからも削除する|
 
 ## 特別な値
 
@@ -142,10 +144,13 @@ Ruby Marshalの代わりにJSONが使用され、ファイル名も`.indexes.jso
 |source\_directory|system|system|ソースディレクトリ|
 |source\_file|system|system|ソースファイル名|
 |source\_path|system|system|ソースファイルパス|
-|page\_url|system|system|当該ドキュメントの生成後のURL|
-|page\_url\_encoded|system|system|当該ドキュメントの生成後のURLのURIエンコードされたもの|
-|page\_url\_encoded\_external|system|system|`page_url_encoded`で`self_url_external_prefix`を使うもの|
-|title\_encoded|system|system|タイトルをURIエンコードしたもの|
+|dest\_path|system|system|出力ファイルパス|
+|normalized\_docdir|system||`/`で始まる正規化されたソースディレクトリ|
+|normalized\_docpath|system||`/`で始まる正規化されたドキュメントパス|
+|page\_url|system||当該ドキュメントの生成後のURL|
+|page\_url\_encoded|system||当該ドキュメントの生成後のURLのURIエンコードされたもの|
+|page\_url\_encoded\_external|system||`page_url_encoded`で`self_url_external_prefix`を使うもの|
+|title\_encoded|system||タイトルをURIエンコードしたもの|
 |timestamp|frontmatter|frontmatter / system|`date`よりも詳細なドキュメントの日時を記載する項目|
 |timestamp\_xmlschema|system|system|XMLスキーマでフォーマットされたドキュメント日時。`timestamp`が定義されていない場合、`date`を使う|
 |timestamp\_jplocal|system|system|日本のローカル形式でフォーマットされたドキュメント日時。`timestamp`が定義されていない場合、`date`を使う|
@@ -162,6 +167,7 @@ Pre Plugins, Post plugins, Blessing commandにおいて利用できる環境変�
 |`pbsimply_subdir`|Yes|Yes|Yes|ドキュメントルートからのドキュメントディレクトリのパス|
 |`pbsimply_indexes`|Yes|Yes|Yes|インデックスデータベースのファイルパス|
 |`pbsimply_frontmatter`|Yes|Yes|Yes|現在のドキュメントのfrontmatter(JSON)のパス|
+|`pbsimply_working_dir`|Yes|Yes|Yes|処理中のファイルが置かれているディレクトリ|
 
 ## Testing
 
@@ -180,44 +186,6 @@ Pre Plugins, Post plugins, Blessing commandにおいて利用できる環境変�
 
 もし`http://example.com/site/index.html`のように本番環境がサブディレクトリにある場合、
 ドキュメントをサブディレクトリ化に配置することを推奨する。
-
-## 事前処理
-
-`.pre_generate`ディレクトリ下にスクリプトを置くと、PureBuilder Simply Pandocは各ファイルの生成前に同スクリプトを実行する。
-
-実行権限がなくてもshebangを理解するよう、スクリプトファイルは`perl`によって呼ばれる。
-
-```
-perl <script> <temporary_source_file>
-```
-
-PureBuilder Simply Pandocはtemporary_source_fileをこのスクリプトの出力で置き換える。
-
-データベース構築より前に実行されるため、
-スクリプトは`indexes.rbm`を利用することはできない。
-
-pre-scriptはドキュメントを生成する前に呼ばれ、スキップされる(更新されていない、あるいは草稿の)ドキュメントでは呼ばれない。
-
-## 事後処理
-
-`.post_generate`ディレクトリ下にスクリプトを置くと、PureBuilder Simply Pandocはファイルの生成後に同スクリプトを実行する。
-
-実行権限がなくてもshebangを理解するよう、スクリプトファイルは`perl`によって呼ばれる。
-
-```
-perl <script> <temporary_source_file>
-```
-
-PureBuilder Simply Pandocは`temporary_source_file`をこのスクリプトの出力で置き換える。
-
-スクリプトは`indexes.rbm`を利用することができ、該当するデータベースへのファイルパスは環境変数`$pbsimply_indexes`に格納される。
-
-ドキュメントメタデータは環境変数`$pbsimply_doc_frontmatter`で、YAML形式でアクセスできる。
-
-ドキュメントのサブディレクトリ部分は環境変数`$pbsimply_subdir`でアクセスできる。
-
-post-scriptは生成されたファイルのリストとともに呼ばれる。
-今回生成しなかった(既に生成されていた)ファイルはリストに含まれない。
 
 ## 祝福
 
@@ -325,8 +293,7 @@ PureBuilder::ACCS::DEFINITIONS[:prev] = ->(frontmatter, pb) {
 `bless_cmd`は通常の祝福用、
 `bless_accscmd`はACCSの祝福用である。
 
-いずれの場合も`.pbsimply-frontmatter.json`ファイルからドキュメントメタデータを読み取ることができ、
-同ファイルを書き換えることで変更を反映することができる。
+いずれの場合も環境変数`$PBSIMPLY_WORKING_DIR`のディレクトリにある`pbsimply-frontmatter.json`ファイルからドキュメントメタデータを読み取ることができ、同ファイルを書き換えることで変更を反映することができる。
 
 ### 自動的な祝福
 
@@ -360,8 +327,6 @@ PureBuilder::ACCS::DEFINITIONS[:prev] = ->(frontmatter, pb) {
 |.index.md|each|ACCSが生成するインデックスページ|
 |.accsindex.erb|root or each ACCS|ACCSインデックスページ用Markdown eRubyテンプレート|
 |.accs.yaml|each|ACCSインデックスページ用の`@index`|
-|.post\_generate|root|post pluginsを配置するディレクトリ|
-|.pre\_generate|root|pre pluginsを配置するディレクトリ|
 |.pbsimply-bless.rb|root|Bless用のRubyスクリプト|
 
 # ドキュメントサンプル
@@ -444,6 +409,7 @@ PureBuilder SimplyはPandocを使うことで非常に強力なツールとな�
 |Kramdown|`kramdown`|
 |Redcarpet|`redcarpet`|
 |CommonMarker (cmark-gfm)|`cmark`|
+|Docutils (実験的)|`docutils`|
 
 また、テンプレートをeRubyテンプレートとして評価するものについては、テンプレート上で次の値を利用することができる
 (ほとんどの場合、`frontmatter`と`article_body`を使う)。
@@ -571,3 +537,102 @@ RubyのMarkdownライブラリ、Redcarpetを用いて生成する。
 * `toc`
 * `pandoc_additional_options`
 * `post_eruby`
+
+### Docutils
+
+#### 説明
+
+Pythonで書かれたReSTructured Textプロセッサ、Docutilsを用いて生成する。
+ソースファイルはReSTructured Textであるとして処理し、対象は`*.rst`ファイルに限られる。
+
+#### Dependency
+
+* Docutils (`rst2html5`)
+
+#### 使用できない設定
+
+* `toc`
+* `pandoc_additional_options`
+
+#### 追加される設定
+
+|Key|Type|Description|
+|-------|-----|-----------------------|
+|`docutils_options`|Array|`rst2html5`コマンドに渡されるコマンドラインオプション引数|
+
+# Hooks
+
+Hooksを使うことで、PureBuilder Simplyの処理に追加の挙動を加えることができる。
+
+Hooksを定義するには、ドキュメントルートディレクトリに`.pbsimply-hooks.rb`を置く。
+このスクリプトでは、`PBSimply::Hooks.load_hooks`を定義する必要がある。
+
+このメソッドには`PBSimply::Hooks`オブジェクトが引数として渡される。
+`PBSimply::Hooks`オブジェクトはタイミングをメソッドとして持っており、それぞれのタイミングオブジェクトの`<<`メソッドに`Proc`オブジェクトを渡すことで、hookに処理を追加することができる。
+
+```ruby
+#!/bin/ruby
+
+def (PBSimply::Hooks).load_hooks h
+  h.process << ->(v) {
+    db[v["normalized_docpath"]] = v
+  }
+
+  h.post << ->(v) {
+    db.delete_if do |dbk, dbv|
+      not File.exist? dbv["dest_path"]
+    end
+  }
+end
+```
+
+hookには必ず1つの引数(通常はHash)が渡されるが、その中身はタイミングによって異なる。
+
+## pre
+
+`PBSimply::Hooks#pre`はドキュメントの処理の一番最初に呼ばれる。
+
+引数は`frontmatter`と`procdoc`.
+
+`frontmatter`はこのタイミングでのfrontmatterが入っている。
+これは、BLESSされる前である。
+
+`procdoc`には処理中のドキュメントの一時ファイルのパスが入っている。
+この時点では、このファイルの中身はソースドキュメントからfrontmatterを除いたものに過ぎない。
+
+## process
+
+`PBSimply::Hooks#process`はドキュメントの一連の処理を行い、最後の生成を行う直前に呼ばれる。
+
+引数は`frontmatter`, `procdoc`, `outpath`である。
+
+`frontmatter`および`procdoc`は`#pre`と同様だが、生成前の処理はすべて終わった状態になっている。
+`outpath`は出力予定のパスで、まだ`outpath`への出力は行われていない。
+
+## delete
+
+`PBSimply::Hooks#delete`は、ドキュメントが「なくなった」場合に呼ばれる。
+これは、ドキュメントがdraftに変更された場合を含む。
+
+引数は`target_file_path`と`source_file_path`である。
+
+`target_file_path`はこのドキュメントが生成される場合の出力ファイルパスである。
+このファイルは存在する場合もあれば、存在しないこともある。
+
+`source_file_path`はソースドキュメントのパスである。
+存在することもあれば、存在しないこともある。
+
+## post
+
+`PBsimply::Hooks#post`はすべてのドキュメントの生成が終わったタイミングで呼ばれる。
+
+引数は`this_time_processed`である。
+これは、`Hash`の配列で、実際にPureBuilder Simplyが今回の処理したドキュメントが入っている。
+中身は`source`(オリジナルのソースファイルのパス), `dest`(出力ファイルのパス), `frontmatter`である。
+
+## accs
+
+`PBSimply::Hooks#accs`はACCSインデックスを生成するときに呼ばれる。
+
+引数として`index`と`indexes`が渡される。
+これは、`.accsindex.erb`で認識される`@index`および`@indexes`と同じものである。
