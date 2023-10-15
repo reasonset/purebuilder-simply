@@ -201,3 +201,7 @@ Add JSON support.
 * Support `RDoc` in `_docformat` frontmatter
 * Update request Ruby version in README 2.3 to 3.0 (Actual required >=2.6 at least for endless range)
 
+## v3.0.2 2023-10-15
+
+* Fix detecting update
+* Add configuration for detecting update.

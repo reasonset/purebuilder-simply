@@ -121,6 +121,7 @@ JSON is used instead of Ruby Marshal and hhe filename is `.indexes.json`
 |accs\_across\_category|Boolean|Don't separate ACCS article lists by category (on default template.)|
 |accs\_sort\_by|String|Sorting method for ACCS article list. `default` (date, title, last update), `title` (title, date), `name` (filename, title, date) and `serial` (`serial`, date, filename) are avilable. It works on default template.|
 |auto\_delete|Boolean|Delete output file when source file is deleted or turned to draft.|
+|detect\_modification|String|Detecting modification method. `changes` looks change `changes` header. `mtimesize` looks mtime and file size. Otherwise, it looks mtime.|
 
 ## Special values in @index
 
