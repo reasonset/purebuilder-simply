@@ -187,7 +187,6 @@ module PBSimply::Frontmatter
 
     frontmatter["_size"] = fsize
     frontmatter["_mtime"] = mtime
-    frontmatter["_last_proced"] = @now.to_i
 
     if File.extname(filename) == ".md"
       frontmatter["_docformat"] = "Markdown"

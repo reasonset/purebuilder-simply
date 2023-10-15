@@ -221,7 +221,7 @@ class PBSimply
     # Exclude unchanged documents.
     if @indexes && @indexes_orig
       STDERR.puts "Checking modification..."
-      target_docs.delete_if {|filename, frontmatter, pos| !check_modify([@dir, filename], frontmatter)}
+      target_docs.delete_if {|filename, frontmatter, pos| !check_modify(filename, frontmatter)}
     end
 
     # Modify frontmatter `BLESSING'
@@ -386,28 +386,31 @@ class PBSimply
   private
 
   # Check is the article modified? (or force update?)
-  def check_modify(path, frontmatter)
+  def check_modify(filename, frontmatter)
     modify = true
-    index = @indexes_orig[path[1]].dup || {}
-    frontmatter = @db.cmp_obj(frontmatter)
+    index = @indexes_orig[filename]&.dup || {}
 
-    # Remove unstable metadata for compartion.
-    index.delete("_last_proced")
-    index.delete("source_path")
-    index.delete("source_directory")
-    index.delete("dest_path")
-    frontmatter.delete("_last_proced")
-    frontmatter.delete("source_path")
-    frontmatter.delete("source_directory")
-    frontmatter.delete("dest_path")
-
-    if index == frontmatter
-      STDERR.puts "#{path[1]} is not modified."
-      modify = false
+    case @config["detect_modification"]
+    when "changes"
+      # Use "changes"
+      modify = false if frontmatter["changes"] == index["changes"]
+    when "mtimesize"
+      # Use mtime and file size.
+      modify = false if frontmatter["_mtime"] <= (index["_last_proced"] || 0) && frontmatter["_size"] == index["_size"]
     else
-      STDERR.puts "#{path[1]} last modified at #{frontmatter["_mtime"]}, last processed at #{@indexes_orig[path[1]]&.[]("_last_proced") || 0}"
-      frontmatter["last_update"] = @now.strftime("%Y-%m-%d %H:%M:%S")
+      # Default method, use mtime.
+      modify = false if frontmatter["_mtime"] <= (index["_last_proced"] || 0)
     end
+
+
+    if modify
+      STDERR.puts "#{filename} last modified at #{frontmatter["_mtime"]}, last processed at #{@indexes_orig[filename]&.[]("_last_proced") || 0}"
+    else
+      STDERR.puts "#{filename} is not modified."
+    end
+
+    frontmatter["_last_proced"] = @now.to_i
+    frontmatter["last_update"] = @now.strftime("%Y-%m-%d %H:%M:%S")
 
     if @refresh
       # Refresh (force update) mode.

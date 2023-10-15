@@ -156,6 +156,7 @@ Ruby Marshalの代わりにJSONが使用され、ファイル名も`.indexes.jso
 |timestamp\_jplocal|system|system|日本のローカル形式でフォーマットされたドキュメント日時。`timestamp`が定義されていない場合、`date`を使う|
 |timestamp\_rubytimestr|system|system|Rubyの`Time#to_s`のようなフォーマットされたドキュメント日時。`timestamp`が定義されていない場合、`date`を使う|
 |timestamp\_str|system||`%Y-%m-%d[ %H:%M:%S %Z]`形式の日時。 `timestamp`が定義されていない場合、`date`を使う|
+|detect\_modification|String|更新の検出方法。`changes`は`changes`ヘッダーの変更から検出する。`mtimesize`はmtimeとファイルサイズから検出する。 これ以外の場合、mtimeで検出する|
 
 ## 環境変数
 
