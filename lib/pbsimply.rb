@@ -201,6 +201,8 @@ class PBSimply
       # Push to target documents without checking modification.
       target_docs.push([filename, frontmatter, pos])
     end
+    ENV.delete("pbsimply_currentdoc")
+    ENV.delete("pbsimply_filename")
 
     delete_turn_draft draft_articles
 
@@ -236,6 +238,8 @@ class PBSimply
     # Proccess documents
     target_docs.each do |filename, frontmatter, pos|
       ext = File.extname filename
+      ENV["pbsimply_currentdoc"] = File.join(@workdir, "current_document#{ext}")
+      ENV["pbsimply_filename"] = filename
       @index = frontmatter
       File.open(File.join(@dir, filename)) do |f|
         f.seek(pos)

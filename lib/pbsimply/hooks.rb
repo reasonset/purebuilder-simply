@@ -16,7 +16,17 @@ class PBSimply::Hooks
       @hooks << proc
     end
 
-    alias :add :<<
+    def add(&proc)
+      @hooks << proc
+    end
+
+    # Invoke command updating files
+    def cmd(*cmdarg)
+      proc = ->(arg) do
+        system(*cmdarg)
+      end
+      self << proc
+    end
 
     def run(arg)
       STDERR.puts "Hooks processing (#{@name})"
@@ -32,14 +42,32 @@ class PBSimply::Hooks
     end
   end
 
+  # Timing Object for pre, process
+  class HooksHolderPre < HooksHolder
+    # Invoke command as filter.
+    def filter(*cmdarg)
+      proc = ->(arg) do
+        IO.popen(cmdarg, "w+") do |io|
+          io.print File.read ENV["pbsimply_currentdoc"]
+          io.close_write
+          File.open(ENV["pbsimply_currentdoc"], "w") do |f|
+            f.write io.read
+          end
+        end
+      end
+      self << proc
+    end
+  end
+
   def initialize(pbsimply)
     @pbsimply = pbsimply
+    @hooks_loaded = false
 
     # Called first phase before generate. This hooks called before blessing.
     #
     # Argument: frontmatter, procdoc.
     # procdoc is processing source document path.
-    @pre = HooksHolder.new "pre"
+    @pre = HooksHolderPre.new "pre"
 
     # Called after document was generated.
     # 
@@ -73,7 +101,8 @@ class PBSimply::Hooks
   def load
     if File.file?("./.pbsimply-hooks.rb")
       require './.pbsimply-hooks.rb'
-      PBSimply::Hooks.load_hooks(self)
+      PBSimply::Hooks.load_hooks(self) unless @hooks_loaded
+      @hooks_loaded = true
     end
   end
 

@@ -205,3 +205,8 @@ Add JSON support.
 
 * Fix detecting update
 * Add configuration for detecting update.
+
+## v3.1.0
+
+* Fix about Hooks
+* Add `#cmd` and `#filter` to Hooks timing object

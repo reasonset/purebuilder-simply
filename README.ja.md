@@ -160,15 +160,17 @@ Ruby Marshalの代わりにJSONが使用され、ファイル名も`.indexes.jso
 
 ## 環境変数
 
-Pre Plugins, Post plugins, Blessing commandにおいて利用できる環境変数
+Pre Plugins, Post plugins, Blessing command, Hooksにおいて利用できる環境変数
 
 |変数|Pre|Post|Bless|説明|
 |---------|---|---|---|--------------------|
-|`pbsimply_outdir`|Yes|Yes|Yes|出力先ドキュメントルートのパス|
-|`pbsimply_subdir`|Yes|Yes|Yes|ドキュメントルートからのドキュメントディレクトリのパス|
-|`pbsimply_indexes`|Yes|Yes|Yes|インデックスデータベースのファイルパス|
-|`pbsimply_frontmatter`|Yes|Yes|Yes|現在のドキュメントのfrontmatter(JSON)のパス|
-|`pbsimply_working_dir`|Yes|Yes|Yes|処理中のファイルが置かれているディレクトリ|
+|`pbsimply_outdir`|Yes|Yes|Yes|Yes|Yes|出力先ドキュメントルートのパス|
+|`pbsimply_subdir`|Yes|Yes|Yes|Yes|Yes|ドキュメントルートからのドキュメントディレクトリのパス|
+|`pbsimply_indexes`|Yes|Yes|Yes|Yes|Yes|インデックスデータベースのファイルパス|
+|`pbsimply_frontmatter`|Yes|Yes|Yes|Yes|Yes|現在のドキュメントのfrontmatter(JSON)のパス|
+|`pbsimply_working_dir`|Yes|Yes|Yes|Yes|Yes|処理中のファイルが置かれているディレクトリ|
+|`pbsimply_currentdoc`|Yes|Yes|No|No|No|処理中のドキュメントファイルのパス|
+|`pbsimply_filename`|Yes|Yes|No|No|No|元々のソースファイルのファイル名|
 
 ## Testing
 
@@ -563,6 +565,8 @@ Pythonで書かれたReSTructured Textプロセッサ、Docutilsを用いて生�
 
 # Hooks
 
+## 概要
+
 Hooksを使うことで、PureBuilder Simplyの処理に追加の挙動を加えることができる。
 
 Hooksを定義するには、ドキュメントルートディレクトリに`.pbsimply-hooks.rb`を置く。
@@ -589,28 +593,56 @@ end
 
 hookには必ず1つの引数(通常はHash)が渡されるが、その中身はタイミングによって異なる。
 
-## pre
+## タイミングメソッド
 
-`PBSimply::Hooks#pre`はドキュメントの処理の一番最初に呼ばれる。
+`PBSimply::Hooks#load_hooks`の引数オブジェクトのメソッド。
+
+### `#add {|arg| ... }`
+
+ブロックをタイミングオブジェクトに追加する。
+
+### `#<< proc`
+
+Procオブジェクトをタイミングオブジェクトに追加する。
+
+### `#cmd(*cmdarg)`
+
+`system(*cmdarg)` 形式でコマンドを実行する。
+
+`pre`では`$pbsimply_currentdoc`の内容を更新して反映させることができる。
+
+### `#filter(*cmdarg)`
+
+`IO.popen(cmdarg, "w+")` 形式でコマンドを実行する。
+
+コマンドは標準入力からドキュメントの内容が与えられ、ドキュメントの内容はコマンドの出力で置き換えられる。
+
+このコマンドは`pre`においてのみ利用可能。
+
+## タイミングオブジェクト
+
+### pre
+
+`PBSimply::Hooks#pre`はドキュメント処理の直前に呼ばれる。
 
 引数は`frontmatter`と`procdoc`.
 
 `frontmatter`はこのタイミングでのfrontmatterが入っている。
-これは、BLESSされる前である。
+`pre`が呼ばれるのはBLESSよりも後である。
 
 `procdoc`には処理中のドキュメントの一時ファイルのパスが入っている。
 この時点では、このファイルの中身はソースドキュメントからfrontmatterを除いたものに過ぎない。
 
-## process
+### process
 
-`PBSimply::Hooks#process`はドキュメントの一連の処理を行い、最後の生成を行う直前に呼ばれる。
+`PBSimply::Hooks#process`はドキュメントの一連の処理を行い、最後の生成を行った直後に呼ばれる。
 
 引数は`frontmatter`, `procdoc`, `outpath`である。
 
 `frontmatter`および`procdoc`は`#pre`と同様だが、生成前の処理はすべて終わった状態になっている。
-`outpath`は出力予定のパスで、まだ`outpath`への出力は行われていない。
+`outpath`は出力予定されたドキュメントのパス。
 
-## delete
+### delete
 
 `PBSimply::Hooks#delete`は、ドキュメントが「なくなった」場合に呼ばれる。
 これは、ドキュメントがdraftに変更された場合を含む。
@@ -623,7 +655,7 @@ hookには必ず1つの引数(通常はHash)が渡されるが、その中身は
 `source_file_path`はソースドキュメントのパスである。
 存在することもあれば、存在しないこともある。
 
-## post
+### post
 
 `PBsimply::Hooks#post`はすべてのドキュメントの生成が終わったタイミングで呼ばれる。
 
@@ -631,7 +663,7 @@ hookには必ず1つの引数(通常はHash)が渡されるが、その中身は
 これは、`Hash`の配列で、実際にPureBuilder Simplyが今回の処理したドキュメントが入っている。
 中身は`source`(オリジナルのソースファイルのパス), `dest`(出力ファイルのパス), `frontmatter`である。
 
-## accs
+### accs
 
 `PBSimply::Hooks#accs`はACCSインデックスを生成するときに呼ばれる。
 
