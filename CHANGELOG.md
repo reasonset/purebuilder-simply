@@ -205,3 +205,9 @@ Add JSON support.
 
 * Fix detecting update
 * Add configuration for detecting update.
+
+## v3.1 2023-10-16
+
+* Fix about Hooks
+* Add `$pbsimply_currentdoc` and `$pbsimply_filename` environment variables
+* Add `#cmd` and `#filter` to Hooks timing object

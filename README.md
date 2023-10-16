@@ -160,15 +160,17 @@ JSON is used instead of Ruby Marshal and hhe filename is `.indexes.json`
 
 ## Environment variables
 
-Environment variables that able to use in Pre Plugins, Post plugins, Blessing command.
+Environment variables that able to use in Pre Plugins, Post plugins, Hooks or Blessing command.
 
-|Name|Pre|Post|Bless|Description|
+|Name|Pre|Process|Delete|Post|Bless|Description|
 |---------|---|---|---|--------------------|
-|`pbsimply_outdir`|Yes|Yes|Yes|Path for output directory root.|
-|`pbsimply_subdir`|Yes|Yes|Yes|Path for document directory from document root.|
-|`pbsimply_indexes`|Yes|Yes|Yes|Path for index database.|
-|`pbsimply_frontmatter`|Yes|Yes|Yes|Path for current document's frontmatter (JSON).|
-|`pbsimply_working_dir`|Yes|Yes|Yes|Temporary firectory path for putting processing data.|
+|`pbsimply_outdir`|Yes|Yes|Yes|Yes|Yes|Path for output directory root.|
+|`pbsimply_subdir`|Yes|Yes|Yes|Yes|Yes|Path for document directory from document root.|
+|`pbsimply_indexes`|Yes|Yes|Yes|Yes|Yes|Path for index database.|
+|`pbsimply_frontmatter`|Yes|Yes|Yes|Yes|Yes|Path for current document's frontmatter (JSON).|
+|`pbsimply_working_dir`|Yes|Yes|Yes|Yes|Yes|Temporary directory path for putting processing data.|
+|`pbsimply_currentdoc`|Yes|Yes|No|No|No|Temporary filepath for processing document.|
+|`pbsimply_filename`|Yes|Yes|No|No|No|Original source filename.|
 
 ## Testing
 
@@ -566,6 +568,8 @@ Source files are treated as ReSTructured Text, and the target is limited to `*.r
 
 # Hooks
 
+## Overview
+
 You can tweak PureBuilder Simply behavior with hooks feature.
 
 write `.pbsimply-hooks.rb` on document root to use Hooks.
@@ -592,27 +596,55 @@ end
 
 Hook called with one argument. Ordinary it is a `Hash`, but keys and values are different between timing object.
 
-## pre
+## Timing methods
 
-`PBSimply::Hooks#pre` is called first on processing document.
+Methods of argument of `PBSimply::Hooks#load_hooks`.
+
+### `#add {|arg| ... }`
+
+Add block to timing object.
+
+### `#<< proc`
+
+Add proc to timing object.
+
+### `#cmd(*cmdarg)`
+
+Call command with `system(*cmdarg)`.
+
+You can modify content of `$pbsimply_currentdoc` on `pre`.
+
+### `#filter(*cmdarg)`
+
+Call command with `IO.popen(cmdarg, "w+")`.
+
+Command is given document content from STDIN, and overwrite document content with command's output.
+
+you can use this method *only* on `pre`.
+
+## Timing object
+
+### pre
+
+`PBSimply::Hooks#pre` is called before processing document.
 
 Argument are `frontmatter` and `procdoc`.
 
-`frontmatter` is frontmatter without BLESSing.
+`pre` is called after BLESSing.
 
 `procdoc` is processing document's temporary path.
 Its content same as source document but without frontmatter.
 
-## process
+### process
 
-`PBSimply::Hooks#process` is called just before generating.
+`PBSimply::Hooks#process` is called just after generating.
 
 Arguments are `frontmatter`, `procdoc`, `outpath`.
 
 `frontmatter` and `procdoc` are same as `#pre`, but after other process.
-`outpath` is intended output file path, but don't write yet.
+`outpath` is output file path.
 
-## delete
+### delete
 
 `PBSimply::Hooks#delete` is called when document is lost include it turn to draft.
 
@@ -632,7 +664,7 @@ Argument is `this_time_processed`.
 
 It has `source` (original source file path,) `dest` (output file path,) `frontmatter`.
 
-## accs
+### accs 
 
 `PBSimply::Hooks#accs` is called before generating ACCS index.
 
