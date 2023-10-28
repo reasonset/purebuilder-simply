@@ -211,3 +211,8 @@ Add JSON support.
 * Fix about Hooks
 * Add `$pbsimply_currentdoc` and `$pbsimply_filename` environment variables
 * Add `#cmd` and `#filter` to Hooks timing object
+
+## v3.2 2023-10-28
+
+* Add `pbsimply-init` command
+* usr env(1) for pbsimply-testserver

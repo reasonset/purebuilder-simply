@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/bin/env ruby
 # -*- mode: ruby; coding: UTF-8 -*-
 
 require 'webrick'

@@ -3,17 +3,67 @@
 # ../Build means Build directory on Source document root's parent directory.
 outdir: ../Build
 #outdir: /home/foo/public_html/
+#
+# Template file path.
+# ./template.html by default.
+template: template.html
+#
 # Loading CSS files (userd by Pandoc's default template.)
 # This values must be *server's URL*.
+# This settings is not avilable on rdoc, rdoc_markdown, kramdown, redcarpet or cmark engine.
 css:
   - /css/layout.css
-  - /css/base.css
+  - /css/base.css#
 # Enable TOC. true or false. false by default.
+# This settings is not avilable on rdoc, rdoc_markdown, kramdown, redcarpet, cmark or docutils engine.
 toc: true
+#
 # Enable eRuby template expansion. true or false. false by default.
+# This settings is not avilable on rdoc, rdoc_markdown, kramdown, redcarpet or cmark engine.
 post_eruby: false
+# Default metadata. If same key exists in document's frontmatter, document's frontmatter is given priority to this settings.
+default_meta:
+  author: "John Doe"
+#
+# Override every ACCS index page's frontmatter.
+alt_frontmatter:
+  title: Serial documents by ACCS
+#
+# Testserver (pbsimply-testserver.rb)'s port. 8000 by default.
+#testserver_port: 8000
+#
+# Generated document's URL absolute prefix. This value replaces reading /.
+#self_url_prefix: /foowebsite/
+#
+# Generated document's URL absolute prefix. This value replaces reading /. Used by page_url_encoded_external.
+self_url_external_prefix: https://example.com/
+# Database format. use JSON if set json or oj.
+#dbstyle: json
+#
+# Blessing way. If cmd given, you external command instead of Ruby function.
+#bless_style: cmd
+#
+# Blessing external command
+#bless_cmd: [echo, BLESS]
+#
+# Blessing external command on ACCS.
+#bless_accscmd: [echo, ACCS]
+#
+# Method control for find ACCS next/prev.
+# numbering, date, timestamp, lexical
+#blessmethod_accs_rel: date
+#
+# Delete output file automatically when lose source document.
+#auto_delete: yes
+#
+#################################################
+# Pandoc engine option
+#################################################
+#pbsimply_processor: pandoc
+#
 # Pandoc's default file settings.
 # It is merge into default file. See https://pandoc.org/MANUAL.html#default-files
+# This option used only by pandoc engine.
 pandoc_additional_options:
   metadata:
     lang: ja
@@ -23,23 +73,33 @@ pandoc_additional_options:
 #  include-after-body:
 #    - after.html
 #
-# Default metadata. If same key exists in document's frontmatter, document's frontmatter is given priority to this settings.
-default_meta:
-  author: "John Doe"
-# Override every ACCS index page's frontmatter.
-alt_frontmatter:
-  title: Serial documents by ACCS
-# Testserver (pbsimply-testserver.rb)'s port. 8000 by default.
-#testserver_port: 8000
-# Generated document's URL absolute prefix. This value replaces reading /.
-#self_url_prefix: /foowebsite/
-# Generated document's URL absolute prefix. This value replaces reading /. Used by page_url_encoded_external.
-self_url_external_prefix: https://example.com/
-# Database format. use JSON if set json or oj.
-#dbstyle: json
-# Blessing way. If cmd given, you external command instead of Ruby function.
-#bless_style: cmd
-# Blessing external command
-#bless_cmd: [echo, BLESS]
-# Blessing external command on ACCS.
-#bless_accscmd: [echo, ACCS]
+#################################################
+# Kramdown engine option
+#################################################
+#pbsimply_processor: kramdown
+#
+# An associative array passed as the second argument to `Kramdown::Document.new`. See the https://kramdown.gettalong.org/rdoc/Kramdown/Options.html for detail.
+#kramdown_features: {}
+#
+#################################################
+# RedCarpet engine option
+#################################################
+#pbsimply_processor: redcarpet
+#
+# An associative array showing the extensions to Redcarpet. See the https://github.com/vmg/redcarpet for details.
+#redcarpet_extensions: {}
+#
+#################################################
+# Docutils engine option
+#################################################
+#pbsimply_processor: docutils
+#
+# rst2html5 command line options.
+#docutils_options: []
+#
+#################################################
+# Other engines without options
+#################################################
+#pbsimply_processor: rdoc
+#pbsimply_processor: rdoc_markdown
+#pbsimply_processor: cmark

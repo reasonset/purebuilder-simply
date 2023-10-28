@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'pbsimply'
-  s.version     = '3.1.0'
+  s.version     = '3.2.0'
   s.summary     = 'PureBuiler Simply'
   s.description = 'Pre compile, static serving website builder.'
   s.authors     = ["Masaki Haruka"]
@@ -23,4 +23,5 @@ Gem::Specification.new do |s|
   s.license     = 'Apache-2.0'
   s.executables << "pbsimply"
   s.executables << "pbsimply-testserver"
+  s.executables << "pbsimply-init"
 end
