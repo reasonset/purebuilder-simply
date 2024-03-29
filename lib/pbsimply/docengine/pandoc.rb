@@ -56,7 +56,7 @@ class PBSimply
         File.open(@workfile_frontmatter, "w") {|f| YAML.dump(frontmatter, f)}
 
         # Go Pandoc
-        pandoc_cmdline = ["pandoc"]
+        pandoc_cmdline = [(@config["pandoc_command"] || "pandoc")]
         pandoc_cmdline += ["-d", @workfile_pandoc_defaultfiles, "--metadata-file", @workfile_frontmatter, "-M", "title:#{frontmatter["title"]}"]
         pandoc_cmdline += ["-f", frontmatter["input_format"]] if frontmatter["input_format"]
         pandoc_cmdline += [ procdoc ]

@@ -216,3 +216,10 @@ Add JSON support.
 
 * Add `pbsimply-init` command
 * usr env(1) for pbsimply-testserver
+
+
+## v3.2.1 2024-03-30
+
+* Change default `dbstyle` to JSON (*breaking compatibility*)
+* Add `pandoc_command` configuration
+* Delete Post Generate plug-in sample.

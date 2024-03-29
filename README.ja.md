@@ -121,6 +121,7 @@ Ruby Marshalの代わりにJSONが使用され、ファイル名も`.indexes.jso
 |bless\_accscmd|String / Array|ACCSのblessに使用するコマンド|
 |blessmethod\_accs\_rel|String|「次」「前」の記事を探索する自動blessメソッド|
 |auto\_delete|Boolean|ソースドキュメントが消えた場合、出力ドキュメントからも削除する|
+|pandoc\_command|String|Pandocのコマンド。デフォルトは`pandoc`|
 
 ## 特別な値
 

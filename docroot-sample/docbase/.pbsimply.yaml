@@ -38,6 +38,7 @@ alt_frontmatter:
 # Generated document's URL absolute prefix. This value replaces reading /. Used by page_url_encoded_external.
 self_url_external_prefix: https://example.com/
 # Database format. use JSON if set json or oj.
+# marshal, json, oj or yaml.
 #dbstyle: json
 #
 # Blessing way. If cmd given, you external command instead of Ruby function.

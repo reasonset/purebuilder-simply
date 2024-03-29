@@ -74,8 +74,10 @@ class PBSimply
       DocDB::JSON.new(dir)
     when "oj"
       DocDB::Oj.new(dir)
-    else
+    when "marshal"
       DocDB::Marshal.new(dir)
+    else
+      DocDB::JSON.new(dir)
     end
 
     @frontmatter.merge!(@config["default_meta"]) if @config["default_meta"]
