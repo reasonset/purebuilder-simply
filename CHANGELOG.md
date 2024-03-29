@@ -222,4 +222,4 @@ Add JSON support.
 
 * Change default `dbstyle` to JSON (*breaking compatibility*)
 * Add `pandoc_command` configuration
-* Delete Post Generate plug-in sample.
+* Delete Post Generate plug-in sample
