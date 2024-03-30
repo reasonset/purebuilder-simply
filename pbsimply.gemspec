@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'pbsimply'
-  s.version     = '3.2.1'
+  s.version     = '3.2.2'
   s.summary     = 'PureBuiler Simply'
   s.description = 'Pre compile, static serving website builder.'
   s.authors     = ["Masaki Haruka"]

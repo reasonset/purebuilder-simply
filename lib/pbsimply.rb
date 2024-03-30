@@ -37,6 +37,17 @@ class PBSimply
   #               SETUP FUNCTIONS               #
   ###############################################
 
+  def self.find_docroot
+    lastwd = nil
+    until File.exist?(".pbsimply.yaml")
+      Dir.chdir ".."
+      if lastwd == Dir.pwd
+        abort "PureBuilder Simply document root not found."
+      end
+      lastwd = Dir.pwd
+    end
+  end
+
   # Load config file.
   def self.load_config
     config = nil

@@ -223,3 +223,7 @@ Add JSON support.
 * Add `pandoc_command` configuration
 * Delete Post Generate plug-in sample
 * `Marshal` DocDB opens file with binary mode (Windows compatible)
+
+## v3.2.2 2024-03-30
+
+* Add auto document root finding

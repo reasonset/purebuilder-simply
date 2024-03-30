@@ -2,6 +2,7 @@
 
 require 'pbsimply'
 
+PBSimply.find_docroot
 config = PBSimply.load_config
 
 pbs_class = case config["pbsimply_processor"]
