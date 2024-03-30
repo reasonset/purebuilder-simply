@@ -222,3 +222,4 @@ Add JSON support.
 * Propagate config to hooks
 * Add `pandoc_command` configuration
 * Delete Post Generate plug-in sample
+* `Marshal` DocDB opens file with binary mode (Windows compatible)
