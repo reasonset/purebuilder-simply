@@ -15,13 +15,13 @@ class PBSimply
   # Abstruct super class.
   class DocDB
     def dump(object)
-      File.open(File.join(@dir, ".indexes.#{@ext}"), "w") do |f|
+      File.open(File.join(@dir, ".indexes.#{@ext}"), wmode) do |f|
         f.write @store_class.dump(object)
       end
     end
 
     def load
-      File.open(File.join(@dir, ".indexes.#{@ext}"), "r") do |f|
+      File.open(File.join(@dir, ".indexes.#{@ext}"), rmode) do |f|
         next @store_class.load(f)
       end
     end
@@ -38,6 +38,14 @@ class PBSimply
       @store_class.load(@store_class.dump(frontmatter))
     end
 
+    def wmode
+      "w"
+    end
+
+    def rmode
+      "r"
+    end
+
     # Use Ruby Marshal
     class Marshal < DocDB
       def initialize(dir)
@@ -48,6 +56,14 @@ class PBSimply
 
       def cmp_obj(frontmatter)
         frontmatter.dup
+      end
+
+      def wmode
+        "wb"
+      end
+
+      def rmode
+        "rb"
       end
     end
 
