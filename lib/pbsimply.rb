@@ -108,7 +108,7 @@ class PBSimply
     @accs = nil
     @accs_index = {}
     @now = Time.now
-    @hooks = PBSimply::Hooks.new(self)
+    @hooks = PBSimply::Hooks.new(self, @config)
   end
 
   # Process command-line
@@ -335,9 +335,6 @@ class PBSimply
         load_index
 
         @accs = true if File.exist?(File.join(@dir, ".accs.yaml"))
-
-        # Check existing in indexes.
-        @indexes.delete_if {|k,v| ! File.exist?([@dir, k].join("/")) }
 
         proc_dir
       end

@@ -59,8 +59,9 @@ class PBSimply::Hooks
     end
   end
 
-  def initialize(pbsimply)
+  def initialize(pbsimply, config)
     @pbsimply = pbsimply
+    @config = config
     @hooks_loaded = false
 
     # Called first phase before generate. This hooks called before blessing.
@@ -111,4 +112,6 @@ class PBSimply::Hooks
   attr :delete
   attr :post
   attr :accs
+
+  attr :config
 end

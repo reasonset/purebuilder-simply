@@ -57,9 +57,10 @@ class PBSimply
 
         # Go Pandoc
         pandoc_cmdline = [(@config["pandoc_command"] || "pandoc")]
-        pandoc_cmdline += ["-d", @workfile_pandoc_defaultfiles, "--metadata-file", @workfile_frontmatter, "-M", "title:#{frontmatter["title"]}"]
+        pandoc_cmdline += ["-d", @workfile_pandoc_defaultfiles, "--metadata-file", @workfile_frontmatter, "-M", "title:#{frontmatter["title"]}", "-w", "html5"]
         pandoc_cmdline += ["-f", frontmatter["input_format"]] if frontmatter["input_format"]
         pandoc_cmdline += [ procdoc ]
+        pp pandoc_cmdline if ENV["DEBUG"] == "yes"
         IO.popen((pandoc_cmdline)) do |io|
           doc = io.read
         end
