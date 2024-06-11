@@ -123,7 +123,9 @@ JSON is used instead of Ruby Marshal and hhe filename is `.indexes.json`
 |auto\_delete|Boolean|Delete output file when source file is deleted or turned to draft.|
 |detect\_modification|String|Detecting modification method. `changes` looks change `changes` header. `mtimesize` looks mtime and file size. Otherwise, it looks mtime.|
 |pandoc\_command|String|Pandoc command. `pandoc` is default.|
-
+|jsonout|Boolean|If true, output JSON instead of HTML.|
+|jsonout_include|String[]|Array of keys to include frontmatter with `jsonout`. This settings is preffered over `jsonout_exclude`.|
+|jsonout_exclude|String[]|Array of keys to exclude from frontmatter with `jsonout`.|
 
 ## Special values in @index
 

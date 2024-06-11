@@ -122,6 +122,9 @@ Ruby Marshalの代わりにJSONが使用され、ファイル名も`.indexes.jso
 |blessmethod\_accs\_rel|String|「次」「前」の記事を探索する自動blessメソッド|
 |auto\_delete|Boolean|ソースドキュメントが消えた場合、出力ドキュメントからも削除する|
 |pandoc\_command|String|Pandocのコマンド。デフォルトは`pandoc`|
+|jsonout|Boolean|真である場合、JSON形式で出力する|
+|jsonout_include|String[]|`jsonout`で出力されるJSONに含むfrontmatterのキーの配列。この設定は`jsonout_exclude`より優先される|
+|jsonout_exclude|String[]|`jsonout`で出力されるJSONから除外されるfrontmatterのキーの配列|
 
 ## 特別な値
 

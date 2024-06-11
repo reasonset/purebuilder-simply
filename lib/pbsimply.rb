@@ -367,6 +367,7 @@ class PBSimply
     pre_plugins(procdoc, frontmatter)
     @hooks.pre.run({procdoc: procdoc, frontmatter: frontmatter})
 
+    # Generated Document
     doc = process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc) # at sub-class
 
     ##### Post eRuby
@@ -378,9 +379,7 @@ class PBSimply
     # Write out
     outpath = frontmatter["dest_path"]
 
-    File.open(outpath, "w") do |f|
-      f.write(doc)
-    end
+    write_out outpath, frontmatter, doc
 
     # Hooks for processed document.
     @hooks.process.run({
@@ -398,6 +397,39 @@ class PBSimply
   ###############################################
 
   private
+
+  # Interface to write file
+  def write_out outpath, frontmatter, doc
+    if @config["jsonout"]
+      write_json outpath, frontmatter, doc
+    else
+      File.open(outpath, "w") do |f|
+        f.write(doc)
+      end
+    end
+  end
+
+  # Write file with JSON format
+  def write_json outpath, frontmatter, doc
+    fm = frontmatter.dup
+    if @config["jsonout_include"]
+      fm = {}
+      @config["jsonout_include"].each do |k|
+        fm[k] = frontmatter[k]
+      end
+    elsif @config["jsonout_exclude"]
+      @config["jsonout_exclude"].each do |k|
+        fm.delete k
+      end
+    end
+
+    File.open(outpath, "w") do |f|
+      f.write JSON_LIB.dump({
+        "frontmatter": fm,
+        "document": doc
+      })
+    end
+  end
 
   # Check is the article modified? (or force update?)
   def check_modify(filename, frontmatter)
