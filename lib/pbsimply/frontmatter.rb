@@ -130,9 +130,9 @@ module PBSimply::Frontmatter
     when @outfile
       @outfile
     when @accs_processing
-      File.join(@config["outdir"], @dir, "index") + outext
+      File.join(@config["outdir"], @dir, "index") + outext(frontmatter)
     else
-      File.join(@config["outdir"], @dir, File.basename(filename, ".*")) + outext()
+      File.join(@config["outdir"], @dir, File.basename(filename, ".*")) + outext(frontmatter)
     end
 
     absolute_current = File.absolute_path Dir.pwd

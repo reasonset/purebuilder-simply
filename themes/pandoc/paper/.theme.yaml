@@ -1,0 +1,7 @@
+name: Paper
+description: Paper like earnest theme for PureBuilder Simply 3.3
+initial_control:
+  build_cpr:
+    - [css]
+    - [js]
+  base_theme: "pandoc/_pandoc_new"

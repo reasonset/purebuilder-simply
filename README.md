@@ -155,7 +155,10 @@ JSON is used instead of Ruby Marshal and hhe filename is `.indexes.json`
 |page\_url|system||This (generated) page's URL.|
 |page\_url\_encoded|system||This (generated) page's URI encoded URL.|
 |page\_url\_encoded\_external|system||This (generated) page's URI encoded URL with `self_url_external_prefix`.|
+|page\_html\_escaped|system||This (generated) page's HTML escaped URL.|
+|page\_html\_escaped\_external|system||This (generated) page's HTML escaped URL with `self_url_external_prefix`.|
 |title\_encoded|system||URI encoded document title.|
+|title\_html\_escaped|system||HTML escaped document title.|
 |timestamp|frontmatter|system|The date and time of the document which is more detailed than `date`.|
 |timestamp\_xmlschema|system||XML Schema formatted Timestamp. Use `date` instead of `timestamp` if `timestamp` isn't defined.|
 |timestamp\_jplocal|system||Japanese local formatted Timestamp. Use `date` instead of `timestamp` if `timestamp` isn't defined.|
@@ -323,9 +326,7 @@ They are an associative array that have keys `url` and `title`.
 |--------|-------------|
 |pbsimply-testserver|Satrt web server for testing.|
 |accsindex.erb|Sample for `.accsindex.erb`. Normaly you don't need to edit template.|
-|docroot-sample|For (part) copy to your document root.|
 |template.html|Sample for PureBuilder template.|
-|postgenerate|Sample files for post generate script.|
 
 ### You put or generated
 

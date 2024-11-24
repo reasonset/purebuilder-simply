@@ -121,6 +121,7 @@ Ruby Marshalの代わりにJSONが使用され、ファイル名も`.indexes.jso
 |bless\_accscmd|String / Array|ACCSのblessに使用するコマンド|
 |blessmethod\_accs\_rel|String|「次」「前」の記事を探索する自動blessメソッド|
 |auto\_delete|Boolean|ソースドキュメントが消えた場合、出力ドキュメントからも削除する|
+|detect\_modification|String|更新の検出方法。`changes`は`changes`ヘッダーの変更から検出する。`mtimesize`はmtimeとファイルサイズから検出する。 これ以外の場合、mtimeで検出する|
 |pandoc\_command|String|Pandocのコマンド。デフォルトは`pandoc`|
 |jsonout|Boolean|真である場合、JSON形式で出力する|
 |jsonout_include|String[]|`jsonout`で出力されるJSONに含むfrontmatterのキーの配列。この設定は`jsonout_exclude`より優先される|
@@ -154,13 +155,15 @@ Ruby Marshalの代わりにJSONが使用され、ファイル名も`.indexes.jso
 |page\_url|system||当該ドキュメントの生成後のURL|
 |page\_url\_encoded|system||当該ドキュメントの生成後のURLのURIエンコードされたもの|
 |page\_url\_encoded\_external|system||`page_url_encoded`で`self_url_external_prefix`を使うもの|
+|page\_html\_escaped|system||当該ドキュメントの生成後のURLのHTMLエンコードされたもの|
+|page\_html\_escaped\_external|system||`page_html_encoded`で`self_url_external_prefix`を使うもの|
 |title\_encoded|system||タイトルをURIエンコードしたもの|
+|title\_html\_escaped|system||タイトルをHTMLエスケープしたもの|
 |timestamp|frontmatter|frontmatter / system|`date`よりも詳細なドキュメントの日時を記載する項目|
 |timestamp\_xmlschema|system|system|XMLスキーマでフォーマットされたドキュメント日時。`timestamp`が定義されていない場合、`date`を使う|
 |timestamp\_jplocal|system|system|日本のローカル形式でフォーマットされたドキュメント日時。`timestamp`が定義されていない場合、`date`を使う|
 |timestamp\_rubytimestr|system|system|Rubyの`Time#to_s`のようなフォーマットされたドキュメント日時。`timestamp`が定義されていない場合、`date`を使う|
 |timestamp\_str|system||`%Y-%m-%d[ %H:%M:%S %Z]`形式の日時。 `timestamp`が定義されていない場合、`date`を使う|
-|detect\_modification|String|更新の検出方法。`changes`は`changes`ヘッダーの変更から検出する。`mtimesize`はmtimeとファイルサイズから検出する。 これ以外の場合、mtimeで検出する|
 
 ## 環境変数
 
@@ -321,8 +324,6 @@ PureBuilder::ACCS::DEFINITIONS[:prev] = ->(frontmatter, pb) {
 |--------|-------------|
 |pbsimply-testserver|テスト用ウェブサーバー起動スクリプト|
 |accsindex.erb|`.accsindex.erb`のサンプル。通常編集せずそのまま利用できる|
-|docroot-sample|(部分的に)コピーしてドキュメントルートとして使用するためのサンプル|
-|postgenerate|post pluginsのサンプルファイル|
 
 ### あなたが置くか、生成されるもの
 

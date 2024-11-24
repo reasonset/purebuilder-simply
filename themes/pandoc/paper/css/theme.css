@@ -1,0 +1,126 @@
+body {
+  background-color: #fcf7f4;
+  color: #333;
+}
+
+a {
+  color: #0a7ec2;
+}
+
+article h1 {
+  border-bottom: 1px solid;
+}
+
+.sitetitle a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.sitetitle h1 {
+  margin-block-end: 0.15em;
+  margin-block-start: 0.15em;
+}
+
+.sitetitle {
+  border-bottom: 1px solid #5d5e68;
+}
+
+.top-navigation {
+  border-bottom: 2px solid #5d5e68;
+}
+
+#TopNavNav div {
+  display: inline-block;
+}
+
+.main-wrapper {
+  max-width: 1050px;
+  margin: auto;
+  padding-top: 1em;
+}
+
+.toc {
+  max-width: 800px;
+  margin: auto;
+  border: 2px solid #94b7eb;
+  border-radius: 3px;
+}
+
+article p, article li, article td {
+  font-family: serif;
+}
+
+article p em, article p strong, article th {
+  font-family: sans-serif;
+}
+
+article strong {
+  color: #d44503;
+  text-decoration: underline;
+}
+
+table {
+  margin: auto;
+}
+
+table td {
+  border-top: 1px solid;
+  border-bottom: 1px solid;
+}
+
+#DocumentFooter {
+  border-top: 2px solid #5d5e68;
+  text-align: right;
+  font-size: 80%;
+}
+
+#WrapWindow {
+  visibility: hidden;
+  z-index: 55000;
+  background-color: #000; /* for RGBa Unsupported browseres */
+  background-color: rgba(0,0,0,0);
+  height: 100vh;
+  width: 100vw;
+  position: fixed;
+  top: 0px;
+  left: 0px;
+}
+  
+#WrapWindow img {
+  margin : 0px auto;
+  max-width: 100vw;
+  max-height: 100vh;
+  display: block;
+}
+
+/***** Source Code *****/
+pre code.sourceCode .al {color: #282828;font-weight: bold;} /*Alert*/
+pre code.sourceCode .an {color: #17448c;} /*Annotation*/
+pre code.sourceCode .at {color: #086a48;} /*Attribute*/
+pre code.sourceCode .dt {color: #ba740b;} /*BaseN*/
+pre code.sourceCode .du {color: #9b129b;} /*Builtin*/
+pre code.sourceCode .cf {color: #15438e;} /*ControlFlow*/
+pre code.sourceCode .ch {color: #82122f;} /*Char*/
+pre code.sourceCode .cn {color: #b01bb0;} /*Constant*/
+pre code.sourceCode .co {color: #293da1;} /*Comment*/
+pre code.sourceCode .cv {color: #ba740b;} /*CommentVar*/
+pre code.sourceCode .do {color: #218B97;} /*Documentation*/
+pre code.sourceCode .dt {color: #2dad86;} /*DataType*/
+pre code.sourceCode .dv {color: #af16af;} /*DecVal*/
+pre code.sourceCode .er {color: #282828; text-decoration: underline;} /*Error*/
+pre code.sourceCode .ex {color: #2dad86;} /*Extension*/
+pre code.sourceCode .fl {color: #af16af;} /*Float*/
+pre code.sourceCode .fu {color: #b51d3e;} /*Function*/
+pre code.sourceCode .im {color: #2dad86;} /*Import*/
+pre code.sourceCode .in {color: #01a8ad;} /*Infomation*/
+pre code.sourceCode .kw {color: #82122f;} /*Keyword*/
+pre code.sourceCode .op {color: #17448c;} /*Operator*/
+pre code.sourceCode .ot {color: #5d5e61;} /*Other*/
+pre code.sourceCode .pp {color: #A85E3D;} /*PreProcessor*/
+pre code.sourceCode .sc {color: #1076ad; background-color: #4E163E} /*SpecialChar*/
+pre code.sourceCode .ss {color: #82122f;} /*SpecialString*/
+pre code.sourceCode .st {color: #295698;} /*String*/
+pre code.sourceCode .va {color: #15438e;} /*Variable*/
+pre code.sourceCode .vs {color: #218B97; font-style: italic;} /*VerbatimString*/
+pre code.sourceCode .wa {color: #5d5e61;} /*Warning*/
+/**********************/

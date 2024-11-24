@@ -1,0 +1,7 @@
+name: Bloggy
+description: Basic theme bloggy from PureBuilder Simply 2.0
+initial_control:
+  build_cpr:
+    - [css]
+    - [javascript]
+  base_theme: "pandoc/_pandoc_base"
