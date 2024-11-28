@@ -100,6 +100,11 @@ class PBSimplyInit
   def install_theme
     $stderr.puts "Installing theme..."
 
+    # Backup .pbsimply.yaml
+    if File.exist?(File.join(@source_dir, ".pbsimply.yaml"))
+      File.rename(File.join(@source_dir, ".pbsimply.yaml"), File.join(@source_dir, ".pbsimply.yaml.orig"))
+    end
+
     # Install base theme
     if @theme_yaml["initial_control"] && @theme_yaml["initial_control"]["base_theme"]
       $stderr.puts "Install base theme..."
