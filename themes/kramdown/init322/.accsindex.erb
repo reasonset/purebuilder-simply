@@ -1,0 +1,35 @@
+---
+title: <%= @index["title"] %>
+date: <%= @index["date"] %>
+accsindex: yes
+---
+
+<%
+articles = Hash.new {|h,k| h[k] = Array.new }
+
+@indexes.each do |filename, index|
+  articles[(index["category"] || "default")].push index
+end
+
+%>
+
+% artkeys = articles.keys.sort
+% artkeys.each do |catname|
+% cat = articles[catname]
+
+% if articles.length > 1
+# <%= catname %>
+% end
+
+<%
+  list = if @config["accs_order"] == "desc" || @index["accs_order"] == "desc" || @index["blogmode"]
+    cat.sort_by {|i| [i["date"].to_s, i["title"].to_s, i["_last_update"].to_i] }.reverse
+  else
+    cat.sort_by {|i| [i["date"].to_s, i["title"].to_s, i["_last_update"].to_i] }
+  end
+
+  list.each do |i|
+%>* [<%= i["title"].gsub('@', '\@') %>](<%= File.basename(i["_filename"].to_s, ".*") + ".html" %>) (<%= i["date"] %>)
+<% end %>
+
+% end

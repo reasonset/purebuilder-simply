@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="$lang$" xml:lang="$lang$"$if(dir)$ dir="$dir$"$endif$>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="PureBuilder Simply" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+$for(author-meta)$
+  <meta name="author" content="$author-meta$" />
+$endfor$
+$if(date-meta)$
+  <meta name="dcterms.date" content="$date-meta$" />
+$endif$
+$if(keywords)$
+  <meta name="keywords" content="$for(keywords)$$keywords$$sep$, $endfor$" />
+$endif$
+$if(description-meta)$
+  <meta name="description" content="$description-meta$" />
+$endif$
+  <title>$pagetitle$ - $sitename$</title>
+$for(css)$
+  <link rel="stylesheet" href="$css$" />
+$endfor$
+</head>
+<body>
+  <div class="top-container">
+    <div class="sitetitle">
+      <h1>
+        <a href="/">$sitename$</a>
+      </h1>
+    </div>
+    <div class="top-navigation">
+      <nav id="TopNavNav">
+  $for(site-navigation)$
+        <div class="navigation-item"><a href="$it.path$">$it.name$</a></div>
+  $endfor$
+      </nav>
+    </div>  
+  </div>
+  <div class="main-wrapper">
+    <div class="toc">
+$if(toc)$
+      <nav id="$idprefix$TOC" role="doc-toc">
+$if(toc-title)$
+        <h2 id="$idprefix$toc-title">$toc-title$</h2>
+$endif$
+$table-of-contents$
+      </nav>
+$endif$
+    </div>
+    <article id="MainArticle">
+      <h1>$title$</h1>
+      $body$
+    </article>
+  </div>
+  <footer id="DocumentFooter">
+    $if(date)$
+    <p class="date">Published at: $date$</p>
+    $endif$
+    $if(author-meta)$
+    <p class="author">©️$author-meta$ $year$</p>
+    $endif$
+    <p class="poweredby">Powered by <a href="https://purebuilder.app">PureBuilder Simply</a></p>
+  </footer>
+  <aside id="WrapWindow">
+    <img alt="Fullsized Image" id="LBoxImage" />
+  </aside>
+</body>
+</html>

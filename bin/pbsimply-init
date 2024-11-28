@@ -1,371 +1,146 @@
 #!/bin/env ruby
-require 'fileutils'
-
-module PBSimplyInit
-end
-
-PBSimplyInit::YAML = <<EOF
----
-# Built documents output path.
-# ../Build means Build directory on Source document root's parent directory.
-outdir: ../Build
-#outdir: /home/foo/public_html/
-#
-# Template file path.
-# ./template.html by default.
-template: template.erb
-#
-# Loading CSS files (userd by Pandoc's default template.)
-# This values must be *server's URL*.
-# This settings is not avilable on rdoc, rdoc_markdown, kramdown, redcarpet or cmark engine.
-#css:
-#  - /css/layout.css
-#  - /css/base.css#
-# Enable TOC. true or false. false by default.
-# This settings is not avilable on rdoc, rdoc_markdown, kramdown, redcarpet, cmark or docutils engine.
-# toc: true
-#
-# Enable eRuby template expansion. true or false. false by default.
-# This settings is not avilable on rdoc, rdoc_markdown, kramdown, redcarpet or cmark engine.
-post_eruby: false
-# Default metadata. If same key exists in document's frontmatter, document's frontmatter is given priority to this settings.
-default_meta:
-  author: "John Doe"
-  site_title: "My first blog"
-#
-# Override every ACCS index page's frontmatter.
-alt_frontmatter:
-  title: Serial documents by ACCS
-#
-# Testserver (pbsimply-testserver.rb)'s port. 8000 by default.
-#testserver_port: 8000
-#
-# Generated document's URL absolute prefix. This value replaces reading /.
-#self_url_prefix: /foowebsite/
-#
-# Generated document's URL absolute prefix. This value replaces reading /. Used by page_url_encoded_external.
-self_url_external_prefix: https://example.com/
-# Database format. use JSON if set json or oj.
-#dbstyle: json
-#
-# Blessing way. If cmd given, you external command instead of Ruby function.
-#bless_style: cmd
-#
-# Blessing external command
-#bless_cmd: [echo, BLESS]
-#
-# Blessing external command on ACCS.
-#bless_accscmd: [echo, ACCS]
-#
-# Method control for find ACCS next/prev.
-# numbering, date, timestamp, lexical
-#blessmethod_accs_rel: date
-#
-# Delete output file automatically when lose source document.
-#auto_delete: yes
-#
-#################################################
-# Pandoc engine option
-#################################################
-#pbsimply_processor: pandoc
-#
-# Pandoc's default file settings.
-# It is merge into default file. See https://pandoc.org/MANUAL.html#default-files
-# This option used only by pandoc engine.
-#pandoc_additional_options:
-#  metadata:
-#    lang: ja
-#    title-prefix: "Powered by PureBuilder Simply"
-#  include-before-body:
-#    - before.html
-#  include-after-body:
-#    - after.html
-#
-#################################################
-# Kramdown engine option
-#################################################
-pbsimply_processor: kramdown
-# An associative array passed as the second argument to `Kramdown::Document.new`. See the https://kramdown.gettalong.org/rdoc/Kramdown/Options.html for detail.
-#kramdown_features: {}
-#
-#################################################
-# RedCarpet engine option
-#################################################
-#pbsimply_processor: redcarpet
-# An associative array showing the extensions to Redcarpet. See the https://github.com/vmg/redcarpet for details.
-#redcarpet_extensions: {}
-#
-#################################################
-# Docutils engine option
-#################################################
-#pbsimply_processor: docutils
-# rst2html5 command line options.
-#docutils_options: []
-EOF
-
-PBSimplyInit::TEMPLATE = <<EOF
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="ja" xml:lang="ja">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-    <meta name="date" content="<%= frontmatter["date"] %>" />
-    <link rel="stylesheet" href="/css/style.css" />
-    <title><%= frontmatter["title"] %></title>
-  </head>
-  <body>
-    <div id="Overall">
-      <div id="BannerHeader">
-        <h1><%= frontmatter["site_title"] %></h1>
-        <h2><%= frontmatter["title"] %></h2>
-      </div>
-      <div id="ContentContainer">
-        <nav id="NavigationColumn">
-          <ul>
-          <%
 require 'yaml'
-menu = YAML.load File.read("menu.yaml")
-        %><% menu.each {|k, v| %><%= sprintf('<li><a href="%s">%s</a></li>', v, k) %><% } %>
-          </ul>
-        </nav>
-        <article id="MainArticle"><%= article_body %></aritcle>
-      </div>
-      <footer id="PBSimply">
-        Powered by <a href="https://purebuilder.app/">PureBuilder Simply</a>
-      </footer>
-    </div>
-  </body>
-</html>
-EOF
+require 'fileutils'
+require 'optparse'
 
-PBSimplyInit::CSS = <<EOF
-body, html {
-  margin: 0;
-  padding: 0;
-}
-#Overall {
-  max-width: 800px;
-  margin: 0 auto;
-}
-#BannerHeader {
-  height: 200px;
-  width: 100%;
-}
-#ContentContainer {
-  display: flex;
-  width: 100%;
-}
-#BannerHeader {
-  background-color: #8eafe3;
-  border-radius: 2px;
-  color: #000;
-}
-#BannerHeader h1 {
-  font-size: 2.1rem;
-  text-align: center;
-  position: relative;
-  top: calc(50% - 1em);
-}
-#BannerHeader h2 {
-  font-size: 1.2rem;
-  text-align: center;
-  position: relative;
-  top: 1.25em;
-}
+class PBSimplyInit
+  def initialize
+    set_gemroot
+    load_default_theme
 
-#NavigationColumn ul {
-  list-style-type: none;
-  list-style-position: outside;
-  margin: 3px;
-  padding: 0;
-  text-align: center;
-}
-#NavigationColumn li {
-  background-color: #b9bced;
-  border: 2px solid #6367a1;
-  color: #000;
-  border-radius: 4px;
-  margin: 3px 1px;
-  padding: 2px;
-}
-#NavigationColumn a {
-  color: rgb(57, 18, 183);
-  text-decoration: none;
-}
-#MainArticle {
-  color: #666;
-  padding: 8px;
-}
-#MainArticle h1, #MainArticle h2, #MainArticle h3, #MainArticle h4, #MainArticle h5, #MainArticle h6 {
-  color: #333;
-}
-#PBSimply {
-  padding: 8px;
-  text-align: right;
-  border-top: 2px solid #6b84df;
-}
-@media screen and (min-width: 800px) {
-  #ContentContainer { flex-direction: row; }
-  #NavigationColumn {
-    order: 1;
-    width: 250px;
-  }
-  #MainArticle {
-    order: 2;
-    width: 550px;
-  }
-}
-@media screen and (max-width: 799px) {
-  #ContentContainer { flex-direction: column; }
-  #NavigationColumn {
-    order: 2;
-    width: 100%;
-  }
-  #MainArticle {
-    order: 1;
-    width: 100%;
-  }
-}
+    @cmdopts = {}
+    op = OptionParser.new
+    op.on("-t THEME", "--theme")
+    op.on("-f", "--force")
+    op.on("-l", "--list-themes")
+    op.on("-s", "--source-only")
+    op.parse!(ARGV, into: @cmdopts)
 
-a {
-  color: #4e1efd;
-}
-EOF
+    @filepath = ARGV.shift
+    @filepath ||= "."
 
-PBSimplyInit::INDEXMD = <<EOF
----
-title: First article
-date: 1970-01-01
----
+    if @cmdopts[:"source-only"]
+      @source_dir = @filepath
+    else
+      @source_dir = File.join(@filepath, "Source")
+      @build_dir = File.join(@filepath, "Build")
+    end
+      
+    @config_home = (ENV["XDG_CONFIG_HOME"] ? ENV["XDG_CONFIG_HOME"] : [ENV["HOME"], ".config"])
+    @theme_dirs = [[@gemroot, "themes"], [@gemroot, "themes", "third_party"], [*@config_home, "pbsimply", "themes"]]
 
-# This is first article
-
-This file is shown at top page.
-
-The first step, edit index.md file on document source root.
-EOF
-
-PBSimplyInit::MENUYAML = <<EOF
----
-Top page: /
-Article list: /articles
-EOF
-
-PBSimplyInit::ACCSYAML = <<EOF
----
-title: 1st series
-EOF
-
-PBSimplyInit::ACCSINDEX = <<EOF
----
-title: <%= @index["title"] %>
-date: <%= @index["date"] %>
-accsindex: yes
----
-
-<%
-articles = Hash.new {|h,k| h[k] = Array.new }
-
-@indexes.each do |filename, index|
-  articles[(index["category"] || "default")].push index
-end
-
-%>
-
-% artkeys = articles.keys.sort
-% artkeys.each do |catname|
-% cat = articles[catname]
-
-% if articles.length > 1
-# <%= catname %>
-% end
-
-<%
-  list = if @config["accs_order"] == "desc" || @index["accs_order"] == "desc" || @index["blogmode"]
-    cat.sort_by {|i| [i["date"].to_s, i["title"].to_s, i["_last_update"].to_i] }.reverse
-  else
-    cat.sort_by {|i| [i["date"].to_s, i["title"].to_s, i["_last_update"].to_i] }
+    if @cmdopts[:"list-themes"]
+      list_theme
+      exit true
+    end
   end
 
-  list.each do |i|
-%>* [<%= i["title"].gsub('@', '\@') %>](<%= File.basename(i["_filename"].to_s, ".*") + ".html" %>) (<%= i["date"] %>)
-<% end %>
+  def list_theme
+    themes = {}
+    @theme_dirs.each do |dir|
+      Dir.glob(File.join(*dir, "**", ".theme.yaml")).each do |i|
+        theme_name = i.sub(%r:[\\/]\.theme.yaml$:, "").delete_prefix(File.join(*dir)).sub(%r:^[\\/]:, "")
+        themes[theme_name] ||= YAML.load File.read i
+      end
+    end
+    themes.each do |k, v|
+      puts [k, v["name"], v["description"]].join("   ")
+    end
+  end
 
-% end
-EOF
+  def set_gemroot
+    pwd = __FILE__
+    pwd = File.readlink __FILE__ if File.symlink? __FILE__
+    pwd = File.join(File.dirname(pwd), "..")
+    pwd = File.expand_path(pwd)
+    @gemroot = pwd
+  end
 
-PBSimplyInit::ACCSARTICLE = <<EOF
----
-title: Untitled series 1
-date: 2023-10-28
-category: PureBuilder Simply
----
+  def mkdir
+    filepath = @filepath
 
-# Untitled article
+    if File.exist? filepath and (!File.directory? filepath)
+      abort "File #{filepath} is not a directory."
+    end
 
-This is a series article sample.
+    if File.exist? filepath and Dir.children(filepath).length > 0 and !@cmdopts[:force]
+      abort "File #{filepath} is not empty."
+    end
 
-`/articles` folder is set up as ACCS directory.
-ACCS recognize articles as series, and generate index page automatically.
+    FileUtils.mkdir_p(@source_dir)
+    FileUtils.mkdir_p(@build_dir) if @build_dir
+  end
 
-# How to add new article?
+  def load_default_theme
+    @default = YAML.load(File.read File.join(@gemroot, "themes", "default.yaml"))
+    @default_theme = @default["default_theme"]
+  end
 
-Add source document on `/articles`, and do `pbsimply articles`.
+  def select_theme
+    if @cmdopts[:theme]
+      @theme = @cmdopts[:theme].split("/")
+    else
+      @theme = @default_theme
+    end
+    theme_path = search_theme @theme
+    load_theme_yaml theme_path
+  end
 
-`pbsimply` will detect modified or new article and build it.
+  def search_theme theme_name
+    theme = @theme_dirs.map {|i| i + theme_name }.first {|i| File.exist? File.join(*i, ".theme.yaml")}
+    abort "No such theme" unless theme
+    puts "Theme found at #{File.join *theme}"
+    theme
+  end
 
-# How to remove this article?
+  def load_theme_yaml theme_path
+    @theme_yaml = YAML.load(File.read File.join(theme_path, ".theme.yaml"))
+  end
 
-Remove `/articles/20231028-untitled.md` and `../Build/articles/20231028-untitled.html`, and do `pbsimply articles`.
-EOF
+  def install_theme
+    $stderr.puts "Installing theme..."
 
-filepath = ARGV.shift
-filepath ||= "."
+    # Backup .pbsimply.yaml
+    if File.exist?(File.join(@source_dir, ".pbsimply.yaml"))
+      File.rename(File.join(@source_dir, ".pbsimply.yaml"), File.join(@source_dir, ".pbsimply.yaml.orig"))
+    end
 
-if File.exist? filepath and (!File.directory? filepath)
-  abort "File #{filepath} is not directory."
+    # Install base theme
+    if @theme_yaml["initial_control"] && @theme_yaml["initial_control"]["base_theme"]
+      $stderr.puts "Install base theme..."
+      Dir.children(File.join(@gemroot, "themes", @theme_yaml["initial_control"]["base_theme"])).each do |i|
+        FileUtils.cp_r(File.join(@gemroot, "themes", *@theme_yaml["initial_control"]["base_theme"], i), File.join(@source_dir))
+      end
+    end
+
+    $stderr.puts "Install theme..."
+    Dir.children(File.join(@gemroot, "themes", *@theme)).each do |i|
+      FileUtils.cp_r(File.join(@gemroot, "themes", *@theme, i), File.join(@source_dir))
+    end
+    
+    if @theme_yaml["initial_control"]
+      if @theme_yaml["initial_control"]["build_mkdirp"] && @build_dir
+        $stderr.puts "Create directories in Build directory..."
+        @theme_yaml["initial_control"]["build_mkdirp"].each do |i|
+          abort "The theme includes potentially dangerous command" if i.include? ".."
+          FileUtils.mkdir_p(File.join(@build_dir, *i))
+        end
+      end
+
+      if @theme_yaml["initial_control"]["build_cpr"] && @build_dir
+        $stderr.puts "Copy files in Build directory..."
+        @theme_yaml["initial_control"]["build_cpr"].each do |i|
+          abort "The theme includes potentially dangerous command" if i.include? ".."
+          FileUtils.cp_r(File.join(@source_dir, *i), @build_dir)
+        end
+      end
+    end
+
+    $stderr.puts "Done"
+  end
 end
 
-if File.exist? filepath and Dir.children(filepath).length > 0
-  abort "File #{filepath} is not empty."
-end
-
-FileUtils.mkdir_p(File.join(filepath, "Source"))
-FileUtils.mkdir_p(File.join(filepath, "Build"))
-
-File.open(File.join(filepath, "Source", ".pbsimply.yaml"), "w") do |f|
-  f.puts PBSimplyInit::YAML
-end
-
-File.open(File.join(filepath, "Source", ".accsindex.erb"), "w") do |f|
-  f.puts PBSimplyInit::ACCSINDEX
-end
-
-File.open(File.join(filepath, "Source", "template.erb"), "w") do |f|
-  f.puts PBSimplyInit::TEMPLATE
-end
-
-File.open(File.join(filepath, "Source", "index.md"), "w") do |f|
-  f.puts PBSimplyInit::INDEXMD
-end
-
-File.open(File.join(filepath, "Source", "menu.yaml"), "w") do |f|
-  f.puts PBSimplyInit::MENUYAML
-end
-
-FileUtils.mkdir_p(File.join(filepath, "Source", "css"))
-File.open(File.join(filepath, "Source", "css", "style.css"), "w") do |f|
-  f.puts PBSimplyInit::CSS
-end
-
-FileUtils.cp_r(File.join(filepath, "Source", "css"), File.join(filepath, "Build", "css"))
-
-FileUtils.mkdir_p(File.join(filepath, "Source", "articles"))
-File.open(File.join(filepath, "Source", "articles", ".accs.yaml"), "w") do |f|
-  f.puts PBSimplyInit::ACCSYAML
-end
-
-FileUtils.mkdir_p(File.join(filepath, "Source", "articles"))
-File.open(File.join(filepath, "Source", "articles", "20231028-untitled.md"), "w") do |f|
-  f.puts PBSimplyInit::ACCSARTICLE
-end
+initializer = PBSimplyInit.new
+initializer.select_theme
+initializer.mkdir
+initializer.install_theme

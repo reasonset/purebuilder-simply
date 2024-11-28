@@ -1,0 +1,91 @@
+body, html {
+  margin: 0;
+  padding: 0;
+}
+#Overall {
+  max-width: 800px;
+  margin: 0 auto;
+}
+#BannerHeader {
+  height: 200px;
+  width: 100%;
+}
+#ContentContainer {
+  display: flex;
+  width: 100%;
+}
+#BannerHeader {
+  background-color: #8eafe3;
+  border-radius: 2px;
+  color: #000;
+}
+#BannerHeader h1 {
+  font-size: 2.1rem;
+  text-align: center;
+  position: relative;
+  top: calc(50% - 1em);
+}
+#BannerHeader h2 {
+  font-size: 1.2rem;
+  text-align: center;
+  position: relative;
+  top: 1.25em;
+}
+
+#NavigationColumn ul {
+  list-style-type: none;
+  list-style-position: outside;
+  margin: 3px;
+  padding: 0;
+  text-align: center;
+}
+#NavigationColumn li {
+  background-color: #b9bced;
+  border: 2px solid #6367a1;
+  color: #000;
+  border-radius: 4px;
+  margin: 3px 1px;
+  padding: 2px;
+}
+#NavigationColumn a {
+  color: rgb(57, 18, 183);
+  text-decoration: none;
+}
+#MainArticle {
+  color: #666;
+  padding: 8px;
+}
+#MainArticle h1, #MainArticle h2, #MainArticle h3, #MainArticle h4, #MainArticle h5, #MainArticle h6 {
+  color: #333;
+}
+#PBSimply {
+  padding: 8px;
+  text-align: right;
+  border-top: 2px solid #6b84df;
+}
+@media screen and (min-width: 800px) {
+  #ContentContainer { flex-direction: row; }
+  #NavigationColumn {
+    order: 1;
+    width: 250px;
+  }
+  #MainArticle {
+    order: 2;
+    width: 550px;
+  }
+}
+@media screen and (max-width: 799px) {
+  #ContentContainer { flex-direction: column; }
+  #NavigationColumn {
+    order: 2;
+    width: 100%;
+  }
+  #MainArticle {
+    order: 1;
+    width: 100%;
+  }
+}
+
+a {
+  color: #4e1efd;
+}

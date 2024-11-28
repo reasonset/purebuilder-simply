@@ -126,14 +126,13 @@ module PBSimply::Frontmatter
     abort "This document has no frontmatter" unless frontmatter
     abort "This document has no title." unless frontmatter["title"]
 
-    outext = frontmatter["force_ext"] || ".html"
     outpath = case
     when @outfile
       @outfile
     when @accs_processing
-      File.join(@config["outdir"], @dir, "index") + outext
+      File.join(@config["outdir"], @dir, "index") + outext(frontmatter)
     else
-      File.join(@config["outdir"], @dir, File.basename(filename, ".*")) + outext
+      File.join(@config["outdir"], @dir, File.basename(filename, ".*")) + outext(frontmatter)
     end
 
     absolute_current = File.absolute_path Dir.pwd
@@ -199,5 +198,15 @@ module PBSimply::Frontmatter
     frontmatter["date"] ||= @now.strftime("%Y-%m-%d %H:%M:%S")
 
     return frontmatter, pos
+  end
+
+  def outext frontmatter
+    return frontmatter["force_ext"] if frontmatter["force_ext"]
+
+    if @config["jsonout"]
+      ".json"
+    else
+      ".html"
+    end
   end
 end

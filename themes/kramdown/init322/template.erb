@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ja" xml:lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <meta name="date" content="<%= frontmatter["date"] %>" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <title><%= frontmatter["title"] %></title>
+  </head>
+  <body>
+    <div id="Overall">
+      <div id="BannerHeader">
+        <h1><%= frontmatter["site_title"] %></h1>
+        <h2><%= frontmatter["title"] %></h2>
+      </div>
+      <div id="ContentContainer">
+        <nav id="NavigationColumn">
+          <ul>
+          <%
+require 'yaml'
+menu = YAML.load File.read("menu.yaml")
+        %><% menu.each {|k, v| %><%= sprintf('<li><a href="%s">%s</a></li>', v, k) %><% } %>
+          </ul>
+        </nav>
+        <article id="MainArticle"><%= article_body %></aritcle>
+      </div>
+      <footer id="PBSimply">
+        Powered by <a href="https://purebuilder.app/">PureBuilder Simply</a>
+      </footer>
+    </div>
+  </body>
+</html>

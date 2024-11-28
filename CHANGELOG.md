@@ -227,3 +227,9 @@ Add JSON support.
 ## v3.2.2 2024-03-30
 
 * Add auto document root finding
+
+## v3.3.0 2024-11-25
+
+* Add JSON out feature
+* Add theme feature
+* Add cooldark and paper theme
