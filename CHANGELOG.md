@@ -233,3 +233,7 @@ Add JSON support.
 * Add JSON out feature
 * Add theme feature
 * Add cooldark and paper theme
+
+## v3.3.1 2024-11-30
+
+* Add `_contrib_base` theme for Pandoc.
