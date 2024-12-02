@@ -233,3 +233,7 @@ Add JSON support.
 * Add JSON out feature
 * Add theme feature
 * Add cooldark and paper theme
+
+## v3.3.1 2024-12-02
+
+* Add user contibution theme submodule
