@@ -234,6 +234,6 @@ Add JSON support.
 * Add theme feature
 * Add cooldark and paper theme
 
-## v3.3.1 2024-11-30
+## v3.3.1 2024-12-02
 
-* Add `_contrib_base` theme for Pandoc.
+* Add user contibution theme submodule

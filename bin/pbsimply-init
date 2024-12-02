@@ -27,7 +27,7 @@ class PBSimplyInit
     end
       
     @config_home = (ENV["XDG_CONFIG_HOME"] ? ENV["XDG_CONFIG_HOME"] : [ENV["HOME"], ".config"])
-    @theme_dirs = [[@gemroot, "themes"], [@gemroot, "themes", "third_party"], [*@config_home, "pbsimply", "themes"]]
+    @theme_dirs = [[@gemroot, "themes"], [@gemroot, "themes", "contribute"], [*@config_home, "pbsimply", "themes"]]
 
     if @cmdopts[:"list-themes"]
       list_theme
