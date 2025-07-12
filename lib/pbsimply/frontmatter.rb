@@ -149,12 +149,15 @@ module PBSimply::Frontmatter
     frontmatter["normalized_docpath"] = absolute_docpath[pwd_length..]
     # URL in site.
     this_url = (source_path).sub(/^[\.\/]*/) { @config["self_url_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html")
+    this_url_external = (source_path).sub(/^[\.\/]*/) { @config["self_url_external_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html")
+    this_url.sub!(%r!/\.([^/]+.html)$!, '/\1')
+    this_url_external.sub!(%r!/\.([^/]+.html)$!, '/\1')
     frontmatter["page_url"] = this_url
     # URL in site with URI encode.
     frontmatter["page_url_encoded"] = ERB::Util.url_encode(this_url)
-    frontmatter["page_url_encoded_external"] = ERB::Util.url_encode((source_path).sub(/^[\.\/]*/) { @config["self_url_external_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html"))
+    frontmatter["page_url_encoded_external"] = ERB::Util.url_encode(this_url_external)
     frontmatter["page_html_escaped"] = ERB::Util.html_escape(this_url)
-    frontmatter["page_html_escaped_external"] = ERB::Util.html_escape((source_path).sub(/^[\.\/]*/) { @config["self_url_external_prefix"] || "/" }.sub(/\.[a-zA-Z0-9]+$/, ".html"))
+    frontmatter["page_html_escaped_external"] = ERB::Util.html_escape(this_url_external)
     # Title with URL Encoded.
     frontmatter["title_encoded"] = ERB::Util.url_encode(frontmatter["title"])
     frontmatter["title_html_escaped"] = ERB::Util.html_escape(frontmatter["title"])
