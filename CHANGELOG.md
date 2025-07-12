@@ -237,3 +237,7 @@ Add JSON support.
 ## v3.3.1 2024-12-02
 
 * Add user contibution theme submodule
+
+## v3.3.2 2025-07-12
+
+* Fixed ACCS integration to ensure auto-generated frontmatter uses `index.html` as exception
