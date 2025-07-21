@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/bin/env ruby
 
 # Hooks is new in PureBuilder Simply 2.2.
 # Hooks object has instance variables for each timing.

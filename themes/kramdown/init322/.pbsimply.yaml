@@ -74,6 +74,13 @@ self_url_external_prefix: https://example.com/
 #  include-after-body:
 #    - after.html
 #
+# Add extensions and input formats in Pandoc.
+# The extensions specified here are interpreted as source documents,
+# and the values are used as the values of the -f option in pandoc.
+# pandoc_input_ext:
+#   t2t: t2t
+#   mw: mediawiki
+#   muse: muse
 #################################################
 # Kramdown engine option
 #################################################

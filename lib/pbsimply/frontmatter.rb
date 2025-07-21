@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/bin/env ruby
 require 'erb'
 require 'yaml'
 
@@ -15,6 +15,10 @@ module PBSimply::Frontmatter
     if File.exist? File.join(dir, ".meta." + filename)
       # Load standalone metadata YAML.
       frontmatter = Psych.unsafe_load(File.read(File.join(dir, (".meta." + filename))))
+      pos = 0
+    elsif File.exist? File.join(dir, ".meta." + filename + ".yaml")
+      # Load standalone metadata YAML with .yaml extension.
+      frontmatter = Psych.unsafe_load(File.read(File.join(dir, (".meta." + filename + ".yaml"))))
       pos = 0
     else
 

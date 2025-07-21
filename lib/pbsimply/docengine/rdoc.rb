@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/bin/env ruby
 
 class PBSimply
   module Processor

@@ -1,10 +1,12 @@
 # Purebuilder Simply
 
-Simplified website building system with Pandoc.
+Programmable static site generator supporting Markdown, reStructuredText, and RDoc via pluggable engines and CLI-based workflows.
 
 ## What is PureBuilder
 
-PureBuilder is website building script.
+PureBuilder Simply is a pre-built website building tool. It is also called a headless CMS or SSG.
+
+It is easy to build and update, excels in writing functions, and is suitable for building text-centric websites.
 
 ## What is ACCS
 
@@ -213,9 +215,6 @@ You can modify frontmatter Hash object directly.
 When processing directory is an ACCS document directory,
 `PureBuilder::ACCS::BLESS` is also called after `PureBuilder::BLESS` if defined.
 
-You can add keys and `Proc` values to `PureBuilder::ACCS::DEFINTIONS` Hash.
-They are used for setting special value.
-
 |Key|Function|
 |-----|-------------------------|
 |`:next`|Set returned value to `frontmatter["next_article"]`|
@@ -224,7 +223,7 @@ They are used for setting special value.
 For example, this is [Chienomi](https://chienomi.org/)'s blessing script.
 
 ```ruby
-#!/usr/bin/ruby
+#!/bin/env ruby
 
 load "./.lib/categories.rb"
 

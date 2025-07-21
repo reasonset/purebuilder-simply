@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/bin/env ruby
 
 # ACCS namespace.
 module PBSimply::ACCS

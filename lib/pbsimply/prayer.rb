@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/bin/env ruby
 
 # Module for BLESSING feature.
 module PBSimply::Prayer
