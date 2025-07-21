@@ -51,7 +51,7 @@ module PBSimply::Plugger
         STDERR.puts "Processing #{v[:dest]} (from #{v[:source]})"
         procdoc = v[:dest]
         frontmatter ||= @indexes[File.basename v[:source]]
-        File.open(@workfile_frontmatter, "w") {|f| f.write JSON_LIB.dump(frontmatter)}
+        File.open(@workfile_frontmatter, "w") {|f| f.write PBSimply::JSON_LIB.dump(frontmatter)}
         Dir.entries(".post_generate").sort.each do |script_file|
           next if script_file =~ /^\./
           STDERR.puts "Running script: #{script_file}"

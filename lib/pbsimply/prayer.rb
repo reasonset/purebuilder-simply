@@ -47,7 +47,7 @@ module PBSimply::Prayer
   end
 
   def bless_cmd(frontmatter)
-    File.open(@workfile_frontmatter, "w") {|f| f.write JSON_LIB.dump(frontmatter) }
+    File.open(@workfile_frontmatter, "w") {|f| f.write PBSimply::JSON_LIB.dump(frontmatter) }
     # BLESSING (Always)
     if @config["bless_cmd"]
       (Array === @config["bless_cmd"] ? system(*@config["bless_cmd"]) : system(@config["bless_cmd"]) ) or abort "*** BLESS COMMAND RETURNS NON-ZERO STATUS"
