@@ -170,7 +170,7 @@ JSON is used instead of Ruby Marshal and hhe filename is `.indexes.json`
 Environment variables that able to use in Pre Plugins, Post plugins, Hooks or Blessing command.
 
 |Name|Pre|Process|Delete|Post|Bless|Description|
-|---------|---|---|---|--------------------|
+|---------|---|---|---|---|---|--------------------|
 |`pbsimply_outdir`|Yes|Yes|Yes|Yes|Yes|Path for output directory root.|
 |`pbsimply_subdir`|Yes|Yes|Yes|Yes|Yes|Path for document directory from document root.|
 |`pbsimply_indexes`|Yes|Yes|Yes|Yes|Yes|Path for index database.|
@@ -669,7 +669,7 @@ Argument is `this_time_processed`.
 
 It has `source` (original source file path,) `dest` (output file path,) `frontmatter`.
 
-### accs 
+### accs
 
 `PBSimply::Hooks#accs` is called before generating ACCS index.
 
