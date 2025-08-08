@@ -79,8 +79,8 @@ ACCSプロセッサは`index.html`を生成し、配置する。
 
 Pre Plugins, Post plugins, Blessing command, Hooksにおいて利用できる環境変数
 
-|変数|Pre|Post|Bless|説明|
-|---------|---|---|---|--------------------|
+|変数|Pre|Post|Delete|Post|Bless|説明|
+|---------|---|---|---|---|---|--------------------|
 |`pbsimply_outdir`|Yes|Yes|Yes|Yes|Yes|出力先ドキュメントルートのパス|
 |`pbsimply_subdir`|Yes|Yes|Yes|Yes|Yes|ドキュメントルートからのドキュメントディレクトリのパス|
 |`pbsimply_indexes`|Yes|Yes|Yes|Yes|Yes|インデックスデータベースのファイルパス|
