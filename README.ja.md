@@ -200,7 +200,7 @@ JavaScriptプラグインファイル。
 
 ### Bloggy
 
-![よくあるブログっぽいテーマ](img/theme-bloggy.png)]
+![よくあるブログっぽいテーマ](img/theme-bloggy.png)
 
 ## Pandoc以外のプロセッサを使う
 

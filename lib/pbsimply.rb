@@ -120,6 +120,8 @@ class PBSimply
     @accs_index = {}
     @now = Time.now
     @hooks = PBSimply::Hooks.new(self, @config)
+
+    @debug = (ENV["DEBUG"] == "yes")
   end
 
   # Process command-line

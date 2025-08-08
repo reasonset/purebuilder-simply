@@ -71,7 +71,7 @@ class PBSimply
           pandoc_cmdline += ["-f", @pandoc_input_extmap[File.extname filename]]
         end
         pandoc_cmdline += [ procdoc ]
-        pp pandoc_cmdline if ENV["DEBUG"] == "yes"
+        pp pandoc_cmdline if @debug
         IO.popen((pandoc_cmdline)) do |io|
           doc = io.read
         end
