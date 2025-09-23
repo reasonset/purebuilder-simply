@@ -57,6 +57,10 @@ self_url_external_prefix: https://example.com/
 # Delete output file automatically when lose source document.
 #auto_delete: yes
 #
+# Unicode normalize in processing document.
+# nfc, nfd, nfkc, nfkd.
+#unicode_normalize: nfkc
+#
 #################################################
 # Pandoc engine option
 #################################################

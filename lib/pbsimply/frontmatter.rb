@@ -44,7 +44,7 @@ module PBSimply::Frontmatter
           begin
             frontmatter = Psych.unsafe_load(lines.join)
           rescue => e
-            STDERR.puts "!CRITICAL: Cannot parse frontmatter."
+            $stderr.puts "!CRITICAL: Cannot parse frontmatter."
             raise e
           end
 
@@ -114,7 +114,7 @@ module PBSimply::Frontmatter
             begin
               frontmatter = Psych.unsafe_load(lines.map {|i| i.sub(/^\s*/, "") }.join)
             rescue
-              STDERR.puts "Error in parsing ReST YAML frontmatter (#{$!})"
+              $stderr.puts "Error in parsing ReST YAML frontmatter (#{$!})"
               next
             end
           else

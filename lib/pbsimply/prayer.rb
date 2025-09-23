@@ -9,14 +9,14 @@ module PBSimply::Prayer
       bless_ruby frontmatter
     end
   end
-  
+
   def bless_ruby(frontmatter)
     # BLESSING (Always)
     if PureBuilder.const_defined?(:BLESS) && Proc === PureBuilder::BLESS
       begin
         PureBuilder::BLESS.(frontmatter, self)
       rescue
-        STDERR.puts "*** BLESSING PROC ERROR ***"
+        $stderr.puts "*** BLESSING PROC ERROR ***"
         raise
       end
     end
@@ -26,7 +26,7 @@ module PBSimply::Prayer
       begin
         PureBuilder::ACCS::BLESS.(frontmatter, self)
       rescue
-        STDERR.puts "*** ACCS BLESSING PROC ERROR ***"
+        $stderr.puts "*** ACCS BLESSING PROC ERROR ***"
         raise
       end
     end

@@ -17,6 +17,7 @@ require 'pbsimply/plugger'
 require 'pbsimply/hooks'
 require 'pbsimply/frontmatter'
 require 'pbsimply/accs'
+require 'pbsimply/config-checker.rb'
 
 class PBSimply
   include Prayer
@@ -55,6 +56,9 @@ class PBSimply
       File.open(".pbsimply.yaml") do |f|
         config = Psych.unsafe_load(f)
       end
+      ConfigChecker.verify_config config
+    rescue PBSimply::ConfigChecker::InvalidConfigError
+      abort $!.to_s
     rescue
       abort "Failed to load config file (./.pbsimply.yaml)"
     end
@@ -99,7 +103,7 @@ class PBSimply
     end
 
     unless File.exist? outdir
-      STDERR.puts "destination directory is not exist. creating (only one step.)"
+      $stderr.puts "destination directory is not exist. creating (only one step.)"
       FileUtils.mkdir_p outdir
     end
   end
@@ -178,9 +182,9 @@ class PBSimply
     draft_articles = []
     target_docs = []
     @indexes_orig = {}
-    STDERR.puts "in #{@dir}..."
+    $stderr.puts "in #{@dir}..."
 
-    STDERR.puts "Checking Frontmatter..."
+    $stderr.puts "Checking Frontmatter..."
     Dir.foreach(@dir) do |filename|
       next if filename == "." || filename == ".." || filename == ".index.md"
       if filename =~ /^\./ || filename =~ /^draft-/
@@ -196,7 +200,7 @@ class PBSimply
         next
       end
 
-      STDERR.puts "Checking frontmatter in #{filename}"
+      $stderr.puts "Checking frontmatter in #{filename}"
       frontmatter, pos = read_frontmatter(@dir, filename)
       frontmatter = @frontmatter.merge frontmatter
       frontmatter.merge!(@add_meta) if @add_meta
@@ -237,18 +241,18 @@ class PBSimply
   def proc_docs target_docs
     # Exclude unchanged documents.
     if @indexes && @indexes_orig
-      STDERR.puts "Checking modification..."
+      $stderr.puts "Checking modification..."
       target_docs.delete_if {|filename, frontmatter, pos| !check_modify(filename, frontmatter)}
     end
 
     # Modify frontmatter `BLESSING'
     target_docs.each do |filename, frontmatter, pos|
-      STDERR.puts "Blessing #{filename}..."
+      $stderr.puts "Blessing #{filename}..."
       bless frontmatter
     end
 
     # Ready.
-    STDERR.puts "Okay, Now ready. Process documents..."
+    $stderr.puts "Okay, Now ready. Process documents..."
 
     # Proccess documents
     target_docs.each do |filename, frontmatter, pos|
@@ -258,13 +262,17 @@ class PBSimply
       @index = frontmatter
       File.open(File.join(@dir, filename)) do |f|
         f.seek(pos)
-        File.open(File.join(@workdir, "current_document#{ext}"), "w") {|fo| fo.write f.read}
+        doc_content = f.read
+        if @config["unicode_normalize"] && !frontmatter["skip_normalize"]
+          doc_content.unicode_normalize!(@config["unicode_normalize"].to_sym)
+        end
+        File.open(File.join(@workdir, "current_document#{ext}"), "w") {|fo| fo.write doc_content }
       end
 
-      STDERR.puts "Processing #{filename}"
+      $stderr.puts "Processing #{filename}"
       generate(@dir, filename, frontmatter)
     end
-    
+
     # Call post plugins
     post_plugins
 
@@ -274,13 +282,13 @@ class PBSimply
 
   # Delete turn to draft article.
   def delete_turn_draft draft_articles
-    STDERR.puts "Checking turn to draft..."
+    $stderr.puts "Checking turn to draft..."
     draft_articles.each do |dah|
       df = dah[:article_filename]
       [df, (df + ".html"), File.basename(df, ".*"), (File.basename(df, ".*") + ".html")].each do |tfn|
         tfp = File.join(@config["outdir"], @dir, tfn)
         if File.file?(tfp)
-          STDERR.puts "#{df} was turn to draft."
+          $stderr.puts "#{df} was turn to draft."
           @hooks.delete.run({target_file_path: tfp, source_file_path: dah[:source_file_path]})
           File.delete tfp if @config["auto_delete"]
         end
@@ -292,12 +300,12 @@ class PBSimply
   # Delete missing source
   def delete_missing
     return unless @indexes
-    STDERR.puts "Checking missing article..."
+    $stderr.puts "Checking missing article..."
     missing_keys = []
     @indexes.each do |k, v|
       next if !v["source_path"] || !v["dest_path"]
       unless File.exist? v["source_path"]
-        STDERR.puts "#{k} is missing."
+        $stderr.puts "#{k} is missing."
         missing_keys.push k
         @hooks.delete.run({target_file_path: v["dest_path"] ,source_file_path: v["source_path"]})
         File.delete v["dest_path"] if @config["auto_delete"]
@@ -374,7 +382,7 @@ class PBSimply
 
     ##### Post eRuby
     if @config["post_eruby"]
-      STDERR.puts "Porcessing with eRuby."
+      $stderr.puts "Porcessing with eRuby."
       doc = ERB.new(doc, nil, "%<>").result(binding)
     end
 
@@ -452,9 +460,9 @@ class PBSimply
 
 
     if modify
-      STDERR.puts "#{filename} last modified at #{frontmatter["_mtime"]}, last processed at #{@indexes_orig[filename]&.[]("_last_proced") || 0}"
+      $stderr.puts "#{filename} last modified at #{frontmatter["_mtime"]}, last processed at #{@indexes_orig[filename]&.[]("_last_proced") || 0}"
     else
-      STDERR.puts "#{filename} is not modified."
+      $stderr.puts "#{filename} is not modified."
     end
 
     frontmatter["_last_proced"] = @now.to_i

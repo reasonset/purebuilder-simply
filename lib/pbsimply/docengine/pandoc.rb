@@ -53,7 +53,7 @@ class PBSimply
 
       # Invoke pandoc, parse and format and write out.
       def print_fileproc_msg(filename)
-        STDERR.puts "#{filename} is going Pandoc."
+        $stderr.puts "#{filename} is going Pandoc."
       end
 
       def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)

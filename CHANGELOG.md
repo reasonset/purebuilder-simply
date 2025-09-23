@@ -2,7 +2,14 @@
 
 ## Version 3: Add Hooks, Theme, Initializer
 
-### v3.4.0
+### v3.5.0
+
+* Add `unicode_normalize` option
+* Add config checker
+* Update template config file
+* Use `$stderr` instead of `STDERR`
+
+### v3.4.0 (dev)
 
 * `.meta.${filename}.yaml` can be used in addition to `.meta.${filename}` as separated metadata.
 * README to refer to the portal site.
@@ -56,7 +63,7 @@
 * Extend Hooks feature
 * Find deleted article
 * Add `auto_delete` option
-* *Pre/Post plugins are now deprecated*
+* **Pre/Post plugins are now deprecated**
 * Add `dest_path`, `normalized_docdir`, `normalized_docpathz` to frontmatter
 * Fix `$pbsimply_indexes`, `$pbsimply_frontmatter` variable werenot working
 * Add `$pbsimply_working_dir` environment variable

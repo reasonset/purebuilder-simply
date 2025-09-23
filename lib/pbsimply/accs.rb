@@ -62,7 +62,7 @@ EOF
   #
   # This method called on the assumption that processed all documents and run as directory mode.
   def process_accs
-    STDERR.puts "Processing ACCS index..."
+    $stderr.puts "Processing ACCS index..."
     if File.exist?(File.join(@dir, ".accsindex.erb"))
       erbtemplate = File.read(File.join(@dir, ".accsindex.erb"))
     elsif File.exist?(".accsindex.erb")

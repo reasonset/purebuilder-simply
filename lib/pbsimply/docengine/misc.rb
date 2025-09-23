@@ -15,7 +15,7 @@ class PBSimply
       end
 
       def print_fileproc_msg(filename)
-        STDERR.puts "#{filename} generate with Redcarpet Markdown"
+        $stderr.puts "#{filename} generate with Redcarpet Markdown"
       end
 
       def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)
@@ -39,7 +39,7 @@ class PBSimply
       end
 
       def print_fileproc_msg(filename)
-        STDERR.puts "#{filename} generate with Kramdown"
+        $stderr.puts "#{filename} generate with Kramdown"
       end
 
       def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)
@@ -66,7 +66,7 @@ class PBSimply
       end
 
       def print_fileproc_msg(filename)
-        STDERR.puts "#{filename} generate with CommonMarker (cmark-gfm)"
+        $stderr.puts "#{filename} generate with CommonMarker (cmark-gfm)"
       end
 
       def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)

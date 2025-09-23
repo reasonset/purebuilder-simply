@@ -18,11 +18,11 @@ module PBSimply::Plugger
   # Porcessing document (same content as source document) path given as first argument.
   def pre_plugins(procdoc, frontmatter)
     if File.directory?(".pre_generate")
-      STDERR.puts("Processing with pre plugins")
+      $stderr.puts("Processing with pre plugins")
       script_file = File.join(".pre_generate", script_file)
       Dir.entries(".pre_generate").sort.each do |script_file|
         next if script_file =~ /^\./
-        STDERR.puts "Running script: #{File.basename script_file}"
+        $stderr.puts "Running script: #{File.basename script_file}"
         pre_script_result = nil
         script_cmdline = case
         when File.executable?(script_file)
@@ -45,16 +45,16 @@ module PBSimply::Plugger
   def post_plugins(frontmatter=nil)
     if File.directory?(".post_generate")
 
-      STDERR.puts("Processing with post plugins")
+      $stderr.puts("Processing with post plugins")
 
       @this_time_processed.each do |v|
-        STDERR.puts "Processing #{v[:dest]} (from #{v[:source]})"
+        $stderr.puts "Processing #{v[:dest]} (from #{v[:source]})"
         procdoc = v[:dest]
         frontmatter ||= @indexes[File.basename v[:source]]
         File.open(@workfile_frontmatter, "w") {|f| f.write PBSimply::JSON_LIB.dump(frontmatter)}
         Dir.entries(".post_generate").sort.each do |script_file|
           next if script_file =~ /^\./
-          STDERR.puts "Running script: #{script_file}"
+          $stderr.puts "Running script: #{script_file}"
           script_file = File.join(".post_generate", script_file)
           post_script_result = nil
           script_cmdline = case
