@@ -70,8 +70,10 @@ class PBSimply
       end
 
       def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)
+        options = @config["commonmarker_options"]&.map(&:to_sym) || [:table, :strikethrough]
+
         # Getting HTML string.
-        article_body = CommonMarker.render_doc(File.read(procdoc), :DEFAULT, [:table, :strikethrough]).to_html
+        article_body = CommonMarker.render_doc(File.read(procdoc), :DEFAULT, options).to_html
 
         # Process with eRuby temaplte.
         erb_template = ERB.new(File.read(@config["template"]), trim_mode: '%<>')

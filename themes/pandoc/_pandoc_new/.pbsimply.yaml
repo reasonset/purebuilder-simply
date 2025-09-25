@@ -103,6 +103,14 @@ pandoc_additional_options:
 #redcarpet_extensions: {}
 #
 #################################################
+# CommonMarker engine option
+#################################################
+#pbsimply_processor: cmark
+#
+# An array showing `CommonMarker.render_doc`'s 3rd agrument.
+#commonmarker_options: []
+#
+#################################################
 # Docutils engine option
 #################################################
 #pbsimply_processor: docutils

@@ -12,7 +12,10 @@ template: template.html
 # This values must be *server's URL*.
 # This settings is not avilable on rdoc, rdoc_markdown, kramdown, redcarpet or cmark engine.
 css:
-  - /css/theme.css
+  - /css/base.css
+  - /css/layout.css
+  - /css/lightbox.css
+  - /css/skylighting.css
 # Enable TOC. true or false. false by default.
 # This settings is not avilable on rdoc, rdoc_markdown, kramdown, redcarpet, cmark or docutils engine.
 toc: true
@@ -101,6 +104,14 @@ pandoc_additional_options:
 #
 # An associative array showing the extensions to Redcarpet. See the https://github.com/vmg/redcarpet for details.
 #redcarpet_extensions: {}
+#
+#################################################
+# CommonMarker engine option
+#################################################
+#pbsimply_processor: cmark
+#
+# An array showing `CommonMarker.render_doc`'s 3rd agrument.
+#commonmarker_options: []
 #
 #################################################
 # Docutils engine option

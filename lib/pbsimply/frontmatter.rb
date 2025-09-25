@@ -20,6 +20,10 @@ module PBSimply::Frontmatter
       # Load standalone metadata YAML with .yaml extension.
       frontmatter = Psych.unsafe_load(File.read(File.join(dir, (".meta." + filename + ".yaml"))))
       pos = 0
+      elsif File.exist? File.join(dir, ".meta." + filename + ".yml")
+        # Load standalone metadata YAML with .yml extension.
+        frontmatter = Psych.unsafe_load(File.read(File.join(dir, (".meta." + filename + ".yaml"))))
+        pos = 0
     else
 
       case File.extname filename

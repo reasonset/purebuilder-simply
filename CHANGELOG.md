@@ -2,17 +2,18 @@
 
 ## Version 3: Add Hooks, Theme, Initializer
 
-### v3.5.0
+### v3.4.0 2025-09-25
 
+* `.meta.${filename}.yaml` or `.meta.${filename}.yml` can be used in addition to `.meta.${filename}` as separated metadata.
+* README to refer to the portal site.
 * Add `unicode_normalize` option
+* Add `skip_update` option
 * Add config checker
 * Update template config file
 * Use `$stderr` instead of `STDERR`
-
-### v3.4.0 (dev)
-
-* `.meta.${filename}.yaml` can be used in addition to `.meta.${filename}` as separated metadata.
-* README to refer to the portal site.
+* Add `commonmarker_options` configuration.
+* Add `index.md` to `_pandoc_base`
+* Fix CSS pathes in `_pandoc_base`
 
 ### v3.3.2 2025-07-12
 

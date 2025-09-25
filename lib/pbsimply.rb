@@ -468,6 +468,9 @@ class PBSimply
     frontmatter["_last_proced"] = @now.to_i
     frontmatter["last_update"] = @now.strftime("%Y-%m-%d %H:%M:%S")
 
+    if frontmatter["skip_update"]
+      # Document specific skip update
+      false
     if @refresh
       # Refresh (force update) mode.
       true
