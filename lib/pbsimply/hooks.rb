@@ -1,8 +1,8 @@
-#!/usr/bin/ruby
+#!/bin/env ruby
 
 # Hooks is new in PureBuilder Simply 2.2.
 # Hooks object has instance variables for each timing.
-# 
+#
 class PBSimply::Hooks
 
   # Timing object class.
@@ -29,13 +29,13 @@ class PBSimply::Hooks
     end
 
     def run(arg)
-      STDERR.puts "Hooks processing (#{@name})"
+      $stderr.puts "Hooks processing (#{@name})"
       @hooks.each_with_index do |proc, index|
-        STDERR.puts "Hooks[#{index}]"
+        $stderr.puts "Hooks[#{index}]"
         begin
           proc.(arg)
         rescue
-          STDERR.puts "*** HOOKS PROC ERROR ***"
+          $stderr.puts "*** HOOKS PROC ERROR ***"
           raise
         end
       end
@@ -71,7 +71,7 @@ class PBSimply::Hooks
     @pre = HooksHolderPre.new "pre"
 
     # Called after document was generated.
-    # 
+    #
     # Argument: outpath, frontmatter, procdoc.
     # outpath is generated final document path. You can read output result.
     # procdoc is source document path before generate.

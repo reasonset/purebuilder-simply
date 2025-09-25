@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/bin/env ruby
 
 class PBSimply
   module Processor
@@ -30,7 +30,7 @@ class PBSimply
 
       # Invoke pandoc, parse and format and write out.
       def print_fileproc_msg(filename)
-        STDERR.puts "#{filename} is going Docutils."
+        $stderr.puts "#{filename} is going Docutils."
       end
 
       def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)

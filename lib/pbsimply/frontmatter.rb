@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/bin/env ruby
 require 'erb'
 require 'yaml'
 
@@ -16,6 +16,14 @@ module PBSimply::Frontmatter
       # Load standalone metadata YAML.
       frontmatter = Psych.unsafe_load(File.read(File.join(dir, (".meta." + filename))))
       pos = 0
+    elsif File.exist? File.join(dir, ".meta." + filename + ".yaml")
+      # Load standalone metadata YAML with .yaml extension.
+      frontmatter = Psych.unsafe_load(File.read(File.join(dir, (".meta." + filename + ".yaml"))))
+      pos = 0
+      elsif File.exist? File.join(dir, ".meta." + filename + ".yml")
+        # Load standalone metadata YAML with .yml extension.
+        frontmatter = Psych.unsafe_load(File.read(File.join(dir, (".meta." + filename + ".yaml"))))
+        pos = 0
     else
 
       case File.extname filename
@@ -40,7 +48,7 @@ module PBSimply::Frontmatter
           begin
             frontmatter = Psych.unsafe_load(lines.join)
           rescue => e
-            STDERR.puts "!CRITICAL: Cannot parse frontmatter."
+            $stderr.puts "!CRITICAL: Cannot parse frontmatter."
             raise e
           end
 
@@ -110,7 +118,7 @@ module PBSimply::Frontmatter
             begin
               frontmatter = Psych.unsafe_load(lines.map {|i| i.sub(/^\s*/, "") }.join)
             rescue
-              STDERR.puts "Error in parsing ReST YAML frontmatter (#{$!})"
+              $stderr.puts "Error in parsing ReST YAML frontmatter (#{$!})"
               next
             end
           else

@@ -12,7 +12,10 @@ template: template.html
 # This values must be *server's URL*.
 # This settings is not avilable on rdoc, rdoc_markdown, kramdown, redcarpet or cmark engine.
 css:
-  - /css/theme.css
+  - /css/base.css
+  - /css/layout.css
+  - /css/lightbox.css
+  - /css/skylighting.css
 # Enable TOC. true or false. false by default.
 # This settings is not avilable on rdoc, rdoc_markdown, kramdown, redcarpet, cmark or docutils engine.
 toc: true
@@ -57,6 +60,10 @@ self_url_external_prefix: https://example.com/
 # Delete output file automatically when lose source document.
 #auto_delete: yes
 #
+# Unicode normalize in processing document.
+# nfc, nfd, nfkc, nfkd.
+#unicode_normalize: nfkc
+#
 #################################################
 # Pandoc engine option
 #################################################
@@ -75,6 +82,13 @@ pandoc_additional_options:
 #  include-after-body:
 #    - after.html
 #
+# Add extensions and input formats in Pandoc.
+# The extensions specified here are interpreted as source documents,
+# and the values are used as the values of the -f option in pandoc.
+# pandoc_input_ext:
+#   t2t: t2t
+#   mw: mediawiki
+#   muse: muse
 #################################################
 # Kramdown engine option
 #################################################
@@ -90,6 +104,14 @@ pandoc_additional_options:
 #
 # An associative array showing the extensions to Redcarpet. See the https://github.com/vmg/redcarpet for details.
 #redcarpet_extensions: {}
+#
+#################################################
+# CommonMarker engine option
+#################################################
+#pbsimply_processor: cmark
+#
+# An array showing `CommonMarker.render_doc`'s 3rd agrument.
+#commonmarker_options: []
 #
 #################################################
 # Docutils engine option

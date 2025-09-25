@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/bin/env ruby
 
 ###############################################
 #           DOCUMENT PROCESSORS               #
@@ -17,7 +17,14 @@ class PBSimply
           "to" => "html5",
           "standalone" => true
         }
+
         super
+
+        @pandoc_input_extmap = {}
+        @config["pandoc_input_ext"]&.each do |k,v|
+          key = k[0] == "." ? k : "." + k
+          @pandoc_input_extmap[key] = v
+        end
       end
 
       def setup_config(dir)
@@ -46,7 +53,7 @@ class PBSimply
 
       # Invoke pandoc, parse and format and write out.
       def print_fileproc_msg(filename)
-        STDERR.puts "#{filename} is going Pandoc."
+        $stderr.puts "#{filename} is going Pandoc."
       end
 
       def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)
@@ -58,9 +65,13 @@ class PBSimply
         # Go Pandoc
         pandoc_cmdline = [(@config["pandoc_command"] || "pandoc")]
         pandoc_cmdline += ["-d", @workfile_pandoc_defaultfiles, "--metadata-file", @workfile_frontmatter, "-M", "title:#{frontmatter["title"]}", "-w", "html5"]
-        pandoc_cmdline += ["-f", frontmatter["input_format"]] if frontmatter["input_format"]
+        if frontmatter["input_format"]
+          pandoc_cmdline += ["-f", frontmatter["input_format"]]
+        elsif @pandoc_input_extmap[File.extname filename]
+          pandoc_cmdline += ["-f", @pandoc_input_extmap[File.extname filename]]
+        end
         pandoc_cmdline += [ procdoc ]
-        pp pandoc_cmdline if ENV["DEBUG"] == "yes"
+        pp pandoc_cmdline if @debug
         IO.popen((pandoc_cmdline)) do |io|
           doc = io.read
         end
@@ -74,7 +85,8 @@ class PBSimply
       end
 
       def target_file_extensions
-        [".md", ".rst"]
+        p [".md", ".rst"] + @pandoc_input_extmap.keys
+        [".md", ".rst"] + @pandoc_input_extmap.keys
       end
     end
   end

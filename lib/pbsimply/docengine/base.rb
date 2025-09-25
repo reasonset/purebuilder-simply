@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/bin/env ruby
 require 'pbsimply/docengine/pandoc.rb'
 require 'pbsimply/docengine/rdoc.rb'
 require 'pbsimply/docengine/misc.rb'

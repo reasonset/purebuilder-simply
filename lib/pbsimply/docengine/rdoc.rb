@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/bin/env ruby
 
 class PBSimply
   module Processor
@@ -36,7 +36,7 @@ class PBSimply
       end
 
       def print_fileproc_msg(filename)
-        STDERR.puts "#{filename} generate with RDoc/Markdown"
+        $stderr.puts "#{filename} generate with RDoc/Markdown"
       end
 
       def get_markup_document procdoc
@@ -47,7 +47,7 @@ class PBSimply
     # RDoc processor
     class PbsRDoc < PbsRBase
       def print_fileproc_msg(filename)
-        STDERR.puts "#{filename} generate with RDoc"
+        $stderr.puts "#{filename} generate with RDoc"
       end
 
       def get_markup_document procdoc

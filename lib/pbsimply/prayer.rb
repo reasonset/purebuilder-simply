@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/bin/env ruby
 
 # Module for BLESSING feature.
 module PBSimply::Prayer
@@ -9,14 +9,14 @@ module PBSimply::Prayer
       bless_ruby frontmatter
     end
   end
-  
+
   def bless_ruby(frontmatter)
     # BLESSING (Always)
     if PureBuilder.const_defined?(:BLESS) && Proc === PureBuilder::BLESS
       begin
         PureBuilder::BLESS.(frontmatter, self)
       rescue
-        STDERR.puts "*** BLESSING PROC ERROR ***"
+        $stderr.puts "*** BLESSING PROC ERROR ***"
         raise
       end
     end
@@ -26,7 +26,7 @@ module PBSimply::Prayer
       begin
         PureBuilder::ACCS::BLESS.(frontmatter, self)
       rescue
-        STDERR.puts "*** ACCS BLESSING PROC ERROR ***"
+        $stderr.puts "*** ACCS BLESSING PROC ERROR ***"
         raise
       end
     end
@@ -47,7 +47,7 @@ module PBSimply::Prayer
   end
 
   def bless_cmd(frontmatter)
-    File.open(@workfile_frontmatter, "w") {|f| f.write JSON_LIB.dump(frontmatter) }
+    File.open(@workfile_frontmatter, "w") {|f| f.write PBSimply::JSON_LIB.dump(frontmatter) }
     # BLESSING (Always)
     if @config["bless_cmd"]
       (Array === @config["bless_cmd"] ? system(*@config["bless_cmd"]) : system(@config["bless_cmd"]) ) or abort "*** BLESS COMMAND RETURNS NON-ZERO STATUS"
