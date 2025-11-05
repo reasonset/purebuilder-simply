@@ -2,6 +2,10 @@
 
 ## Version 3: Add Hooks, Theme, Initializer
 
+### v3.4.1 2025-11-05
+
+* Fix bug: Fixed an issue where documents skipped during processing would lose content set by bless.
+
 ### v3.4.0 2025-09-25
 
 * `.meta.${filename}.yaml` or `.meta.${filename}.yml` can be used in addition to `.meta.${filename}` as separated metadata.

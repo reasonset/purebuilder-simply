@@ -225,9 +225,19 @@ class PBSimply
 
     delete_turn_draft draft_articles
 
-    proc_docs target_docs
+    # #proc_docs destructs target_docs
+    processed_docs = proc_docs target_docs.dup
 
     delete_missing
+    
+    # Restore skipped doc's frontmatter
+    orig_filelist = Set.new(target_docs.map {|i| i[0]})
+    proc_filelist = Set.new(processed_docs.map {|i| i[0]})
+    recov_filelist = orig_filelist - proc_filelist
+    pp recov_filelist
+    recov_filelist.each do |filename|
+      @indexes[filename] = @indexes_orig[filename]
+    end
 
     # Save index.
     @db.dump(@indexes) unless @skip_index
@@ -278,6 +288,9 @@ class PBSimply
 
     # Call hooks
     @hooks.post.run({this_time_processed: @this_time_processed})
+    
+    # Return actually processed documents
+    target_docs
   end
 
   # Delete turn to draft article.
@@ -471,7 +484,7 @@ class PBSimply
     if frontmatter["skip_update"]
       # Document specific skip update
       false
-    if @refresh
+    elsif @refresh
       # Refresh (force update) mode.
       true
     else
