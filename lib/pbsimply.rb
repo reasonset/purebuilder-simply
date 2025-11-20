@@ -8,6 +8,7 @@ require 'tmpdir'
 require 'fileutils'
 require 'optparse'
 require 'digest/sha1'
+require 'set' # It's not needed since Ruby 3.2
 
 # PureBuilder Simply Components
 require 'pbsimply/docdb'
@@ -234,7 +235,6 @@ class PBSimply
     orig_filelist = Set.new(target_docs.map {|i| i[0]})
     proc_filelist = Set.new(processed_docs.map {|i| i[0]})
     recov_filelist = orig_filelist - proc_filelist
-    pp recov_filelist
     recov_filelist.each do |filename|
       @indexes[filename] = @indexes_orig[filename]
     end
