@@ -8,6 +8,7 @@ require 'tmpdir'
 require 'fileutils'
 require 'optparse'
 require 'digest/sha1'
+require 'set' # It's not needed since Ruby 3.2
 
 # PureBuilder Simply Components
 require 'pbsimply/docdb'

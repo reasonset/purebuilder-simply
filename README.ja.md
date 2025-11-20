@@ -34,7 +34,11 @@ PureBuilder Simply ACCS はPureBuilder Simplyによって `index.html` ファイ
 ## Dependency
 
 * Ruby >= 3.0
-* Pandoc >= 2.8
+* Pandoc >= 2.8 (任意)
+* Docutils (任意)
+* redcarpet Gem (任意)
+* kramdown Gem (任意)
+* commonmarker Gem (任意)
 
 ## Usage
 

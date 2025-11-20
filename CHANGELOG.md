@@ -2,6 +2,10 @@
 
 ## Version 3: Add Hooks, Theme, Initializer
 
+### v3.4.2 2025-11-20
+
+* Explicitly load the `set` for prior to Ruby 3.2
+
 ### v3.4.1 2025-11-05
 
 * Fix bug: Fixed an issue where documents skipped during processing would lose content set by bless.

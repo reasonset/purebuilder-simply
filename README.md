@@ -34,7 +34,11 @@ PB Simply ACCS make `index.md` with indexes build by PureBuilder.
 ## Dependency
 
 * Ruby >= 3.0
-* Pandoc >= 2.8
+* Pandoc >= 2.8 (Optional)
+* Docutils (Optional)
+* redcarpet Gem (Optional)
+* kramdown Gem (Optional)
+* commonmarker Gem (Optional)
 
 ## Usage
 
