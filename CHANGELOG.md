@@ -2,6 +2,11 @@
 
 ## Version 3: Add Hooks, Theme, Initializer
 
+### v3.5.0 2025-12-10
+
+* Add `--preflight` option.
+* Add `--only-accs` option.
+
 ### v3.4.2 2025-11-20
 
 * Explicitly load the `set` for prior to Ruby 3.2

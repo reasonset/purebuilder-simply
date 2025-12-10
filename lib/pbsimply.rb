@@ -27,6 +27,10 @@ class PBSimply
   include Frontmatter
   include ACCS
 
+  # Custom exception
+  class CommandLineError < StandardError
+  end
+
   # Use Oj as JSON library for frontmatter passing if possible.
   begin
     require 'oj'
@@ -142,6 +146,7 @@ class PBSimply
     opts.on("-p", "--preflight") { @preflight = true }
     opts.on("-o FILE", "--output") {|v| @outfile = v }
     opts.on("-m FILE", "--additional-metafile") {|v| @add_meta = Psych.unsafe_load(File.read(v))}
+    opts.on("-a", "--only-accs") { @accs_only = true }
     opts.parse!(ARGV)
 
     if File.exist?(".pbsimply-bless.rb")
@@ -345,8 +350,15 @@ class PBSimply
       # If target file is regular file, run as single mode.
       @singlemode = File.file?(@dir)
 
-      # Check single file mode.
-      if @singlemode
+      if @accs_only && !@accs_processing
+        accs_only_mode_check
+
+        # Process ACCS without regular generating document
+        setup_config(@dir)
+        load_index
+
+        process_accs
+      elsif @singlemode # Check single file mode.
         # Single file mode
         return if @preflight
 
@@ -460,6 +472,15 @@ class PBSimply
         "frontmatter": fm,
         "document": doc
       })
+    end
+  end
+
+  def accs_only_mode_check
+    unless File.exist?(File.join(@dir, ".accs.yaml"))
+      raise CommandLineError.new "ACCS-only processing mode can only be performed on the ACCS directory."
+    end
+    unless File.directory?(@dir)
+      raise CommandLineError.new "ACCS-only processing needs ACCS directory as an argument."
     end
   end
 end
