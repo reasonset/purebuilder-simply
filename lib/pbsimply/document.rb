@@ -2,12 +2,13 @@ class PBSimply
   class Document
     include PBSimply::Frontmatter
 
-    def initialize(config, dir, filename, base_frontmatter)
+    def initialize(config, dir, filename, base_frontmatter, now)
       @config = config
       @dir = dir
       @filename = filename
       @ext = File.extname filename
       @orig_filepath = File.join(dir, filename)
+      @now = now
       frontmatter, @pos = read_frontmatter(dir, filename)
       @frontmatter = base_frontmatter.merge frontmatter
       @modified = true

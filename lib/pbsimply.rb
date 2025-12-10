@@ -209,8 +209,7 @@ class PBSimply
       end
 
       $stderr.puts "Checking frontmatter in #{filename}"
-      doc = Document.new(@config, @dir, filename, @frontmatter)
-      doc.now = @now
+      doc = Document.new(@config, @dir, filename, @frontmatter, @now)
 
       if doc.draft?
         draft_articles.push({
@@ -374,8 +373,7 @@ class PBSimply
 
         load_index
 
-        doc = Document.new(@config, dir, filename, @frontmatter)
-        doc.now = @now
+        doc = Document.new(@config, dir, filename, @frontmatter, @now)
         @index = doc.frontmatter
 
         proc_docs([doc])
