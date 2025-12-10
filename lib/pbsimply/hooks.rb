@@ -107,11 +107,5 @@ class PBSimply::Hooks
     end
   end
 
-  attr :pre
-  attr :process
-  attr :delete
-  attr :post
-  attr :accs
-
-  attr :config
+  attr_reader :pre, :process, :delete, :post, :accs, :config
 end

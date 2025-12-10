@@ -85,7 +85,6 @@ class PBSimply
       end
 
       def target_file_extensions
-        p [".md", ".rst"] + @pandoc_input_extmap.keys
         [".md", ".rst"] + @pandoc_input_extmap.keys
       end
     end
