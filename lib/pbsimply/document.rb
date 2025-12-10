@@ -1,6 +1,8 @@
+require 'pbsimply/frontmatter'
+
 class PBSimply
   class Document
-    include PBSimply::Frontmatter
+    include Frontmatter
 
     def initialize(config, dir, filename, base_frontmatter, now)
       @config = config

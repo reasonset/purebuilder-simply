@@ -16,7 +16,6 @@ require 'pbsimply/docengine/base'
 require 'pbsimply/prayer'
 require 'pbsimply/plugger'
 require 'pbsimply/hooks'
-require 'pbsimply/frontmatter'
 require 'pbsimply/accs'
 require 'pbsimply/config-checker.rb'
 require 'pbsimply/document'
@@ -24,7 +23,6 @@ require 'pbsimply/document'
 class PBSimply
   include Prayer
   include Plugger
-  include Frontmatter
   include ACCS
 
   # Custom exception
