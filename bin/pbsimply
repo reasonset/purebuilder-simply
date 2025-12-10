@@ -25,6 +25,12 @@ end
 # Alias for compatibility.
 PureBuilder = pbs_class
 
-pbs = pbs_class.new(config)
-pbs.treat_cmdline
-pbs.main
+begin
+  pbs = pbs_class.new(config)
+  pbs.treat_cmdline
+
+  pbs.main
+rescue PBSimply::CommandLineError => e
+  $stderr.puts e.to_s
+  exit 1
+end

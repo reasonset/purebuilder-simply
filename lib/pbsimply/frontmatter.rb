@@ -211,6 +211,8 @@ module PBSimply::Frontmatter
     return frontmatter, pos
   end
 
+  private
+
   def outext frontmatter
     return frontmatter["force_ext"] if frontmatter["force_ext"]
 

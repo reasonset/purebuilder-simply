@@ -16,15 +16,18 @@ require 'pbsimply/docengine/base'
 require 'pbsimply/prayer'
 require 'pbsimply/plugger'
 require 'pbsimply/hooks'
-require 'pbsimply/frontmatter'
 require 'pbsimply/accs'
 require 'pbsimply/config-checker.rb'
+require 'pbsimply/document'
 
 class PBSimply
   include Prayer
   include Plugger
-  include Frontmatter
   include ACCS
+
+  # Custom exception
+  class CommandLineError < StandardError
+  end
 
   # Use Oj as JSON library for frontmatter passing if possible.
   begin
@@ -119,6 +122,7 @@ class PBSimply
 
     @refresh = false # Force generate all documents.
     @skip_index = false # Don't register to index.
+    @preflight = false # Don't generate output document.
     @outfile = nil # Fixed output filename
     @add_meta = nil
     @accs = nil
@@ -137,8 +141,10 @@ class PBSimply
     opts.on("-X", "--ignore-ext") { @ignore_ext = true }
     opts.on("-I", "--skip-index") { @skip_index = true }
     opts.on("-A", "--skip-accs") { @skip_accs = true }
+    opts.on("-p", "--preflight") { @preflight = true }
     opts.on("-o FILE", "--output") {|v| @outfile = v }
     opts.on("-m FILE", "--additional-metafile") {|v| @add_meta = Psych.unsafe_load(File.read(v))}
+    opts.on("-a", "--only-accs") { @accs_only = true }
     opts.parse!(ARGV)
 
     if File.exist?(".pbsimply-bless.rb")
@@ -171,7 +177,7 @@ class PBSimply
     @docobject
   end
 
-  attr :indexes
+  attr_reader :indexes
 
   ###############################################
   #            PROCESSING FUNCTIONS             #
@@ -182,7 +188,6 @@ class PBSimply
   def proc_dir
     draft_articles = []
     target_docs = []
-    @indexes_orig = {}
     $stderr.puts "in #{@dir}..."
 
     $stderr.puts "Checking Frontmatter..."
@@ -202,11 +207,9 @@ class PBSimply
       end
 
       $stderr.puts "Checking frontmatter in #{filename}"
-      frontmatter, pos = read_frontmatter(@dir, filename)
-      frontmatter = @frontmatter.merge frontmatter
-      frontmatter.merge!(@add_meta) if @add_meta
+      doc = Document.new(@config, @dir, filename, @frontmatter, @now)
 
-      if frontmatter["draft"]
+      if doc.draft?
         draft_articles.push({
           article_filename: filename,
           filename: filename,
@@ -215,30 +218,31 @@ class PBSimply
         next
       end
 
-      @indexes_orig[filename] = @indexes[filename]
-      @indexes[filename] = frontmatter
+      doc.orig_frontmatter = @indexes[filename]
 
       # Push to target documents without checking modification.
-      target_docs.push([filename, frontmatter, pos])
+      target_docs.push(doc)
     end
     ENV.delete("pbsimply_currentdoc")
     ENV.delete("pbsimply_filename")
 
     delete_turn_draft draft_articles
 
-    # #proc_docs destructs target_docs
-    processed_docs = proc_docs target_docs.dup
+    proc_docs target_docs
 
     delete_missing
-    
-    # Restore skipped doc's frontmatter
-    orig_filelist = Set.new(target_docs.map {|i| i[0]})
-    proc_filelist = Set.new(processed_docs.map {|i| i[0]})
-    recov_filelist = orig_filelist - proc_filelist
-    recov_filelist.each do |filename|
-      @indexes[filename] = @indexes_orig[filename]
-    end
 
+    # Update modified doc's frontmatter
+    if @preflight
+      target_docs.each do |doc|
+        @indexes[doc.filename] = doc.effective_forntmatter
+      end
+    else
+      target_docs.each do |doc|
+        @indexes[doc.filename] = doc.frontmatter
+      end
+    end
+    
     # Save index.
     @db.dump(@indexes) unless @skip_index
 
@@ -250,37 +254,41 @@ class PBSimply
 
   def proc_docs target_docs
     # Exclude unchanged documents.
-    if @indexes && @indexes_orig
+    unless @singlemode
       $stderr.puts "Checking modification..."
-      target_docs.delete_if {|filename, frontmatter, pos| !check_modify(filename, frontmatter)}
+      if !@preflight
+        target_docs.delete_if do |doc|
+          next false if @refresh # Force refresh mode
+          !doc.modified?
+        end
+        # target_docs.delete_if {|filename, frontmatter, pos| !check_modify(filename, frontmatter)}
+      end
     end
 
     # Modify frontmatter `BLESSING'
-    target_docs.each do |filename, frontmatter, pos|
-      $stderr.puts "Blessing #{filename}..."
-      bless frontmatter
+    target_docs.each do |doc|
+      $stderr.puts "Blessing #{doc.filename}..."
+      bless doc.frontmatter
+    end
+
+    if !@singlemode && @preflight
+      $stderr.puts "Checking metadata modification..."
+      target_docs.each {|doc| doc.mark_meta_modified }
+      return # Resign processing document in preflight mode.
     end
 
     # Ready.
     $stderr.puts "Okay, Now ready. Process documents..."
 
     # Proccess documents
-    target_docs.each do |filename, frontmatter, pos|
-      ext = File.extname filename
-      ENV["pbsimply_currentdoc"] = File.join(@workdir, "current_document#{ext}")
-      ENV["pbsimply_filename"] = filename
-      @index = frontmatter
-      File.open(File.join(@dir, filename)) do |f|
-        f.seek(pos)
-        doc_content = f.read
-        if @config["unicode_normalize"] && !frontmatter["skip_normalize"]
-          doc_content.unicode_normalize!(@config["unicode_normalize"].to_sym)
-        end
-        File.open(File.join(@workdir, "current_document#{ext}"), "w") {|fo| fo.write doc_content }
-      end
+    target_docs.each do |doc|
+      ENV["pbsimply_currentdoc"] = File.join(@workdir, "current_document#{doc.ext}")
+      ENV["pbsimply_filename"] = doc.filename
+      @index = doc.frontmatter
+      doc.read_document(workdir: @workdir)
 
-      $stderr.puts "Processing #{filename}"
-      generate(@dir, filename, frontmatter)
+      $stderr.puts "Processing #{doc.filename}"
+      generate(doc)
     end
 
     # Call post plugins
@@ -337,11 +345,20 @@ class PBSimply
       ENV["pbsimply_frontmatter"] = @workfile_frontmatter
       @workfile_pandoc_defaultfiles ||= File.join(@workdir, "pbsimply-defaultfiles.yaml")
       # If target file is regular file, run as single mode.
-      @singlemode = true if File.file?(@dir)
+      @singlemode = File.file?(@dir)
 
-      # Check single file mode.
-      if @singlemode
+      if @accs_only && !@accs_processing
+        accs_only_mode_check
+
+        # Process ACCS without regular generating document
+        setup_config(@dir)
+        load_index
+
+        process_accs
+      elsif @singlemode # Check single file mode.
         # Single file mode
+        return if @preflight
+
         if @dir =~ %r:(.*)/([^/]+):
           dir = $1
           filename = $2
@@ -354,14 +371,13 @@ class PBSimply
 
         load_index
 
-        frontmatter, pos = read_frontmatter(dir, filename)
-        frontmatter = @frontmatter.merge frontmatter
-        @index = frontmatter
+        doc = Document.new(@config, dir, filename, @frontmatter, @now)
+        @index = doc.frontmatter
 
-        proc_docs([[filename, frontmatter, pos]])
+        proc_docs([doc])
 
         if File.exist?(File.join(@dir, ".accs.yaml")) && !@accs_processing && !@skip_accs
-          single_accs filename, frontmatter
+          single_accs doc.filename, doc.frontmatter
         end
       else
         # Normal (directory) mode.
@@ -379,13 +395,14 @@ class PBSimply
     @workfile_pandoc_defaultfiles = nil
   end
 
-  def generate(dir, filename, frontmatter)
+  def generate(doc)
+    dir, filename, frontmatter = *doc.to_a
     print_fileproc_msg(filename) # at sub-class
 
     # Preparing and pre script.
-    orig_filepath = [dir, filename].join("/")
-    ext = File.extname(filename)
-    procdoc = File.join(@workdir, "current_document#{ext}")
+    orig_filepath = doc.orig_filepath
+    ext = doc.ext
+    procdoc = doc.proc_doc_path
 
     pre_plugins(procdoc, frontmatter)
     @hooks.pre.run({procdoc: procdoc, frontmatter: frontmatter})
@@ -454,41 +471,12 @@ class PBSimply
     end
   end
 
-  # Check is the article modified? (or force update?)
-  def check_modify(filename, frontmatter)
-    modify = true
-    index = @indexes_orig[filename]&.dup || {}
-
-    case @config["detect_modification"]
-    when "changes"
-      # Use "changes"
-      modify = false if frontmatter["changes"] == index["changes"]
-    when "mtimesize"
-      # Use mtime and file size.
-      modify = false if frontmatter["_mtime"] <= (index["_last_proced"] || 0) && frontmatter["_size"] == index["_size"]
-    else
-      # Default method, use mtime.
-      modify = false if frontmatter["_mtime"] <= (index["_last_proced"] || 0)
+  def accs_only_mode_check
+    unless File.exist?(File.join(@dir, ".accs.yaml"))
+      raise CommandLineError.new "ACCS-only processing mode can only be performed on the ACCS directory."
     end
-
-
-    if modify
-      $stderr.puts "#{filename} last modified at #{frontmatter["_mtime"]}, last processed at #{@indexes_orig[filename]&.[]("_last_proced") || 0}"
-    else
-      $stderr.puts "#{filename} is not modified."
-    end
-
-    frontmatter["_last_proced"] = @now.to_i
-    frontmatter["last_update"] = @now.strftime("%Y-%m-%d %H:%M:%S")
-
-    if frontmatter["skip_update"]
-      # Document specific skip update
-      false
-    elsif @refresh
-      # Refresh (force update) mode.
-      true
-    else
-      modify
+    unless File.directory?(@dir)
+      raise CommandLineError.new "ACCS-only processing needs ACCS directory as an argument."
     end
   end
 end
