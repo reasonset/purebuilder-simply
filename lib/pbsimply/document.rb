@@ -4,15 +4,17 @@ class PBSimply
   class Document
     include Frontmatter
 
-    def initialize(config, dir, filename, base_frontmatter, now)
-      @config = config
-      @dir = dir
+    def initialize(pbs, filename)
+      @config = pbs.config
+      @dir = pbs.dir
       @filename = filename
       @ext = File.extname filename
-      @orig_filepath = File.join(dir, filename)
-      @now = now
-      frontmatter, @pos = read_frontmatter(dir, filename)
-      @frontmatter = base_frontmatter.merge frontmatter
+      @orig_filepath = File.join(pbs.dir, filename)
+      @now = pbs.now
+      @accs_processing = pbs.accs_processing
+      @outfile = pbs.outfile
+      frontmatter, @pos = read_frontmatter(pbs.dir, filename)
+      @frontmatter = pbs.frontmatter.merge frontmatter
       @modified = true
       @proc_doc_path = nil
     end

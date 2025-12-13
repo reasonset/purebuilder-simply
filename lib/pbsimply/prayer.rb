@@ -78,13 +78,13 @@ module PBSimply::Prayer
             begin
               @article_order = @indexes.to_a.sort_by {|i| i[1]["date"]}
             rescue
-              abort "*** Automatic Blessing Method Error: Maybe some article have no date."
+              abort "*** Automatic Blessing Method Error: Maybe some article has no date."
             end
           when "timestamp"
             begin
               @article_order = @indexes.to_a.sort_by {|i| i[1]["timestamp"]}
             rescue
-              abort "*** Automatic Blessing Method Error: Maybe some article have no timetsamp."
+              abort "*** Automatic Blessing Method Error: Maybe some article has no timetsamp."
             end
           when "lexical"
             @article_order = @indexes.to_a.sort_by {|i| i[1]["_filename"]}

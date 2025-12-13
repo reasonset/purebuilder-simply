@@ -129,9 +129,14 @@ class PBSimply
     @accs_index = {}
     @now = Time.now
     @hooks = PBSimply::Hooks.new(self, @config)
+    @dir = nil
+    @frontmatter = {}
+    @accs_processing = false
 
     @debug = (ENV["DEBUG"] == "yes")
   end
+
+  attr_reader :config, :dir, :frontmatter, :now, :accs_processing, :outfile
 
   # Process command-line
   def treat_cmdline(dir=nil)
@@ -188,6 +193,7 @@ class PBSimply
   def proc_dir
     draft_articles = []
     target_docs = []
+    effective_docs = []
     $stderr.puts "in #{@dir}..."
 
     $stderr.puts "Checking Frontmatter..."
@@ -207,7 +213,7 @@ class PBSimply
       end
 
       $stderr.puts "Checking frontmatter in #{filename}"
-      doc = Document.new(@config, @dir, filename, @frontmatter, @now)
+      doc = Document.new(self, filename)
 
       if doc.draft?
         draft_articles.push({
@@ -219,9 +225,13 @@ class PBSimply
       end
 
       doc.orig_frontmatter = @indexes[filename]
+      @indexes[filename] = doc.frontmatter
 
       # Push to target documents without checking modification.
       target_docs.push(doc)
+
+      # Push to all effective documents.
+      effective_docs.push(doc)
     end
     ENV.delete("pbsimply_currentdoc")
     ENV.delete("pbsimply_filename")
@@ -231,20 +241,9 @@ class PBSimply
     proc_docs target_docs
 
     delete_missing
-
-    # Update modified doc's frontmatter
-    if @preflight
-      target_docs.each do |doc|
-        @indexes[doc.filename] = doc.effective_forntmatter
-      end
-    else
-      target_docs.each do |doc|
-        @indexes[doc.filename] = doc.frontmatter
-      end
-    end
     
     # Save index.
-    @db.dump(@indexes) unless @skip_index
+    save_index(effective_docs) unless @skip_index
 
     # ACCS processing
     if @accs && !target_docs.empty?
@@ -371,7 +370,7 @@ class PBSimply
 
         load_index
 
-        doc = Document.new(@config, dir, filename, @frontmatter, @now)
+        doc = Document.new(self, filename)
         @index = doc.frontmatter
 
         proc_docs([doc])
@@ -478,5 +477,13 @@ class PBSimply
     unless File.directory?(@dir)
       raise CommandLineError.new "ACCS-only processing needs ACCS directory as an argument."
     end
+  end
+
+  def save_index(effective_docs)
+    new_indexes = {}
+    effective_docs.each do |doc|
+      new_indexes[doc.filename] = doc.effective_forntmatter
+    end
+    @db.dump(new_indexes)
   end
 end

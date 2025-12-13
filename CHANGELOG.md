@@ -2,6 +2,13 @@
 
 ## Version 3: Add Hooks, Theme, Initializer
 
+### v3.5.1 2025-12-14
+
+* Fix new bugs in v3.5.0
+    * Autobless fails if index database has wrong timestamp or date
+    * Failing generate ACCS index
+    * Outfile option was not work
+
 ### v3.5.0 2025-12-10
 
 * Add `--preflight` option.
