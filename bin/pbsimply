@@ -2,35 +2,37 @@
 
 require 'pbsimply'
 
-PBSimply.find_docroot
-config = PBSimply.load_config
-
-pbs_class = case config["pbsimply_processor"]
-when "docutils"
-  PBSimply::Processor::Docutils
-when "redcarpet"
-  PBSimply::Processor::PbsRedCarpet
-when "kramdown"
-  PBSimply::Processor::PbsKramdown
-when "cmark"
-  PBSimply::Processor::PbsCommonMark
-when "rdoc_markdown"
-  PBSimply::Processor::PbsRMakrdown
-when "rdoc"
-  PBSimply::Processor::PbsRDoc
-else
-  PBSimply::Processor::Pandoc
-end
-
-# Alias for compatibility.
-PureBuilder = pbs_class
-
 begin
+  PBSimply.find_docroot
+  config = PBSimply.load_config
+
+  pbs_class = case config["pbsimply_processor"]
+  when "docutils"
+    PBSimply::Processor::Docutils
+  when "redcarpet"
+    PBSimply::Processor::PbsRedCarpet
+  when "kramdown"
+    PBSimply::Processor::PbsKramdown
+  when "cmark"
+    PBSimply::Processor::PbsCommonMark
+  when "rdoc_markdown"
+    PBSimply::Processor::PbsRMakrdown
+  when "rdoc"
+    PBSimply::Processor::PbsRDoc
+  else
+    PBSimply::Processor::Pandoc
+  end
+
+  # Alias for compatibility.
+  PureBuilder = pbs_class
+
   pbs = pbs_class.new(config)
   pbs.treat_cmdline
 
   pbs.main
-rescue PBSimply::CommandLineError => e
-  $stderr.puts e.to_s
-  exit 1
+rescue PBSimply::PBSimplyError => e
+  if PBSimply::ConfigChecker::InvalidConfigError === e.original_error
+    $stderr.puts e.original_error
+  end
+  abort e.to_s
 end

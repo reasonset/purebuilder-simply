@@ -2,6 +2,11 @@
 
 ## Version 3: Add Hooks, Theme, Initializer
 
+### v3.5.2
+
+* Better error handling
+    * Now PBSimply library raises sub-class of `PBSimply::PBSimplyError` instead of `Kernel.abort`
+
 ### v3.5.1 2025-12-14
 
 * Fix new bugs in v3.5.0

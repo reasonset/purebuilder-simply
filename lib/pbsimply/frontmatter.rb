@@ -131,8 +131,8 @@ module PBSimply::Frontmatter
       end
     end
 
-    abort "This document has no frontmatter" unless frontmatter
-    abort "This document has no title." unless frontmatter["title"]
+    raise DocumentError.new("This document has no frontmatter") unless frontmatter
+    raise DocumentError.new("This document has no title.") unless frontmatter["title"]
 
     outpath = case
     when @outfile

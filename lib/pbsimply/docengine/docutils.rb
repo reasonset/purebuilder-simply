@@ -19,7 +19,7 @@ class PBSimply
           elsif @config["css"].kind_of?(Array)
             @docutils_cli_options.push("--stylesheet=#{@config["css"].join(",")}")
           else
-            abort "css in Config should be a String or an Array."
+            raise PBLoadError.new "css in Config should be a String or an Array."
           end
         end
 
@@ -44,9 +44,9 @@ class PBSimply
           doc = io.read
         end
 
-        # Abort if pandoc returns non-zero status
+        # Abort if docutils returns non-zero status
         if $?.exitstatus != 0
-          abort "Docutils (rst2html5) returns exit code #{$?.exitstatus}"
+          raise ProcessorError.new "Docutils (rst2html5) returns exit code #{$?.exitstatus}"
         end
 
         doc

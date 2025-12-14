@@ -37,7 +37,7 @@ class PBSimply
           elsif @config["css"].kind_of?(Array)
             @pandoc_default_file["css"] = @config["css"]
           else
-            abort "css in Config should be a String or an Array."
+            raise PBLoadError.new "css in Config should be a String or an Array."
           end
         end
 
@@ -71,14 +71,14 @@ class PBSimply
           pandoc_cmdline += ["-f", @pandoc_input_extmap[File.extname filename]]
         end
         pandoc_cmdline += [ procdoc ]
-        pp pandoc_cmdline if @debug
+        pp pandoc_cmdline if $debug
         IO.popen((pandoc_cmdline)) do |io|
           doc = io.read
         end
 
         # Abort if pandoc returns non-zero status
         if $?.exitstatus != 0
-          abort "Pandoc returns exit code #{$?.exitstatus}"
+          raise ProcessorError.new "Pandoc returns exit code #{$?.exitstatus}"
         end
 
         doc

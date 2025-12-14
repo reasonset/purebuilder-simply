@@ -26,7 +26,37 @@ class PBSimply
   include ACCS
 
   # Custom exception
-  class CommandLineError < StandardError
+  class PBSimplyError < StandardError
+    def initialize(*arg)
+      @original_error = nil
+      if arg.size == 2
+        @original_error = arg.pop
+        print_error(@original_error)
+      end
+
+      super(*arg)
+    end
+
+    attr_reader :original_error
+
+    private
+    def print_error(e)
+      $stderr.puts e.full_message if $debug && e
+    end
+  end
+  class CommandLineError < PBSimplyError
+  end
+  class BlessError < PBSimplyError
+  end
+  class PBLoadError < PBSimplyError
+  end
+  class DocumentError < PBSimplyError
+  end
+  class ProcessorError < PBSimplyError
+  end
+  class ConfigChecker
+    class InvalidConfigError < PBSimplyError
+    end
   end
 
   # Use Oj as JSON library for frontmatter passing if possible.
@@ -47,7 +77,7 @@ class PBSimply
     until File.exist?(".pbsimply.yaml")
       Dir.chdir ".."
       if lastwd == Dir.pwd
-        abort "PureBuilder Simply document root not found."
+        raise PBLoadError.new "PureBuilder Simply document root not found."
       end
       lastwd = Dir.pwd
     end
@@ -61,14 +91,12 @@ class PBSimply
         config = Psych.unsafe_load(f)
       end
       ConfigChecker.verify_config config
-    rescue PBSimply::ConfigChecker::InvalidConfigError
-      abort $!.to_s
-    rescue
-      abort "Failed to load config file (./.pbsimply.yaml)"
+    rescue => e
+      raise PBLoadError.new "Failed to load config file (./.pbsimply.yaml)", e
     end
 
     # Required values
-    config["outdir"] or abort "Output directory is not set (outdir)."
+    config["outdir"] or raise PBLoadError.new "Output directory is not set (outdir)."
     config["template"] ||= "./template.html"
 
     config
@@ -133,7 +161,7 @@ class PBSimply
     @frontmatter = {}
     @accs_processing = false
 
-    @debug = (ENV["DEBUG"] == "yes")
+    $debug = (ENV["DEBUG"] == "yes")
   end
 
   attr_reader :config, :dir, :frontmatter, :now, :accs_processing, :outfile
@@ -150,6 +178,7 @@ class PBSimply
     opts.on("-o FILE", "--output") {|v| @outfile = v }
     opts.on("-m FILE", "--additional-metafile") {|v| @add_meta = Psych.unsafe_load(File.read(v))}
     opts.on("-a", "--only-accs") { @accs_only = true }
+    opts.on("--debug") { $debug = true }
     opts.parse!(ARGV)
 
     if File.exist?(".pbsimply-bless.rb")

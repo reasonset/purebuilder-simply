@@ -2,9 +2,6 @@
 
 class PBSimply
   class ConfigChecker
-    class InvalidConfigError < StandardError
-    end
-
     def self.verify_config config
       # blessmethod_accs_rel
       if config["blessmethod_accs_rel"] && ! %w:numbering date timestamp lexical:.include?(config["blessmethod_accs_rel"])
