@@ -88,24 +88,36 @@ self_url_external_prefix: https://example.com/
 #################################################
 # Kramdown engine option
 #################################################
+% if @processor == "kramdown"
 pbsimply_processor: kramdown
+% else
+#pbsimply_processor: kramdown
+% end
 # An associative array passed as the second argument to `Kramdown::Document.new`. See the https://kramdown.gettalong.org/rdoc/Kramdown/Options.html for detail.
 #kramdown_features: {}
 #
 #################################################
 # RedCarpet engine option
 #################################################
+% if @processor == "redcarpet"
+pbsimply_processor: redcarpet
+% else
 #pbsimply_processor: redcarpet
+% end
 # An associative array showing the extensions to Redcarpet. See the https://github.com/vmg/redcarpet for details.
 #redcarpet_extensions: {}
 #
 #################################################
-# CommonMarker engine option
+# Commonmarker engine option
 #################################################
+% if @processor == "cmark"
+pbsimply_processor: cmark
+% else
 #pbsimply_processor: cmark
+% end
 #
-# An array showing `CommonMarker.render_doc`'s 3rd agrument.
-#commonmarker_options: []
+# An Hash showing `Commonmarker.prase`'s `options` argument.
+#commonmarker_options: {}
 #
 #################################################
 # Docutils engine option

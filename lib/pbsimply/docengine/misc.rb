@@ -66,14 +66,14 @@ class PBSimply
       end
 
       def print_fileproc_msg(filename)
-        $stderr.puts "#{filename} generate with CommonMarker (cmark-gfm)"
+        $stderr.puts "#{filename} generate with Commonmarker (cmark-gfm)"
       end
 
       def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)
-        options = @config["commonmarker_options"]&.map(&:to_sym) || [:table, :strikethrough]
+        options = @config["commonmarker_options"] ? @config["commonmarker_options"].transform_keys(&:to_sym) : {}
 
         # Getting HTML string.
-        article_body = CommonMarker.render_doc(File.read(procdoc), :DEFAULT, options).to_html
+        article_body = Commonmarker.parse(File.read(procdoc), options: options).to_html
 
         # Process with eRuby temaplte.
         erb_template = ERB.new(File.read(@config["template"]), trim_mode: '%<>')

@@ -1,9 +1,9 @@
 Gem::Specification.new do |s|
   s.required_ruby_version = ">= 2.6"
   s.name        = 'pbsimply'
-  s.version     = '3.5.1'
+  s.version     = '3.6.0'
   s.summary     = 'Flexible and programmable static site generator with pluggable Markdown engines'
-  s.description = 'A flexible, programmable static site generator for Markdown, reStructuredText, and RDoc formats. PureBuilder Simply supports both embedded and external content processors—including Kramdown, Redcarpet, CommonMarker, RDoc, Pandoc, Docutils—and enables customizable conversion workflows and CLI-based project generation.'
+  s.description = 'A flexible, programmable static site generator for Markdown, reStructuredText, and RDoc formats. PureBuilder Simply supports both embedded and external content processors—including Kramdown, Redcarpet, Commonmarker, RDoc, Pandoc, Docutils—and enables customizable conversion workflows and CLI-based project generation.'
 
   s.authors     = ["Masaki Haruka"]
   s.email       = ["yek@reasonset.net"]

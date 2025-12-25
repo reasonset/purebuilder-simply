@@ -50,11 +50,11 @@ module PBSimply::Prayer
     File.open(@workfile_frontmatter, "w") {|f| f.write PBSimply::JSON_LIB.dump(frontmatter) }
     # BLESSING (Always)
     if @config["bless_cmd"]
-      (Array === @config["bless_cmd"] ? system(*@config["bless_cmd"]) : system(@config["bless_cmd"]) ) or abort "*** BLESS COMMAND RETURNS NON-ZERO STATUS"
+      (Array === @config["bless_cmd"] ? system(*@config["bless_cmd"]) : system(@config["bless_cmd"]) ) or raise BlessError.new "*** BLESS COMMAND RETURNS NON-ZERO STATUS"
     end
     # BLESSING (ACCS)
     if @config["bless_accscmd"]
-      (Array === @config["bless_accscmd"] ? system({"pbsimply_workdir" => @workdir, "pbsimply_frontmatter" => @workfile_frontmatter, "pbsimply_indexes" => @db.path}, *@config["bless_accscmd"]) : system({"pbsimply_workdir" => @workdir, "pbsimply_frontmatter" => @workfile_frontmatter, "pbsimply_indexes" => @db.path}, @config["bless_accscmd"]) ) or abort "*** BLESS COMMAND RETURNS NON-ZERO STATUS"
+      (Array === @config["bless_accscmd"] ? system({"pbsimply_workdir" => @workdir, "pbsimply_frontmatter" => @workfile_frontmatter, "pbsimply_indexes" => @db.path}, *@config["bless_accscmd"]) : system({"pbsimply_workdir" => @workdir, "pbsimply_frontmatter" => @workfile_frontmatter, "pbsimply_indexes" => @db.path}, @config["bless_accscmd"]) ) or raise BlessError.new "*** BLESS COMMAND RETURNS NON-ZERO STATUS"
     end
     mod_frontmatter = JSON.load(File.read(@workfile_frontmatter))
     frontmatter.replace(mod_frontmatter)
@@ -77,14 +77,14 @@ module PBSimply::Prayer
           when "date"
             begin
               @article_order = @indexes.to_a.sort_by {|i| i[1]["date"]}
-            rescue
-              abort "*** Automatic Blessing Method Error: Maybe some article has no date."
+            rescue => e
+              raise BlessError.new("*** Automatic Blessing Method Error: Maybe some article has no date.", e)
             end
           when "timestamp"
             begin
               @article_order = @indexes.to_a.sort_by {|i| i[1]["timestamp"]}
-            rescue
-              abort "*** Automatic Blessing Method Error: Maybe some article has no timetsamp."
+            rescue => e
+              raise BlessError.new("*** Automatic Blessing Method Error: Maybe some article has no timetsamp.", e)
             end
           when "lexical"
             @article_order = @indexes.to_a.sort_by {|i| i[1]["_filename"]}
