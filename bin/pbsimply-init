@@ -2,8 +2,28 @@
 require 'yaml'
 require 'fileutils'
 require 'optparse'
+require 'erb'
 
 class PBSimplyInit
+  class ConfigErb
+    def initialize theme_dir, source_dir, build_dir
+      @theme_dir = theme_dir
+      @source_dir = source_dir
+      @build_dir = build_dir
+
+      @erb = ERB.new(File.read(File.join(@source_dir, ".pbsimply.yaml.erb")), trim_mode: "%")
+    end
+    
+    attr_writer :processor
+
+    def generate
+      generated_config = @erb.result(binding)
+      File.open(File.join(@source_dir, ".pbsimply.yaml"), "w") do |f|
+        f.puts generated_config
+      end
+      File.delete(File.join(@source_dir, ".pbsimply.yaml.erb"))
+    end
+  end
   def initialize
     set_gemroot
     load_default_theme
@@ -33,6 +53,8 @@ class PBSimplyInit
       list_theme
       exit true
     end
+
+    @config_erb_params = {}
   end
 
   def list_theme
@@ -43,8 +65,19 @@ class PBSimplyInit
         themes[theme_name] ||= YAML.load File.read i
       end
     end
-    themes.each do |k, v|
-      puts [k, v["name"], v["description"]].join("   ")
+
+    # Expand rbmdlib -> [kramdown, redcarpet, cmark]
+    rbmdlib = themes.keys.select {|i| i =~ %r:^rbmdlib/: }
+    rbmdlib.each do |k|
+      themes[k.sub(%r:^rbmdlib/:, "kramdown/")] = themes[k]
+      themes[k.sub(%r:^rbmdlib/:, "redcarpet/")] = themes[k]
+      themes[k.sub(%r:^rbmdlib/:, "cmark/")] = themes[k]
+      themes.delete k
+    end
+
+    sorted_keys = themes.keys.sort
+    sorted_keys.each do |k|
+      puts [k, themes[k]["name"], themes[k]["description"]].join("   ")
     end
   end
 
@@ -82,6 +115,20 @@ class PBSimplyInit
     else
       @theme = @default_theme
     end
+
+    @config_erb_params[:processor] = @theme[0]
+
+    if %w:kramdown redcarpet cmark:.include? @theme[0]
+      unified_theme = @theme.clone
+      unified_theme[0] = "rbmdlib"
+      theme_path = search_theme unified_theme
+      if theme_path
+        @config_erb_params[:theme_dir] = theme_path
+        @theme = unified_theme
+        return load_theme_yaml theme_path
+      end
+    end
+
     theme_path = search_theme @theme
     load_theme_yaml theme_path
   end
@@ -133,6 +180,13 @@ class PBSimplyInit
           abort "The theme includes potentially dangerous command" if i.include? ".."
           FileUtils.cp_r(File.join(@source_dir, *i), @build_dir)
         end
+      end
+
+      if @theme_yaml["config_erb"]
+        $stderr.puts "Building .pbsimply.yaml..."
+        erb = ConfigErb.new(@config_erb_params[:theme_dir], @source_dir, @build_dir)
+        erb.processor = @config_erb_params[:processor]
+        erb.generate
       end
     end
 

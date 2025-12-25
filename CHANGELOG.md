@@ -2,10 +2,14 @@
 
 ## Version 3: Add Hooks, Theme, Initializer
 
-### v3.5.2
+### v3.6.0 2025-12-25
 
+* Commonmarker support update to Commonmarker 2.6.0. *This change has potentially incompatibility.*
+* Support for generating `.pbsimply.yaml` using eRuby
+* Support for the `rbmdlib` theme processor, which can be deployed to `kramdown`, `redcarpet`, and `cmark` processor themes
 * Better error handling
     * Now PBSimply library raises sub-class of `PBSimply::PBSimplyError` instead of `Kernel.abort`
+    * This change is friendly to software that uses PureBuilder Simply as a library.
 
 ### v3.5.1 2025-12-14
 
@@ -115,7 +119,7 @@
 
 ### v2.0 2022-01-02
 
-* Support multiple (RDoc, RDoc/Markdown, Kramdown, Redcarpet, CommonMarker) processors
+* Support multiple (RDoc, RDoc/Markdown, Kramdown, Redcarpet, Commonmarker) processors
 * Fix bug when single mode
 * Change filename
 * Support RubyGems
