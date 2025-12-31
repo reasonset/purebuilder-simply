@@ -131,8 +131,8 @@ module PBSimply::Frontmatter
       end
     end
 
-    raise DocumentError.new("This document has no frontmatter") unless frontmatter
-    raise DocumentError.new("This document has no title.") unless frontmatter["title"]
+    raise PBSimply::DocumentError.new("This document has no frontmatter") unless frontmatter
+    raise PBSimply::DocumentError.new("This document has no title.") unless frontmatter["title"]
 
     outpath = case
     when @outfile
