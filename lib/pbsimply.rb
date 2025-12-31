@@ -228,6 +228,7 @@ class PBSimply
     $stderr.puts "Checking Frontmatter..."
     Dir.foreach(@dir) do |filename|
       next if filename == "." || filename == ".." || filename == ".index.md"
+      next unless File.file? File.join(@dir, filename)
       if filename =~ /^\./ || filename =~ /^draft-/
         draft_articles.push({
           article_filename: filename.sub(/^(?:\.|draft-)/, ""),

@@ -2,6 +2,11 @@
 
 ## Version 3: Add Hooks, Theme, Initializer
 
+### v3.6.1 2026-01-01
+
+* Fix bug: Ensured that DocumentError is referenced correctly.
+* Fix bug: Configured to skip non-regular files during directory processing
+
 ### v3.6.0 2025-12-25
 
 * Commonmarker support update to Commonmarker 2.6.0. *This change has potentially incompatibility.*
