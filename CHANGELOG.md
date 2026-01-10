@@ -2,6 +2,10 @@
 
 ## Version 3: Add Hooks, Theme, Initializer
 
+### v3.6.2 2026-01-10
+
+* Small bug fix.
+
 ### v3.6.1 2026-01-01
 
 * Fix bug: Ensured that DocumentError is referenced correctly.
