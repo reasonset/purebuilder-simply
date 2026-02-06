@@ -2,6 +2,15 @@
 
 ## Version 3: Add Hooks, Theme, Initializer
 
+### v3.7.0
+
+* Specifying `eruby_lib` enables selection of either erubis or erubi as the eRuby processor.
+* Specifying `erb_time_mode` enables trim_mode specification when using `ERB` as the eRuby processor.
+* By including the `PBSimply::ERuby` module, which includes `ERB::Util`, you can use `ERB::Util` helper functions and additional helper functions (e.g., `#iso8601`) within eRuby templates.
+* Replace lines starting with `%` with the `<% ... %>` format so that the `.accsindex.yaml` file can be interpreted by `Erubis` or `Erubi`.
+* Enable the use of Liquid and Mustache as template engines
+* Fix commonmarker options
+
 ### v3.6.2 2026-01-10
 
 * Small bug fix.

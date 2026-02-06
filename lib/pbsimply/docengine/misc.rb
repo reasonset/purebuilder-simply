@@ -24,8 +24,7 @@ class PBSimply
         article_body = markdown.render(File.read procdoc)
 
         # Process with eRuby temaplte.
-        erb_template = ERB.new(File.read(@config["template"]), trim_mode: '%<>')
-        doc = erb_template.result(binding)
+        doc = expand_template binding
 
         doc
       end
@@ -51,8 +50,7 @@ class PBSimply
         article_body = markdown.to_html
 
         # Process with eRuby temaplte.
-        erb_template = ERB.new(File.read(@config["template"]), trim_mode: '%<>')
-        doc = erb_template.result(binding)
+        doc = expand_template binding
 
         doc
       end
@@ -71,13 +69,15 @@ class PBSimply
 
       def process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc)
         options = @config["commonmarker_options"] ? @config["commonmarker_options"].transform_keys(&:to_sym) : {}
+        options.each do |k,v|
+          options[k] = v.transform_keys(&:to_sym)
+        end
 
         # Getting HTML string.
-        article_body = Commonmarker.parse(File.read(procdoc), options: options).to_html
+        article_body = Commonmarker.to_html(File.read(procdoc), options: options)
 
         # Process with eRuby temaplte.
-        erb_template = ERB.new(File.read(@config["template"]), trim_mode: '%<>')
-        doc = erb_template.result(binding)
+        doc = expand_template binding
 
         doc
       end

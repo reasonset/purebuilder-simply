@@ -16,35 +16,32 @@ else
   @indexes.each {|filename, index| articles[(index["category"] || "default")].push index }
 end
 
-%>
+articles.keys.sort.each do |catname|
+cat = articles[catname]
 
-% articles.keys.sort.each do |catname|
-% cat = articles[catname]
-
-% unless articles.length == 1
+unless articles.length == 1
 # <%= catname %>
-% end
+<% end
 
-<%
-  sort_method = case @config["accs_sort_by"]
-  when "title"
-    lambda {|i| [i["title"].to_s, i["date"]] }
-  when "name"
-    lambda {|i| [i["_filename"].to_s, i["title"].to_s, i["date"]] }
-  when "serial"
-    lambda {|i| [i["serial"].to_s, i["date"], i["_filename"].to_s] }
-  else
-    lambda {|i| [i["date"], i["title"].to_s, i["_last_update"].to_i] }
-  end
-  
-  list = if @config["accs_order"] == "desc"
-    cat.sort_by(&sort_method).reverse
-  else
-    cat.sort_by(&sort_method)
-  end
+sort_method = case @config["accs_sort_by"]
+when "title"
+  lambda {|i| [i["title"].to_s, i["date"]] }
+when "name"
+  lambda {|i| [i["_filename"].to_s, i["title"].to_s, i["date"]] }
+when "serial"
+  lambda {|i| [i["serial"].to_s, i["date"], i["_filename"].to_s] }
+else
+  lambda {|i| [i["date"], i["title"].to_s, i["_last_update"].to_i] }
+end
 
-  list.each do |i|
+list = if @config["accs_order"] == "desc"
+  cat.sort_by(&sort_method).reverse
+else
+  cat.sort_by(&sort_method)
+end
+
+list.each do |i|
 %>* [<%= i["title"] %>](<%= i["page_url"] %>)
-<% end %>
+<% end
 
-% end
+end %>

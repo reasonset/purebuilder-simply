@@ -20,8 +20,7 @@ class PBSimply
         article_body = rdoc.convert(get_markup_document(procdoc))
 
         # Process with eRuby temaplte.
-        erb_template = ERB.new(File.read(@config["template"]), trim_mode: '%<>')
-        doc = erb_template.result(binding)
+        doc = expand_template binding
 
         doc
       end
