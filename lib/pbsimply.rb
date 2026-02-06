@@ -17,13 +17,17 @@ require 'pbsimply/prayer'
 require 'pbsimply/plugger'
 require 'pbsimply/hooks'
 require 'pbsimply/accs'
-require 'pbsimply/config-checker.rb'
+require 'pbsimply/config-checker'
 require 'pbsimply/document'
+require 'pbsimply/eruby'
+require 'pbsimply/template-engine'
 
 class PBSimply
   include Prayer
   include Plugger
   include ACCS
+  include ERuby
+  include TemplateEngine
 
   # Custom exception
   class PBSimplyError < StandardError
@@ -442,7 +446,7 @@ class PBSimply
     ##### Post eRuby
     if @config["post_eruby"]
       $stderr.puts "Porcessing with eRuby."
-      doc = ERB.new(doc, nil, "%<>").result(binding)
+      doc = str_and_render(dov, binding)
     end
 
     # Write out

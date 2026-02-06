@@ -7,6 +7,9 @@ outdir: ../Build
 # Template file path.
 # ./template.html by default.
 template: template.erb
+# Configure the template engine/template format. The default is eruby, and liquid and mustache can be specified.
+# This setting is only effective when using a document processor that defaults to eRuby. It does not function when using a document processor that employs a different dedicated template engine (e.g., Pandoc).
+# template_format: eruby
 #
 # Loading CSS files (userd by Pandoc's default template.)
 # This values must be *server's URL*.
@@ -21,6 +24,13 @@ template: template.erb
 # Enable eRuby template expansion. true or false. false by default.
 # This settings is not avilable on rdoc, rdoc_markdown, kramdown, redcarpet or cmark engine.
 post_eruby: false
+# Specify the eRuby processor library.
+# The default is erb; erubis and erubi can be specified.
+# Since these libraries are not fully compatible with each other, specifying one may change behavior or cause it to fail to function properly.
+eruby_lib: erb
+# Specifies the value for the `trim_mode` parameter passed to the ERB constructor. The default is `%<>`.
+# Specifying this value may cause .erb files used by the theme to malfunction.
+# erb_trim_mode: "%<>"
 # Default metadata. If same key exists in document's frontmatter, document's frontmatter is given priority to this settings.
 default_meta:
   author: "John Doe"

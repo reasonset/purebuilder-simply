@@ -82,7 +82,7 @@ EOF
 
     @hooks.accs.run({index: @index, indexes: @indexes})
 
-    doc = ERB.new(erbtemplate, trim_mode: "%<>").result(binding)
+    doc = str_and_render(erbtemplate, binding)
     File.open(File.join(@dir, ".index.md"), "w") do |f|
       f.write doc
     end
