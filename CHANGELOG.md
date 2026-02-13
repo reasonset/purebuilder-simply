@@ -2,7 +2,7 @@
 
 ## Version 3: Add Hooks, Theme, Initializer
 
-### v3.7.0
+### v3.7.0 2026-02-06
 
 * Specifying `eruby_lib` enables selection of either erubis or erubi as the eRuby processor.
 * Specifying `erb_time_mode` enables trim_mode specification when using `ERB` as the eRuby processor.
