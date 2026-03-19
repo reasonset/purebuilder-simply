@@ -227,13 +227,19 @@ class PBSimply
     draft_articles = []
     target_docs = []
     effective_docs = []
+    exclude_files = []
     $stderr.puts "in #{@dir}..."
+
+    # Check exclude file
+    if File.exist?(File.join(@dir, ".pbsimply-exclude"))
+      exclude_files = File.read(File.join(@dir, ".pbsimply-exclude")).each_line.map(&:chomp).reject(&:empty?)
+    end
 
     $stderr.puts "Checking Frontmatter..."
     Dir.foreach(@dir) do |filename|
       next if filename == "." || filename == ".." || filename == ".index.md"
       next unless File.file? File.join(@dir, filename)
-      if filename =~ /^\./ || filename =~ /^draft-/
+      if filename =~ /^\./ || filename =~ /^draft-/ || exclude_files.include?(filename)
         draft_articles.push({
           article_filename: filename.sub(/^(?:\.|draft-)/, ""),
           filename: filename,

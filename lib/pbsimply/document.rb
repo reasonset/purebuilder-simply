@@ -13,8 +13,8 @@ class PBSimply
       @now = pbs.now
       @accs_processing = pbs.accs_processing
       @outfile = pbs.outfile
-      frontmatter, @pos = read_frontmatter(pbs.dir, filename)
-      @frontmatter = pbs.frontmatter.merge frontmatter
+      fmt, @pos = read_frontmatter(pbs.dir, filename)
+      @frontmatter = pbs.frontmatter.merge fmt
       @modified = true
       @proc_doc_path = nil
     end
@@ -42,7 +42,7 @@ class PBSimply
     end
 
     def draft?
-      frontmatter["draft"]
+      frontmatter["draft"] || frontmatter["pbsimply_exclude"]
     end
 
     def to_a
