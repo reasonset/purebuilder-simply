@@ -1,6 +1,8 @@
 #!/bin/env ruby
 require 'erb'
 require 'yaml'
+require 'time'
+require 'date'
 
 module PBSimply::Frontmatter
   # Read Frontmatter from the document.
@@ -132,6 +134,11 @@ module PBSimply::Frontmatter
     end
 
     raise PBSimply::DocumentError.new("This document has no frontmatter") unless frontmatter
+
+    if (frontmatter["draft"] || frontmatter["pbsimply_exclude"])
+      return frontmatter, pos
+    end
+
     raise PBSimply::DocumentError.new("This document has no title.") unless frontmatter["title"]
 
     outpath = case
@@ -170,8 +177,7 @@ module PBSimply::Frontmatter
     frontmatter["title_encoded"] = ERB::Util.url_encode(frontmatter["title"])
     frontmatter["title_html_escaped"] = ERB::Util.html_escape(frontmatter["title"])
     fts = frontmatter["timestamp"]
-    fts = fts.to_datetime if Time === fts
-    if DateTime === fts
+    if Time === fts || DateTime === fts
       frontmatter["timestamp_xmlschema"] = fts.xmlschema
       frontmatter["timestamp_jplocal"] = fts.strftime('%Y年%m月%d日 %H時%M分%S秒')
       frontmatter["timestamp_rubytimestr"] = fts.strftime('%a %b %d %H:%M:%S %Z %Y')
