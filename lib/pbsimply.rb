@@ -21,6 +21,7 @@ require 'pbsimply/config-checker'
 require 'pbsimply/document'
 require 'pbsimply/eruby'
 require 'pbsimply/template-engine'
+require 'pbsimply/utils'
 
 class PBSimply
   include Prayer
@@ -61,6 +62,8 @@ class PBSimply
   class ConfigChecker
     class InvalidConfigError < PBSimplyError
     end
+  end
+  class InvalidPathError < PBSimplyError
   end
 
   # Use Oj as JSON library for frontmatter passing if possible.
@@ -164,6 +167,8 @@ class PBSimply
     @dir = nil
     @frontmatter = {}
     @accs_processing = false
+
+    @logger = JsonlLogger.new config["enable_jsonl_log"]
 
     $debug = (ENV["DEBUG"] == "yes")
   end
@@ -349,6 +354,7 @@ class PBSimply
         tfp = File.join(@config["outdir"], @dir, tfn)
         if File.file?(tfp)
           $stderr.puts "#{df} was turn to draft."
+          @logger.delete dah[:source_file_path]
           @hooks.delete.run({target_file_path: tfp, source_file_path: dah[:source_file_path]})
           File.delete tfp if @config["auto_delete"]
         end
@@ -367,6 +373,7 @@ class PBSimply
       unless File.exist? v["source_path"]
         $stderr.puts "#{k} is missing."
         missing_keys.push k
+        @logger.delete v["source_path"]
         @hooks.delete.run({target_file_path: v["dest_path"] ,source_file_path: v["source_path"]})
         File.delete v["dest_path"] if @config["auto_delete"]
       end
@@ -448,6 +455,7 @@ class PBSimply
 
     # Generated Document
     doc = process_document(dir, filename, frontmatter, orig_filepath, ext, procdoc) # at sub-class
+    @logger.generate frontmatter
 
     ##### Post eRuby
     if @config["post_eruby"]
