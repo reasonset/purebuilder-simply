@@ -169,6 +169,7 @@ class PBSimply
     @accs_processing = false
 
     @logger = JsonlLogger.new config["enable_jsonl_log"]
+    @titlemap_db = TitleMapDB.new config["enable_titlemap"]
 
     $debug = (ENV["DEBUG"] == "yes")
   end

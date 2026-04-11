@@ -47,4 +47,37 @@ class PBSimply
       })
     end
   end
+
+  class TitleMapDB
+    def initialize enabled
+      @db = nil
+      if enabled
+        require 'dbm'
+        unless File.exist? ".pbsimply_var"
+          Dir.mkdir(".pbsimply_var")
+        end
+        @db = DBM.new(File.join(".pbsimply_var", "titlemap"))
+        @key = "title"
+        @key = "title_encoded" if enabled == "url_encoded"
+        @key = "title_html_escaped" if enabled == "html_escaped"
+      end
+    end
+
+    def []=(path, frontmatter)
+      return unless @db
+      now = Time.now.to_i
+      val = @db[path]
+      val = val ? JSON.load(val) : {}
+      if val[frontmatter[@key]]
+        val[frontmatter[@key]]["last_update"] = now
+      else
+        val[frontmatter[@key]] = {
+          "since" => now,
+          "last_update" => now
+        }
+      end
+
+      @db[path] = val
+    end
+  end
 end
