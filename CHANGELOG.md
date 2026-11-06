@@ -2,11 +2,15 @@
 
 ## Version 3: Add Hooks, Theme, Initializer
 
+### v3.9.0 2026-11-06
+
+* Add `page_url_external` to frontmatter set by system.
+
 ### v3.8.0 2026-03-19
 
 * Changed so that autobless is not executed when `draft: yes` is set, and the system does not check whether a title has been provided
 * Added `pbsimply_exclude` as a synonym for `draft` to exclude items from being processed by `pbsimply`
-* Add a .pbsimply-exclude file to specify items to exclude from pbsimply's processing
+* Add a `.pbsimply-exclude` file to specify items to exclude from pbsimply's processing
 
 ### v3.7.0 2026-02-06
 
