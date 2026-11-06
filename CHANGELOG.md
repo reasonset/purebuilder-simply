@@ -2,6 +2,10 @@
 
 ## Version 3: Add Hooks, Theme, Initializer
 
+### v3.9.0 2026-11-06
+
+* Add `page_url_external` to frontmatter set by system.
+
 ### v3.8.0 2026-03-19
 
 * Changed so that autobless is not executed when `draft: yes` is set, and the system does not check whether a title has been provided

@@ -168,6 +168,7 @@ module PBSimply::Frontmatter
     this_url.sub!(%r!/\.([^/]+.html)$!, '/\1')
     this_url_external.sub!(%r!/\.([^/]+.html)$!, '/\1')
     frontmatter["page_url"] = this_url
+    frontmatter["page_url_external"] = this_url_external
     # URL in site with URI encode.
     frontmatter["page_url_encoded"] = ERB::Util.url_encode(this_url)
     frontmatter["page_url_encoded_external"] = ERB::Util.url_encode(this_url_external)
